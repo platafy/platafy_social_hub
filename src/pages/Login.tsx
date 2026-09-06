@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,10 @@ export default function Login() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isSupabaseConfigured) {
+      toast.error("Configure as variáveis do Supabase na Vercel antes de fazer login.");
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("login", {
       body: { email, password },
@@ -63,8 +67,15 @@ export default function Login() {
           <h1 className="text-2xl font-bold tracking-tight leading-none text-foreground">Acesse sua conta</h1>
           <CardDescription className="text-muted-foreground text-sm">Entre com seu e-mail e senha para continuar</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {!isSupabaseConfigured && (
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/25 p-3 text-xs text-amber-700 dark:text-amber-300">
+              <p className="font-semibold mb-1">⚠️ Supabase não configurado</p>
+              <p>Adicione as variáveis de ambiente na Vercel para ativar o login e o banco de dados.</p>
+            </div>
+          )}
           <form onSubmit={onSubmit} className="space-y-4">
+
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">E-mail</Label>
               <Input 

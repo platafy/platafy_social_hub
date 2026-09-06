@@ -9,17 +9,38 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute, GuestOnlyRoute } from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
+
+function SupabaseConfigAlert() {
+  if (isSupabaseConfigured) return null;
+  return (
+    <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center text-xs sm:text-sm text-amber-600 dark:text-amber-400 font-medium">
+      ⚠️ <strong>Supabase pendente:</strong> Configure <code className="bg-amber-500/15 px-1.5 py-0.5 rounded font-mono text-xs">VITE_SUPABASE_URL</code> e <code className="bg-amber-500/15 px-1.5 py-0.5 rounded font-mono text-xs">VITE_SUPABASE_PUBLISHABLE_KEY</code> na Vercel para ativar o login e o banco.
+    </div>
+  );
+}
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { session, signOut, user } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === "/login" || location.pathname === "/cadastro" || location.pathname === "/recuperar-senha" || location.pathname === "/auth-error";
 
-  if (isLoginPage) return <>{children}</>;
+  if (isLoginPage) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <SupabaseConfigAlert />
+        <div className="flex-1 flex items-center justify-center">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SupabaseConfigAlert />
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur">
+
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="text-xl font-extrabold tracking-tight flex items-center gap-2 hover:opacity-90 transition-opacity">
             <img src="/logo.png" alt="Zernio" className="h-6 w-6 object-contain" />
