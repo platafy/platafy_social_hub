@@ -1,0 +1,25 @@
+project_id = "SEU_PROJECT_ID"
+
+[functions.zernio-sync]
+verify_jwt = false
+
+[functions.zernio-api]
+verify_jwt = false
+
+[functions.zernio-webhook]
+verify_jwt = false
+
+[functions.zernio-contacts-sync]
+verify_jwt = false
+
+[functions.cadastro]
+verify_jwt = false
+
+[functions.login]
+verify_jwt = false
+
+[functions.dados-usuario]
+verify_jwt = false
+
+[functions.recuperacao-senha]
+verify_jwt = false
