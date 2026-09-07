@@ -11,7 +11,7 @@ select cron.schedule(
   '*/2 * * * *',
   $$
   select net.http_post(
-    url := 'https://SEU_PROJECT_ID.supabase.co/functions/v1/zernio-sync',
+    url := 'https://sabzbazyxfxorrfsnhqf.supabase.co/functions/v1/zernio-sync',
     headers := '{"Content-Type": "application/json"}'::jsonb,
     body := '{}'::jsonb,
     timeout_milliseconds := 60000
