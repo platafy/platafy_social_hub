@@ -18,13 +18,14 @@ CREATE TABLE IF NOT EXISTS public.plans (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-GRANT SELECT ON public.plans TO authenticated;
+GRANT SELECT ON public.plans TO anon, authenticated;
 GRANT ALL ON public.plans TO service_role;
 ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Plans are viewable by authenticated users" ON public.plans;
-CREATE POLICY "Plans are viewable by authenticated users" ON public.plans
-  FOR SELECT TO authenticated USING (is_active = true);
+DROP POLICY IF EXISTS "Plans are viewable by everyone" ON public.plans;
+CREATE POLICY "Plans are viewable by everyone" ON public.plans
+  FOR SELECT USING (is_active = true);
 
 -- Inserir os 3 Planos Padrão do SaaS
 INSERT INTO public.plans (name, slug, description, price, features, limits, is_popular)
