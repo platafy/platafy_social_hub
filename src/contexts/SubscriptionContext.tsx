@@ -41,11 +41,70 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
+export const DEFAULT_PLANS: Plan[] = [
+  {
+    id: "7159e5c6-c75e-4979-a033-115de7036285",
+    name: "Starter",
+    slug: "starter",
+    description: "Perfeito para autônomos e pequenos criadores de conteúdo",
+    price: 47.00,
+    currency: "BRL",
+    interval: "monthly",
+    features: [
+      "Até 3 redes sociais conectadas",
+      "50 posts agendados por mês",
+      "Inbox e DMs unificados",
+      "Gestão de até 100 contatos",
+      "Suporte por e-mail"
+    ],
+    limits: { max_channels: 3, max_posts: 50, max_contacts: 100, ai_automations: false },
+    is_popular: false
+  },
+  {
+    id: "b46eb6f2-b29b-4d40-ba37-2ecf82989436",
+    name: "Pro",
+    slug: "pro",
+    description: "O mais recomendado para empresas, profissionais e criadores em crescimento",
+    price: 97.00,
+    currency: "BRL",
+    interval: "monthly",
+    features: [
+      "Até 10 redes sociais conectadas",
+      "Publicações e agendamentos ilimitados",
+      "Automação com IA (Gemini, OpenAI, Claude)",
+      "Moderação inteligente de comentários",
+      "CRM completo de contatos",
+      "Suporte prioritário"
+    ],
+    limits: { max_channels: 10, max_posts: -1, max_contacts: 1000, ai_automations: true },
+    is_popular: true
+  },
+  {
+    id: "d3f7413c-7b11-425f-9d95-cf39fc2d0b59",
+    name: "Agência",
+    slug: "agency",
+    description: "Para agências e negócios que gerenciam múltiplas marcas e clientes",
+    price: 197.00,
+    currency: "BRL",
+    interval: "monthly",
+    features: [
+      "Redes sociais ilimitadas",
+      "Múltiplas contas Zernio integradas",
+      "Automação com IA com todas as LLMs",
+      "Personalização White Label completa",
+      "Acesso prioritário a novos recursos",
+      "Gerente de conta dedicado"
+    ],
+    limits: { max_channels: -1, max_posts: -1, max_contacts: -1, ai_automations: true, white_label: true },
+    is_popular: false
+  }
+];
+
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { tenantId, session } = useAuth();
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -57,8 +116,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         .eq("is_active", true)
         .order("price", { ascending: true });
 
-      if (error) throw error;
-      if (data) {
+      if (error) {
+        console.warn("Erro ao buscar planos remotos (usando padrão):", error);
+        return;
+      }
+      if (data && data.length > 0) {
         setPlans(data as Plan[]);
       }
     } catch (err) {
