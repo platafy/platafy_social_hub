@@ -9,7 +9,8 @@ import {
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
-  DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard
+  DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
+  Heart, MessageCircle, Bookmark
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -1539,13 +1540,29 @@ export default function Home() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'published':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500"><CheckCircle2 className="h-3 w-3" /> Publicado</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <CheckCircle2 className="h-3 w-3" /> Publicado
+          </span>
+        );
       case 'scheduled':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500"><Clock className="h-3 w-3" /> Agendado</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <Clock className="h-3 w-3" /> Agendado
+          </span>
+        );
       case 'failed':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive"><AlertCircle className="h-3 w-3" /> Falhou</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+            <AlertCircle className="h-3 w-3" /> Falhou
+          </span>
+        );
       default:
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground"><Clock className="h-3 w-3" /> {status}</span>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border/50">
+            <Clock className="h-3 w-3" /> {status}
+          </span>
+        );
     }
   };
 
@@ -1597,141 +1614,281 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 min-h-[75vh] w-full max-w-7xl mx-auto">
-      {/* Sidebar Navigation */}
-      <div className="md:col-span-1 md:sticky md:top-28 md:self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto flex flex-col space-y-2 border-r border-border/40 pr-4">
-        <Button
-          variant={activeTab === "dashboard" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+    <div className="flex flex-col md:grid md:grid-cols-4 gap-6 min-h-[75vh] w-full max-w-7xl mx-auto">
+      {/* Mobile Navigation Tabs (Horizontal Scrollable Strip) */}
+      <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-2 mb-1 no-scrollbar w-full">
+        <button
+          type="button"
           onClick={() => setActiveTab("dashboard")}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+            activeTab === "dashboard"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <BarChart3 className="h-4 w-4" /> Painel Geral
-        </Button>
-        <Button
-          variant={activeTab === "composer" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <BarChart3 className="h-3.5 w-3.5" /> Painel
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("composer")}
           disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "composer"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <Plus className="h-4 w-4" /> Novo Post
-        </Button>
-        <Button
-          variant={activeTab === "channels" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <Plus className="h-3.5 w-3.5" /> Novo Post
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("channels")}
           disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "channels"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <Share2 className="h-4 w-4" /> Canais
-        </Button>
-        <Button
-          variant={activeTab === "inbox" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <Share2 className="h-3.5 w-3.5" /> Canais
+          {accounts.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{accounts.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("inbox")}
           disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "inbox"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <MessageSquare className="h-4 w-4" /> Inbox & DMs
-        </Button>
-        <Button
-          variant={activeTab === "contacts" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
-          onClick={() => { setActiveTab("contacts"); }}
+          <MessageSquare className="h-3.5 w-3.5" /> Inbox
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("contacts")}
           disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "contacts"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <Users className="h-4 w-4" /> Contatos
-        </Button>
-        <Button
-          variant={activeTab === "automation" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <Users className="h-3.5 w-3.5" /> Contatos
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("automation")}
           disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "automation"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <Bot className="h-4 w-4" /> Automação IA
-        </Button>
-        <Button
-          variant={activeTab === "settings" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <Bot className="h-3.5 w-3.5" /> IA
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("settings")}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+            activeTab === "settings"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <Settings className="h-4 w-4" /> Configurações
-        </Button>
-        <Button
-          variant={activeTab === "guide" ? "secondary" : "ghost"}
-          className="justify-start gap-3 w-full"
+          <Settings className="h-3.5 w-3.5" /> Ajustes
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("guide")}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+            activeTab === "guide"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
         >
-          <HelpCircle className="h-4 w-4" /> Guia de Uso
-        </Button>
-        <Link to="/planos" className="w-full pt-2">
-          <Button
-            variant="outline"
-            className="justify-start gap-3 w-full border-primary/40 text-primary hover:bg-primary/10 font-semibold"
-          >
-            <CreditCard className="h-4 w-4" /> Planos & Assinatura
-          </Button>
+          <HelpCircle className="h-3.5 w-3.5" /> Guia
+        </button>
+        <Link to="/planos" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
+          <CreditCard className="h-3.5 w-3.5" /> Planos
         </Link>
+      </div>
 
+      {/* Desktop Sidebar Navigation */}
+      <div className="hidden md:flex md:col-span-1 md:sticky md:top-28 md:self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto flex-col space-y-5 border-r border-border/50 pr-4">
+        {/* Navigation Group: Principal */}
+        <div className="space-y-1">
+          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Visão Geral</p>
+          <Button
+            variant={activeTab === "dashboard" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "dashboard" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            <BarChart3 className="h-4 w-4 text-primary" /> Painel Geral
+          </Button>
+          <Button
+            variant={activeTab === "composer" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "composer" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("composer")}
+            disabled={!config.connected}
+          >
+            <Plus className="h-4 w-4 text-primary" /> Novo Post
+          </Button>
+          <Button
+            variant={activeTab === "channels" ? "secondary" : "ghost"}
+            className={`justify-between w-full font-medium transition-all ${activeTab === "channels" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("channels")}
+            disabled={!config.connected}
+          >
+            <span className="flex items-center gap-3">
+              <Share2 className="h-4 w-4 text-primary" /> Canais
+            </span>
+            {accounts.length > 0 && (
+              <span className="px-2 py-0.5 text-[11px] rounded-full bg-secondary/80 text-foreground font-semibold">
+                {accounts.length}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {/* Navigation Group: Comunicação */}
+        <div className="space-y-1">
+          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Comunicação</p>
+          <Button
+            variant={activeTab === "inbox" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "inbox" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("inbox")}
+            disabled={!config.connected}
+          >
+            <MessageSquare className="h-4 w-4 text-primary" /> Inbox & DMs
+          </Button>
+          <Button
+            variant={activeTab === "contacts" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "contacts" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("contacts")}
+            disabled={!config.connected}
+          >
+            <Users className="h-4 w-4 text-primary" /> Contatos
+          </Button>
+        </div>
+
+        {/* Navigation Group: Inteligência & Ajustes */}
+        <div className="space-y-1">
+          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Automação & Sistema</p>
+          <Button
+            variant={activeTab === "automation" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "automation" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("automation")}
+            disabled={!config.connected}
+          >
+            <Bot className="h-4 w-4 text-primary" /> Automação IA
+          </Button>
+          <Button
+            variant={activeTab === "settings" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "settings" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("settings")}
+          >
+            <Settings className="h-4 w-4 text-muted-foreground" /> Configurações
+          </Button>
+          <Button
+            variant={activeTab === "guide" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "guide" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("guide")}
+          >
+            <HelpCircle className="h-4 w-4 text-muted-foreground" /> Guia de Uso
+          </Button>
+        </div>
+
+        {/* Planos CTA Card */}
+        <div className="pt-2">
+          <Link to="/planos" className="block w-full">
+            <div className="p-3.5 rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent hover:border-primary/45 transition-all group shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/15 text-primary group-hover:scale-105 transition-transform">
+                  <CreditCard className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground">Plano & Limites</p>
+                  <p className="text-[11px] text-muted-foreground">Gerencie sua assinatura</p>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Perfil Ativo Selector Card */}
         {config.connected && profiles.length > 0 && (
-          <div className="pt-6 border-t border-border mt-4">
-            <Label className="text-xs font-semibold text-muted-foreground block mb-2 uppercase tracking-wider">Perfil Ativo</Label>
-            <select
-              value={selectedProfileId}
-              onChange={async (e) => {
-                const val = e.target.value;
-                const selectedProf = profiles.find(p => (p._id || p.id) === val);
-                setSelectedProfileId(val);
-                if (selectedProf?.integrationId) {
-                  try {
-                    await zernio.saveConfig("", val, selectedProf.integrationId);
-                    toast.success("Perfil ativo atualizado.");
-                    await fetchConfig(false);
-                  } catch (err: any) {
-                    console.error("Failed to save profile selection:", err);
+          <div className="pt-2 border-t border-border/50">
+            <div className="p-3 rounded-2xl border border-border/60 bg-card/60 space-y-2">
+              <Label className="text-[11px] font-bold text-muted-foreground block uppercase tracking-wider">
+                Perfil Ativo
+              </Label>
+              <select
+                value={selectedProfileId}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  const selectedProf = profiles.find(p => (p._id || p.id) === val);
+                  setSelectedProfileId(val);
+                  if (selectedProf?.integrationId) {
+                    try {
+                      await zernio.saveConfig("", val, selectedProf.integrationId);
+                      toast.success("Perfil ativo atualizado.");
+                      await fetchConfig(false);
+                    } catch (err: any) {
+                      console.error("Failed to save profile selection:", err);
+                    }
                   }
-                }
-              }}
-              className="w-full text-sm bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
-            >
-              {profiles.map((p, index) => (
-                <option key={p._id || p.id || `profile-${index}`} value={p._id || p.id || index}>
-                  {p.name} ({p.integrationName})
-                </option>
-              ))}
-            </select>
+                }}
+                className="w-full text-xs font-medium bg-background border border-border/80 rounded-xl p-2 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+              >
+                {profiles.map((p, index) => (
+                  <option key={p._id || p.id || `profile-${index}`} value={p._id || p.id || index}>
+                    {p.name} ({p.integrationName})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 
-        {/* Cache Controls */}
+        {/* Cache Controls Card */}
         {config.connected && (
-          <div className="pt-4 border-t border-border mt-2 space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground block mb-1 uppercase tracking-wider">Cache</Label>
-            <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 rounded px-2 py-1">
-              <span className="flex items-center gap-1">
-                <DatabaseZap className="h-3 w-3" />
-                {cacheStats.memory} em memória
-              </span>
-              <span>{cacheStats.session} em sessão</span>
+          <div className="pt-2 border-t border-border/50 space-y-2">
+            <div className="p-3 rounded-2xl border border-border/50 bg-secondary/20 space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <DatabaseZap className="h-3.5 w-3.5 text-primary" /> Memória: {cacheStats.memory}
+                </span>
+                <span>Sessão: {cacheStats.session}</span>
+              </div>
+              <div className="flex gap-1.5 pt-1">
+                <Button
+                  id="btn-refresh-data"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 justify-center gap-1.5 text-xs h-8 rounded-xl"
+                  onClick={handleRefresh}
+                  disabled={loading || !selectedProfileId}
+                >
+                  <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+                <Button
+                  id="btn-clear-cache"
+                  variant="ghost"
+                  size="sm"
+                  className="px-2.5 h-8 rounded-xl text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleClearCache}
+                  title="Limpar Cache"
+                >
+                  <Trash className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-            <Button
-              id="btn-refresh-data"
-              variant="outline"
-              size="sm"
-              className="w-full justify-start gap-2 text-xs"
-              onClick={handleRefresh}
-              disabled={loading || !selectedProfileId}
-            >
-              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar Dados
-            </Button>
-            <Button
-              id="btn-clear-cache"
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start gap-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleClearCache}
-            >
-              <Trash className="h-3 w-3" />
-              Limpar Cache
-            </Button>
           </div>
         )}
       </div>
@@ -2041,39 +2198,78 @@ export default function Home() {
             ) : (
               <>
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription className="text-xs font-semibold block uppercase">Canais Conectados</CardDescription>
-                      <CardTitle className="text-3xl font-bold">{accounts.length}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground">Contas sociais ativas no perfil</CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription className="text-xs font-semibold block uppercase">Agendados</CardDescription>
-                      <CardTitle className="text-3xl font-bold">
-                        {posts.filter(p => p.status === 'scheduled').length}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground">Postagens agendadas</CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription className="text-xs font-semibold block uppercase">Publicados</CardDescription>
-                      <CardTitle className="text-3xl font-bold">
-                        {posts.filter(p => p.status === 'published').length}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground">Postagens publicadas</CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription className="text-xs font-semibold block uppercase">Comentários</CardDescription>
-                      <CardTitle className="text-3xl font-bold">{comments.length}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground">Novos comentários recebidos</CardContent>
-                  </Card>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Canais Conectados */}
+                  <div className="card-hover p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs shadow-xs flex flex-col justify-between">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Canais Ativos</p>
+                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">{accounts.length}</h3>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                        <Share2 className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      Contas conectadas ao perfil
+                    </p>
+                  </div>
+
+                  {/* Agendados */}
+                  <div className="card-hover p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs shadow-xs flex flex-col justify-between">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Agendados</p>
+                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">
+                          {posts.filter(p => p.status === 'scheduled').length}
+                        </h3>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <Calendar className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <Clock className="h-3 w-3 text-amber-500" />
+                      Postagens na fila de publicação
+                    </p>
+                  </div>
+
+                  {/* Publicados */}
+                  <div className="card-hover p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs shadow-xs flex flex-col justify-between">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Publicados</p>
+                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">
+                          {posts.filter(p => p.status === 'published').length}
+                        </h3>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      Disparados com sucesso
+                    </p>
+                  </div>
+
+                  {/* Comentários */}
+                  <div className="card-hover p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs shadow-xs flex flex-col justify-between">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Comentários</p>
+                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">{comments.length}</h3>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                        <MessageCircle className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <MessageSquare className="h-3 w-3 text-sky-500" />
+                      Interações e respostas registradas
+                    </p>
+                  </div>
                 </div>
 
                 {/* Posts List */}
@@ -2463,31 +2659,44 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Select Channels */}
-                <div className="space-y-2">
-                  <Label>Selecionar Canais</Label>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-xs text-foreground uppercase tracking-wider">Selecionar Canais de Destino</Label>
+                    <span className="text-[11px] text-muted-foreground">
+                      {selectedAccounts.length} de {accounts.length} selecionado(s)
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    {accounts.map((acc, index) => {
-                      const accId = acc._id || acc.id || `account-${index}`;
-                      const isSelected = selectedAccounts.includes(accId);
-                      return (
-                        <Button
-                          key={accId}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          className="gap-2 text-xs"
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedAccounts(selectedAccounts.filter(id => id !== accId));
-                            } else {
-                              setSelectedAccounts([...selectedAccounts, accId]);
-                            }
-                          }}
-                        >
-                          {getPlatformIcon(acc.platform, isSelected)}
-                          {acc.username}
-                        </Button>
-                      );
-                    })}
+                    {accounts.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Nenhum canal conectado. Conecte um canal nas configurações.</p>
+                    ) : (
+                      accounts.map((acc, index) => {
+                        const accId = acc._id || acc.id || `account-${index}`;
+                        const isSelected = selectedAccounts.includes(accId);
+                        return (
+                          <button
+                            key={accId}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedAccounts(selectedAccounts.filter(id => id !== accId));
+                              } else {
+                                setSelectedAccounts([...selectedAccounts, accId]);
+                              }
+                            }}
+                            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground border-primary shadow-xs ring-2 ring-primary/20 scale-[1.02]"
+                                : "bg-card text-muted-foreground hover:text-foreground border-border/80 hover:bg-secondary/40"
+                            }`}
+                          >
+                            <span className="shrink-0">{getPlatformIcon(acc.platform, isSelected)}</span>
+                            <span>{acc.username || acc.displayName}</span>
+                            {isSelected && <Check className="h-3.5 w-3.5 ml-0.5 shrink-0" />}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -2613,31 +2822,44 @@ export default function Home() {
             </Card>
 
             {/* Live Preview Mockup Card */}
-            <Card className="lg:col-span-1 border border-border/80">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">Pré-visualização</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="border border-border/70 rounded-lg bg-card shadow-sm p-4 space-y-3">
+            <div className="lg:col-span-1 border border-border/70 rounded-2xl bg-card/80 backdrop-blur-xs shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-border/50 flex items-center justify-between bg-secondary/15">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
+                </div>
+                <span className="text-[10px] text-muted-foreground bg-card border border-border/60 rounded-md px-2 py-0.5">Feed Mockup</span>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="border border-border/70 rounded-2xl bg-card shadow-sm p-4 space-y-3.5">
                   {/* Header Mockup */}
-                  <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 rounded-full bg-secondary/85 flex items-center justify-center font-bold text-xs">
-                      Z
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center font-bold text-xs text-primary">
+                        {selectedAccounts.length > 0 && accounts.find(a => (a._id || a.id) === selectedAccounts[0])
+                          ? (accounts.find(a => (a._id || a.id) === selectedAccounts[0])?.username?.[0]?.toUpperCase() || "P")
+                          : "P"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold truncate">
+                          {selectedAccounts.length > 0 && accounts.find(a => (a._id || a.id) === selectedAccounts[0])
+                            ? accounts.find(a => (a._id || a.id) === selectedAccounts[0])?.username
+                            : "seu_perfil"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Agora mesmo • Público</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold truncate">Sua Conta</p>
-                      <p className="text-[10px] text-muted-foreground">Agora mesmo</p>
-                    </div>
+                    <span className="text-muted-foreground/60 text-xs font-bold">•••</span>
                   </div>
 
                   {/* Caption */}
-                  <p className="text-xs text-foreground whitespace-pre-wrap break-words min-h-[30px]">
-                    {postText || <span className="text-muted-foreground/60 italic">Digite algo na legenda para visualizar...</span>}
+                  <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap break-words min-h-[36px]">
+                    {postText || <span className="text-muted-foreground/50 italic text-xs">Digite a legenda para ver uma prévia realista aqui...</span>}
                   </p>
 
                   {/* Image/Video Preview */}
                   {mediaUrl ? (
-                    <div className="rounded border border-border/50 overflow-hidden bg-secondary/20 aspect-video flex items-center justify-center">
+                    <div className="rounded-xl border border-border/50 overflow-hidden bg-black/5 aspect-video flex items-center justify-center shadow-inner">
                       {mediaUrl.toLowerCase().endsWith('.mp4') ? (
                         <video src={mediaUrl} className="w-full h-full object-cover" controls />
                       ) : (
@@ -2645,32 +2867,51 @@ export default function Home() {
                       )}
                     </div>
                   ) : (
-                    <div className="rounded border border-dashed border-border/80 aspect-video flex flex-col items-center justify-center bg-secondary/5 text-muted-foreground/40 text-[10px]">
-                      <span>Sem mídia carregada</span>
+                    <div className="rounded-xl border-2 border-dashed border-border/60 aspect-video flex flex-col items-center justify-center bg-secondary/15 text-muted-foreground/50 text-[11px] gap-1">
+                      <Upload className="h-5 w-5 opacity-40" />
+                      <span>Nenhuma mídia anexada</span>
                     </div>
                   )}
 
+                  {/* Social Feed Actions Bar */}
+                  <div className="pt-2 border-t border-border/40 flex items-center justify-between text-muted-foreground">
+                    <div className="flex items-center gap-3">
+                      <button type="button" className="hover:text-red-500 transition-colors">
+                        <Heart className="h-4 w-4" />
+                      </button>
+                      <button type="button" className="hover:text-primary transition-colors">
+                        <MessageCircle className="h-4 w-4" />
+                      </button>
+                      <button type="button" className="hover:text-primary transition-colors">
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <button type="button" className="hover:text-primary transition-colors">
+                      <Bookmark className="h-4 w-4" />
+                    </button>
+                  </div>
+
                   {/* Simulated platform targets */}
-                  <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>Destinos:</span>
-                    <div className="flex gap-1">
+                  <div className="pt-2.5 border-t border-border/30 flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span className="font-semibold">Redes Destino:</span>
+                    <div className="flex gap-1.5 flex-wrap justify-end">
                       {selectedAccounts.length > 0 ? (
                         selectedAccounts.map((accId, i) => {
                           const acc = accounts.find(a => (a._id || a.id) === accId);
                           return acc ? (
-                            <span key={i} className="p-0.5 border rounded bg-secondary/30">
+                            <span key={i} className="p-1 border border-border/70 rounded-md bg-secondary/40" title={acc.username}>
                               {getPlatformIcon(acc.platform)}
                             </span>
                           ) : null;
                         })
                       ) : (
-                        <span className="italic text-muted-foreground/50">Nenhum selecionado</span>
+                        <span className="italic text-muted-foreground/60">Nenhum canal ativo</span>
                       )}
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
 
@@ -2678,46 +2919,64 @@ export default function Home() {
         {activeTab === "channels" && (
           <div className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Canais Sociais Ativos</CardTitle>
-                <CardDescription>Canais conectados ao perfil que você pode selecionar para postagem.</CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <CardTitle className="text-xl">Canais Sociais Conectados</CardTitle>
+                    <CardDescription>Canais sociais integrados disponíveis para disparo e monitoramento.</CardDescription>
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-secondary/80 text-foreground border border-border/60">
+                    {accounts.length} {accounts.length === 1 ? 'canal ativo' : 'canais ativos'}
+                  </span>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {accounts.map((acc, index) => (
-                    <div key={acc._id || acc.id || `account-${index}`} className="p-4 border rounded-lg bg-card/65 flex items-center gap-3">
-                      <div className="p-2 border rounded-full bg-background/90">
-                        {getPlatformIcon(acc.platform)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate">{acc.displayName || acc.username}</p>
-                        <div className="flex flex-col gap-0.5">
-                          <p className="text-xs text-muted-foreground truncate">{acc.username}</p>
-                          {acc.integrationName && (
-                            <span className="text-[10px] text-primary font-medium mt-0.5 bg-primary/5 border border-primary/10 rounded px-1.5 py-0.5 w-max">
-                              Conta: {acc.integrationName}
-                            </span>
-                          )}
+                {accounts.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl border-2 border-dashed border-border/60 bg-secondary/10">
+                    <Share2 className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+                    <h4 className="font-semibold text-sm">Nenhum canal conectado</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                      Conecte suas contas sociais na plataforma Zernio para começar a publicar e monitorar mensagens.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {accounts.map((acc, index) => (
+                      <div key={acc._id || acc.id || `account-${index}`} className="card-hover p-4.5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs flex items-center gap-3.5 shadow-2xs">
+                        <div className="p-2.5 border border-border/60 rounded-xl bg-secondary/35 shrink-0">
+                          {getPlatformIcon(acc.platform)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold truncate text-foreground">{acc.displayName || acc.username}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate">@{acc.username}</p>
+                            {acc.integrationName && (
+                              <span className="text-[10px] text-primary font-semibold bg-primary/10 border border-primary/15 rounded px-1.5 py-0.2 shrink-0">
+                                {acc.integrationName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Ativo
+                          </span>
                         </div>
                       </div>
-                      <div className="ml-auto text-xs">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-medium">Ativo</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-
-            {/* Adicionar Novo Canal card removed as connection is managed on Zernio platform directly */}
           </div>
         )}
 
         {/* Inbox Tab */}
         {activeTab === "inbox" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 h-[650px] border border-border/40 rounded-lg overflow-hidden bg-card">
+          <div className="grid grid-cols-1 md:grid-cols-3 h-[calc(100vh-13rem)] min-h-[600px] max-h-[860px] border border-border/60 rounded-2xl overflow-hidden bg-card shadow-xs">
             {/* List */}
-            <div className="md:col-span-1 border-r border-border/40 flex flex-col h-full min-h-0 bg-card">
+            <div className="md:col-span-1 border-r border-border/50 flex flex-col h-full min-h-0 bg-card">
               <div className="p-4 border-b border-border/40 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-lg tracking-tight text-foreground">Mensagens</h3>
@@ -3079,9 +3338,18 @@ export default function Home() {
                 activeChat ? (
                   <>
                     {/* Active Header */}
-                    <div className="p-4 border-b border-border/40 flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-sm">{activeChat.participantName || activeChat.contactName || "Contato Zernio"}</h4>
+                    <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-card/80">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                          {(activeChat.participantName || activeChat.contactName || "C").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-sm text-foreground">{activeChat.participantName || activeChat.contactName || "Contato"}</h4>
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Conversa Ativa
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -3091,7 +3359,7 @@ export default function Home() {
                         const isMe = msg.direction === 'outgoing';
                         return (
                           <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`rounded-lg px-4 py-2 text-sm max-w-[70%] ${isMe ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-secondary/40 border border-border/40'}`}>
+                            <div className={`px-4 py-2.5 text-sm max-w-[75%] leading-relaxed ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-xs shadow-xs' : 'bg-secondary/60 text-foreground border border-border/50 rounded-2xl rounded-bl-xs shadow-2xs'}`}>
                               <div className="break-words">{getMessageText(msg)}</div>
                               {msg.createdAt && (
                                 <div className={`text-[10px] mt-1 text-right leading-none ${isMe ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
@@ -3118,19 +3386,25 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                    <MessageSquare className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Selecione uma conversa para ver as mensagens e responder.</p>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 mb-3">
+                      <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h4 className="font-semibold text-sm">Nenhuma conversa selecionada</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">Selecione uma conversa ao lado para visualizar e enviar respostas diretas.</p>
                   </div>
                 )
               ) : (
                 selectedCommentPost ? (
                   <>
                     {/* Active Header */}
-                    <div className="p-4 border-b border-border/40 flex items-center justify-between">
+                    <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-card/80">
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-semibold text-xs text-muted-foreground">Postagem de @{selectedCommentPost.accountUsername}</h4>
-                        <p className="text-xs text-foreground font-medium truncate mt-0.5 max-w-[400px]">{selectedCommentPost.content || "Sem legenda"}</p>
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4 text-primary" />
+                          <h4 className="font-bold text-xs text-foreground">Postagem de @{selectedCommentPost.accountUsername}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5 max-w-[420px]">{selectedCommentPost.content || "Sem legenda"}</p>
                       </div>
                     </div>
 
@@ -3147,7 +3421,7 @@ export default function Home() {
                           const commentDate = comment.createdTime || comment.created_time || comment.createdAt || comment.created_at;
                           return (
                             <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`rounded-lg px-4 py-2 text-sm max-w-[70%] ${isMe ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-secondary/40 border border-border/40'}`}>
+                              <div className={`px-4 py-2.5 text-sm max-w-[75%] leading-relaxed ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-xs shadow-xs' : 'bg-secondary/60 text-foreground border border-border/50 rounded-2xl rounded-bl-xs shadow-2xs'}`}>
                                 <div className="text-[10px] font-semibold mb-0.5 text-muted-foreground">
                                   {authorName}
                                 </div>
@@ -3225,9 +3499,12 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                    <MessageSquare className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Selecione uma postagem para ver os comentários e responder.</p>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 mb-3">
+                      <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h4 className="font-semibold text-sm">Nenhuma postagem selecionada</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">Selecione uma postagem ao lado para gerenciar comentários e respostas.</p>
                   </div>
                 )
               )}
