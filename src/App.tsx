@@ -7,6 +7,8 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import AuthError from "./pages/AuthError";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
+import { BrandLogo } from "@/components/BrandLogo";
 import { ProtectedRoute, GuestOnlyRoute } from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
@@ -42,10 +44,8 @@ function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur">
 
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-extrabold tracking-tight flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <img src="/logo.png" alt="Zernio" className="h-6 w-6 object-contain" />
-            <span className="text-primary font-black">zernio</span>
-            <span className="text-xs bg-primary/15 text-primary font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">hub</span>
+          <Link to="/" className="hover:opacity-90 transition-opacity">
+            <BrandLogo size="md" />
           </Link>
           <div className="flex items-center gap-2">
             {!session && (
@@ -80,45 +80,47 @@ export default function App() {
   return (
     <HashRouter>
       <AuthProvider>
-        <Toaster />
-        <Layout>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <GuestOnlyRoute>
-                  <Login />
-                </GuestOnlyRoute>
-              }
-            />
-            <Route
-              path="/cadastro"
-              element={
-                <GuestOnlyRoute>
-                  <Cadastro />
-                </GuestOnlyRoute>
-              }
-            />
-            <Route
-              path="/recuperar-senha"
-              element={
-                <GuestOnlyRoute>
-                  <RecuperarSenha />
-                </GuestOnlyRoute>
-              }
-            />
-            <Route path="/auth-error" element={<AuthError />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <BrandingProvider>
+          <Toaster />
+          <Layout>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <GuestOnlyRoute>
+                    <Login />
+                  </GuestOnlyRoute>
+                }
+              />
+              <Route
+                path="/cadastro"
+                element={
+                  <GuestOnlyRoute>
+                    <Cadastro />
+                  </GuestOnlyRoute>
+                }
+              />
+              <Route
+                path="/recuperar-senha"
+                element={
+                  <GuestOnlyRoute>
+                    <RecuperarSenha />
+                  </GuestOnlyRoute>
+                }
+              />
+              <Route path="/auth-error" element={<AuthError />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrandingProvider>
       </AuthProvider>
     </HashRouter>
   );

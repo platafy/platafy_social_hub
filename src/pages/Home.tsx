@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 
 const formatConvTime = (dateStr?: string) => {
   if (!dateStr) return "";
@@ -1731,6 +1732,9 @@ export default function Home() {
         {/* Settings Tab */}
         {activeTab === "settings" && (
           <div className="space-y-6">
+            {/* White Label Settings */}
+            <WhiteLabelSettings />
+
             {/* List of Connected Accounts */}
             {config.integrations && config.integrations.length > 0 && (
               <Card>

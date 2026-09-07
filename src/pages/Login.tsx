@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { BrandLogo } from "@/components/BrandLogo";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -57,11 +58,7 @@ export default function Login() {
 
   return (
     <div className="min-h-[85vh] flex flex-col items-center justify-center bg-background/50 px-4 py-8">
-      <div className="flex items-center gap-2 mb-6">
-        <img src="/logo.png" alt="Zernio Logo" className="h-10 w-10 object-contain" />
-        <span className="text-2xl font-black tracking-tight text-primary">zernio</span>
-        <span className="text-xs bg-primary/15 text-primary font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">hub</span>
-      </div>
+      <BrandLogo size="lg" className="mb-6" />
       <Card className="w-full max-w-[400px] border border-border/50 shadow-lg rounded-2xl bg-card/80 backdrop-blur-sm">
         <CardHeader className="space-y-2 pb-6 text-center">
           <h1 className="text-2xl font-bold tracking-tight leading-none text-foreground">Acesse sua conta</h1>
