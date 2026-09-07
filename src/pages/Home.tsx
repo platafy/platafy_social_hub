@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import { zernio, clearZernioCache, getCacheStats, sanitizeMediaUrls } from "@/lib/zernio";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +9,7 @@ import {
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
-  DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight
+  DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
+import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
 
 const formatConvTime = (dateStr?: string) => {
   if (!dateStr) return "";
@@ -1659,6 +1661,14 @@ export default function Home() {
         >
           <HelpCircle className="h-4 w-4" /> Guia de Uso
         </Button>
+        <Link to="/planos" className="w-full pt-2">
+          <Button
+            variant="outline"
+            className="justify-start gap-3 w-full border-primary/40 text-primary hover:bg-primary/10 font-semibold"
+          >
+            <CreditCard className="h-4 w-4" /> Planos & Assinatura
+          </Button>
+        </Link>
 
         {config.connected && profiles.length > 0 && (
           <div className="pt-6 border-t border-border mt-4">
@@ -1734,6 +1744,9 @@ export default function Home() {
           <div className="space-y-6">
             {/* White Label Settings */}
             <WhiteLabelSettings />
+
+            {/* Mercado Pago SaaS Settings */}
+            <MercadoPagoSettings />
 
             {/* List of Connected Accounts */}
             {config.integrations && config.integrations.length > 0 && (

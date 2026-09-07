@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { BrandLogo } from "@/components/BrandLogo";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Cadastro() {
@@ -49,6 +50,9 @@ export default function Cadastro() {
         <CardHeader className="space-y-2 pb-6 text-center">
           <h1 className="text-2xl font-bold tracking-tight leading-none text-foreground">Crie sua conta</h1>
           <CardDescription className="text-muted-foreground text-sm">Crie seu workspace de redes sociais em segundos</CardDescription>
+          <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mx-auto mt-2">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" /> 7 dias de teste grátis incluídos
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
