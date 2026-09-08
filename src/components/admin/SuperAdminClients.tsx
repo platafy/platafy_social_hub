@@ -327,56 +327,56 @@ export function SuperAdminClients() {
     }
   };
 
-  // Helper de badge de status (Light Mode)
+  // Helper de badge de status (Light & Dark Mode)
   const renderStatusBadge = (client: ClientRecord) => {
     const sub = client.subscription;
     const now = new Date();
 
     if (!sub) {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">Sem Licença</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700">Sem Licença</span>;
     }
 
     if (sub.status === "suspended") {
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"><Ban className="w-3 h-3" /> Suspenso</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50"><Ban className="w-3 h-3" /> Suspenso</span>;
     }
 
     if (sub.status === "active") {
       if (sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) <= now) {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"><AlertCircle className="w-3 h-3" /> Vencido</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50"><AlertCircle className="w-3 h-3" /> Vencido</span>;
       }
       let daysText = "";
       if (sub.currentPeriodEnd) {
         const diff = Math.ceil((new Date(sub.currentPeriodEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         daysText = ` (${diff}d)`;
       }
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><CheckCircle2 className="w-3 h-3" /> Ativo{daysText}</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50"><CheckCircle2 className="w-3 h-3" /> Ativo{daysText}</span>;
     }
 
     if (sub.status === "trialing") {
       if (sub.trialEndsAt && new Date(sub.trialEndsAt) <= now) {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock className="w-3 h-3" /> Trial Expirado</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50"><Clock className="w-3 h-3" /> Trial Expirado</span>;
       }
       let daysText = "";
       if (sub.trialEndsAt) {
         const diff = Math.ceil((new Date(sub.trialEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         daysText = ` (${diff}d)`;
       }
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock className="w-3 h-3" /> Teste{daysText}</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50"><Clock className="w-3 h-3" /> Teste{daysText}</span>;
     }
 
-    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">{sub.status}</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700">{sub.status}</span>;
   };
 
-  // Helper de badge de plano (Light Mode)
+  // Helper de badge de plano (Light & Dark Mode)
   const renderPlanBadge = (slug?: string, name?: string) => {
     if (!name) return <span className="text-muted-foreground text-xs">-</span>;
     if (slug === "agency") {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">Agência</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-900/50">Agência</span>;
     }
     if (slug === "pro") {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">Pro</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">Pro</span>;
     }
-    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200">Starter</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 dark:bg-stone-800/60 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">Starter</span>;
   };
 
   // 2. Ação: Cadastrar Novo Cliente
@@ -691,13 +691,13 @@ export function SuperAdminClients() {
         </div>
       </div>
 
-      {/* KPI Cards (Light Mode) */}
+      {/* KPI Cards (Light & Dark Mode) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Total de Clientes</span>
-              <div className="p-1.5 rounded-lg bg-stone-100 text-stone-600">
+              <div className="p-1.5 rounded-lg bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300">
                 <Users className="w-4 h-4" />
               </div>
             </div>
@@ -708,60 +708,60 @@ export function SuperAdminClients() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 transition-colors">
+        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-emerald-700">Ativos</span>
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Ativos</span>
+              <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-emerald-600 mt-1">{stats.active}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{stats.active}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs text-muted-foreground">Com licença em dia</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-amber-300 transition-colors">
+        <Card className="bg-card border-border shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-amber-700">Em Teste (Trial)</span>
-              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Em Teste (Trial)</span>
+              <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-amber-600 mt-1">{stats.trialing}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{stats.trialing}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs text-muted-foreground">Período de avaliação</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-blue-300 transition-colors">
+        <Card className="bg-card border-border shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-blue-700">Licença Manual</span>
-              <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Licença Manual</span>
+              <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
                 <Key className="w-4 h-4" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-blue-600 mt-1">{stats.manual}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{stats.manual}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs text-muted-foreground">Pagamento direto/manual</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-rose-300 transition-colors">
+        <Card className="bg-card border-border shadow-xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-rose-700">Suspensos / Vencidos</span>
-              <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
+              <span className="text-xs font-medium text-rose-700 dark:text-rose-400">Suspensos / Vencidos</span>
+              <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
                 <AlertCircle className="w-4 h-4" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-rose-600 mt-1">{stats.suspendedOrExpired}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">{stats.suspendedOrExpired}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="text-xs text-muted-foreground">Requer atenção</p>
@@ -1009,7 +1009,7 @@ export function SuperAdminClients() {
                             size="sm"
                             title="Renovar / Estender Licença"
                             onClick={() => openRenew(client)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                           >
                             <ArrowUpRight className="w-4 h-4" />
                           </Button>
@@ -1023,7 +1023,7 @@ export function SuperAdminClients() {
                               setIsSuspendModalOpen(true);
                             }}
                             className={`h-8 w-8 p-0 ${
-                              isSuspended ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50"
+                              isSuspended ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40" : "text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                             }`}
                           >
                             {isSuspended ? <Play className="w-4 h-4" /> : <Ban className="w-4 h-4" />}

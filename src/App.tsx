@@ -13,6 +13,8 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ProtectedRoute, GuestOnlyRoute } from "@/components/ProtectedRoute";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Sparkles, LogOut } from "lucide-react";
@@ -33,7 +35,10 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   if (isLoginPage) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="min-h-screen bg-background text-foreground flex flex-col relative">
+        <div className="absolute top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
         <SupabaseConfigAlert />
         <div className="flex-1 flex items-center justify-center">
           {children}
@@ -98,6 +103,8 @@ function Layout({ children }: { children: React.ReactNode }) {
                   </span>
                 </div>
 
+                <ThemeToggle />
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -110,6 +117,10 @@ function Layout({ children }: { children: React.ReactNode }) {
                 </Button>
               </>
             )}
+
+            {!session && (
+              <ThemeToggle />
+            )}
           </div>
         </nav>
       </header>
@@ -121,12 +132,13 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <HashRouter>
-      <AuthProvider>
-        <BrandingProvider>
-          <SubscriptionProvider>
-            <Toaster />
-            <Layout>
-              <Routes>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrandingProvider>
+            <SubscriptionProvider>
+              <Toaster />
+              <Layout>
+                <Routes>
                 <Route
                   path="/"
                   element={
@@ -170,6 +182,7 @@ export default function App() {
           </SubscriptionProvider>
         </BrandingProvider>
       </AuthProvider>
-    </HashRouter>
-  );
+    </ThemeProvider>
+  </HashRouter>
+);
 }
