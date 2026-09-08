@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const formatConvTime = (dateStr?: string) => {
   if (!dateStr) return "";
@@ -1599,18 +1600,7 @@ export default function Home() {
   });
 
   if (initialLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] w-full text-center">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute h-20 w-20 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <img
-            src="/logo.png"
-            alt="Loading..."
-            className="h-12 w-12 object-contain animate-pulse"
-          />
-        </div>
-      </div>
-    );
+    return <LoadingScreen fullScreen={false} message="Carregando painel..." />;
   }
 
   return (

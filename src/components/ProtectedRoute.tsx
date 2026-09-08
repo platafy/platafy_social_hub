@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import type { AppRole } from "@/contexts/AuthContext";
 
 interface Props {
@@ -16,18 +17,7 @@ export function ProtectedRoute({ children, requireRole, requireSubscription = fa
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute h-20 w-20 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <img 
-            src="/logo.png" 
-            alt="Loading..." 
-            className="h-12 w-12 object-contain animate-pulse" 
-          />
-        </div>
-      </div>
-    );
+    return <LoadingScreen fullScreen={true} message="Verificando acesso..." />;
   }
   
   if (authError && location.pathname !== "/auth-error") {
@@ -55,7 +45,7 @@ export function ProtectedRoute({ children, requireRole, requireSubscription = fa
 
 export function GuestOnlyRoute({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <LoadingScreen fullScreen={true} />;
   if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

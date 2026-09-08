@@ -13,9 +13,9 @@ export interface BrandingSettings {
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
-  app_name: "Platafy Social",
+  app_name: "PLATAFY Social",
   app_tagline: "Hub",
-  primary_color: "#ff451a",
+  primary_color: "#4d5b9a",
   logo_url: "",
   favicon_url: "",
 };

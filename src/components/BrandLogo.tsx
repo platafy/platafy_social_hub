@@ -33,7 +33,7 @@ export function BrandLogo({
     lg: "text-xs px-2 py-0.5",
   };
 
-  const logoSrc = branding.logo_url || "/logo.png";
+  const logoSrc = branding.logo_url || branding.favicon_url || "/logo.png";
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
@@ -42,9 +42,12 @@ export function BrandLogo({
         alt={branding.app_name}
         className={`${logoSizes[size]} object-contain rounded-md transition-transform hover:scale-105`}
         onError={(e) => {
-          // Fallback para a logo padrão caso a URL personalizada falhe
-          if ((e.currentTarget as HTMLImageElement).src !== window.location.origin + "/logo.png") {
-            (e.currentTarget as HTMLImageElement).src = "/logo.png";
+          // Fallback gracioso: se a logo falhar, tenta o favicon; se falhar, tenta /logo.png
+          const target = e.currentTarget as HTMLImageElement;
+          if (branding.favicon_url && target.src !== branding.favicon_url && target.src !== window.location.origin + branding.favicon_url) {
+            target.src = branding.favicon_url;
+          } else if (target.src !== window.location.origin + "/logo.png") {
+            target.src = "/logo.png";
           }
         }}
       />
