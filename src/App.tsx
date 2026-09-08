@@ -15,6 +15,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { ProtectedRoute, GuestOnlyRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 import { Button } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Sparkles, LogOut } from "lucide-react";
@@ -43,6 +44,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex items-center justify-center">
           {children}
         </div>
+        <InstallPwaPrompt />
       </div>
     );
   }
@@ -125,6 +127,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">{children}</main>
+      <InstallPwaPrompt />
     </div>
   );
 }

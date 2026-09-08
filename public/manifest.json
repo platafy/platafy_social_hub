@@ -1,0 +1,38 @@
+{
+  "name": "PLATAFY Social Hub - Gestão Inteligente",
+  "short_name": "PLATAFY Hub",
+  "description": "Plataforma de gestão inteligente e publicação para redes sociais",
+  "start_url": "./",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#4d5b9a",
+  "orientation": "any",
+  "categories": ["productivity", "social", "business"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
