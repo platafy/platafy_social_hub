@@ -6,6 +6,8 @@ import { toast } from "sonner";
 
 export type AppRole = "admin" | "member";
 
+export const SUPER_ADMIN_EMAILS = ["suporte@platafy.com"];
+
 interface AuthState {
   session: Session | null;
   user: User | null;
@@ -14,6 +16,7 @@ interface AuthState {
   loading: boolean;
   authError: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -120,6 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const isSuperAdmin = Boolean(
+    user?.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -130,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         authError,
         isAdmin: roles.includes("admin"),
+        isSuperAdmin,
         signOut,
         refresh,
       }}

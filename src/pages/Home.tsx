@@ -67,7 +67,7 @@ const getConversationLastMessage = (conv: any): string => {
 type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide";
 
 export default function Home() {
-  const { tenantId } = useAuth();
+  const { tenantId, isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>(() => (sessionStorage.getItem("zernio_active_tab") as TabType) || "dashboard");
   const [config, setConfig] = useState<{ connected: boolean; profileId: string | null; hasKey: boolean; integrations?: any[] }>({
     connected: false,
@@ -1889,11 +1889,13 @@ export default function Home() {
         {/* Settings Tab */}
         {activeTab === "settings" && (
           <div className="space-y-6">
-            {/* White Label Settings */}
-            <WhiteLabelSettings />
-
-            {/* Mercado Pago SaaS Settings */}
-            <MercadoPagoSettings />
+            {/* Configurações Globais da Plataforma SaaS (Exclusivo para o Super Admin suporte@platafy.com) */}
+            {isSuperAdmin && (
+              <>
+                <WhiteLabelSettings />
+                <MercadoPagoSettings />
+              </>
+            )}
 
             {/* List of Connected Accounts */}
             {config.integrations && config.integrations.length > 0 && (

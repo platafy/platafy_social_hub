@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,9 @@ import {
 } from "lucide-react";
 
 export function MercadoPagoSettings() {
+  const { isSuperAdmin } = useAuth();
+  if (!isSuperAdmin) return null;
+
   const [accessToken, setAccessToken] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");

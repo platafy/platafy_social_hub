@@ -26,7 +26,9 @@ const PRESET_COLORS = [
 
 export function WhiteLabelSettings() {
   const { branding, updateBranding, resetToDefault, applyBrandColors } = useBranding();
-  const { tenantId } = useAuth();
+  const { tenantId, isSuperAdmin } = useAuth();
+
+  if (!isSuperAdmin) return null;
 
   const [appName, setAppName] = useState(branding.app_name);
   const [appTagline, setAppTagline] = useState(branding.app_tagline);
