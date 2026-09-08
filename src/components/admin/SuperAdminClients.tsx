@@ -206,7 +206,7 @@ export function SuperAdminClients() {
     }
     setNewClientForm(prev => ({ ...prev, password: pwd }));
     navigator.clipboard.writeText(pwd);
-    toast.success("Senha gerada e copiada para a área de transferência: " + pwd);
+    toast.success("Senha gerada e copiada: " + pwd);
   };
 
   // KPIs
@@ -254,7 +254,6 @@ export function SuperAdminClients() {
   const filteredClients = useMemo(() => {
     const now = new Date();
     return clients.filter(c => {
-      // Busca texto
       if (searchTerm) {
         const query = searchTerm.toLowerCase();
         const matchName = c.fullName.toLowerCase().includes(query);
@@ -264,17 +263,14 @@ export function SuperAdminClients() {
         if (!matchName && !matchEmail && !matchCompany && !matchPhone) return false;
       }
 
-      // Filtro por plano
       if (filterPlan !== "all") {
         if (c.subscription?.plan?.slug !== filterPlan) return false;
       }
 
-      // Filtro por cobrança
       if (filterBilling !== "all") {
         if (c.subscription?.billingType !== filterBilling) return false;
       }
 
-      // Filtro por status
       if (filterStatus !== "all") {
         const sub = c.subscription;
         if (!sub) return filterStatus === "expired";
@@ -305,7 +301,6 @@ export function SuperAdminClients() {
         const dateB = b.subscription?.currentPeriodEnd || b.subscription?.trialEndsAt || "9999-12-31";
         return new Date(dateA).getTime() - new Date(dateB).getTime();
       }
-      // recent
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [clients, searchTerm, filterPlan, filterStatus, filterBilling, sortBy]);
@@ -332,57 +327,56 @@ export function SuperAdminClients() {
     }
   };
 
-  // Helper de badge de status
+  // Helper de badge de status (Light Mode)
   const renderStatusBadge = (client: ClientRecord) => {
     const sub = client.subscription;
     const now = new Date();
 
     if (!sub) {
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400">Sem Licença</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">Sem Licença</span>;
     }
 
     if (sub.status === "suspended") {
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20"><Ban className="w-3 h-3" /> Suspenso</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"><Ban className="w-3 h-3" /> Suspenso</span>;
     }
 
     if (sub.status === "active") {
       if (sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) <= now) {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20"><AlertCircle className="w-3 h-3" /> Vencido</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"><AlertCircle className="w-3 h-3" /> Vencido</span>;
       }
-      // Ativo com prazo
       let daysText = "";
       if (sub.currentPeriodEnd) {
         const diff = Math.ceil((new Date(sub.currentPeriodEnd).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         daysText = ` (${diff}d)`;
       }
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-3 h-3" /> Ativo{daysText}</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><CheckCircle2 className="w-3 h-3" /> Ativo{daysText}</span>;
     }
 
     if (sub.status === "trialing") {
       if (sub.trialEndsAt && new Date(sub.trialEndsAt) <= now) {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><Clock className="w-3 h-3" /> Trial Expirado</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock className="w-3 h-3" /> Trial Expirado</span>;
       }
       let daysText = "";
       if (sub.trialEndsAt) {
         const diff = Math.ceil((new Date(sub.trialEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         daysText = ` (${diff}d)`;
       }
-      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><Clock className="w-3 h-3" /> Teste{daysText}</span>;
+      return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><Clock className="w-3 h-3" /> Teste{daysText}</span>;
     }
 
-    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400">{sub.status}</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">{sub.status}</span>;
   };
 
-  // Helper de badge de plano
+  // Helper de badge de plano (Light Mode)
   const renderPlanBadge = (slug?: string, name?: string) => {
-    if (!name) return <span className="text-zinc-500 text-xs">-</span>;
+    if (!name) return <span className="text-muted-foreground text-xs">-</span>;
     if (slug === "agency") {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">Agência</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">Agência</span>;
     }
     if (slug === "pro") {
-      return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">Pro</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">Pro</span>;
     }
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">Starter</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200">Starter</span>;
   };
 
   // 2. Ação: Cadastrar Novo Cliente
@@ -603,7 +597,6 @@ export function SuperAdminClients() {
     setLoadingDetailsData(true);
 
     try {
-      // Buscar pagamentos do tenant
       const { data: payments } = await (supabase.from("payment_history" as any) as any)
         .select("*, plan:plans(name)")
         .eq("tenant_id", client.tenantId)
@@ -611,7 +604,6 @@ export function SuperAdminClients() {
 
       setPaymentHistory(payments || []);
 
-      // Buscar logs de auditoria do tenant
       const { data: logs } = await (supabase.from("admin_audit_logs" as any) as any)
         .select("*")
         .eq("target_tenant_id", client.tenantId)
@@ -652,20 +644,20 @@ export function SuperAdminClients() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-zinc-100">
+    <div className="space-y-6 animate-fade-in text-foreground">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" />
               Gestão de Clientes & Licenças
             </h1>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
               <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
             </span>
           </div>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted-foreground">
             Painel centralizado para visualização, cadastro manual, alteração de planos e controle de licenças do SaaS.
           </p>
         </div>
@@ -676,7 +668,7 @@ export function SuperAdminClients() {
             size="sm"
             onClick={() => loadData(true)}
             disabled={refreshing || loading}
-            className="border-zinc-700 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200"
+            className="border-border bg-card hover:bg-muted text-foreground"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin text-primary" : ""}`} />
             Atualizar
@@ -691,7 +683,7 @@ export function SuperAdminClients() {
               }
               setIsNewClientOpen(true);
             }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-md shadow-primary/20"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-sm shadow-primary/20"
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Novo Cliente
@@ -699,79 +691,89 @@ export function SuperAdminClients() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (Light Mode) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <Card className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm">
+        <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-400">Total de Clientes</span>
-              <Users className="w-4 h-4 text-zinc-400" />
+              <span className="text-xs font-medium text-muted-foreground">Total de Clientes</span>
+              <div className="p-1.5 rounded-lg bg-stone-100 text-stone-600">
+                <Users className="w-4 h-4" />
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-white mt-1">{stats.total}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground mt-1">{stats.total}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs text-zinc-500">Cadastrados no sistema</p>
+            <p className="text-xs text-muted-foreground">Cadastrados no sistema</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm">
+        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-emerald-400">Ativos</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-medium text-emerald-700">Ativos</span>
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-emerald-400 mt-1">{stats.active}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-emerald-600 mt-1">{stats.active}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs text-zinc-500">Com licença em dia</p>
+            <p className="text-xs text-muted-foreground">Com licença em dia</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm">
+        <Card className="bg-card border-border shadow-xs hover:border-amber-300 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-amber-400">Em Teste (Trial)</span>
-              <Clock className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-medium text-amber-700">Em Teste (Trial)</span>
+              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-amber-400 mt-1">{stats.trialing}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-amber-600 mt-1">{stats.trialing}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs text-zinc-500">Período de avaliação</p>
+            <p className="text-xs text-muted-foreground">Período de avaliação</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm">
+        <Card className="bg-card border-border shadow-xs hover:border-blue-300 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-blue-400">Licença Manual</span>
-              <Key className="w-4 h-4 text-blue-400" />
+              <span className="text-xs font-medium text-blue-700">Licença Manual</span>
+              <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                <Key className="w-4 h-4" />
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-blue-400 mt-1">{stats.manual}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-blue-600 mt-1">{stats.manual}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs text-zinc-500">Pagamento direto/manual</p>
+            <p className="text-xs text-muted-foreground">Pagamento direto/manual</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm">
+        <Card className="bg-card border-border shadow-xs hover:border-rose-300 transition-colors">
           <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-rose-400">Suspensos / Vencidos</span>
-              <AlertCircle className="w-4 h-4 text-rose-400" />
+              <span className="text-xs font-medium text-rose-700">Suspensos / Vencidos</span>
+              <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
+                <AlertCircle className="w-4 h-4" />
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-rose-400 mt-1">{stats.suspendedOrExpired}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-rose-600 mt-1">{stats.suspendedOrExpired}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-xs text-zinc-500">Requer atenção</p>
+            <p className="text-xs text-muted-foreground">Requer atenção</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filter and Search Bar */}
-      <Card className="bg-zinc-900/60 border-zinc-800/80 p-4">
+      <Card className="bg-card border-border p-4 shadow-xs">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar por nome, e-mail, empresa ou telefone..."
@@ -780,7 +782,7 @@ export function SuperAdminClients() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-9 bg-zinc-950/80 border-zinc-800 text-sm focus-visible:ring-primary/50"
+              className="pl-9 bg-background border-border text-foreground text-sm focus-visible:ring-primary/40"
             />
           </div>
 
@@ -792,7 +794,7 @@ export function SuperAdminClients() {
                 setFilterPlan(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-zinc-950/80 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-primary"
+              className="bg-background border border-border rounded-lg px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:border-primary shadow-xs"
             >
               <option value="all">Todos os Planos</option>
               <option value="starter">Starter</option>
@@ -807,7 +809,7 @@ export function SuperAdminClients() {
                 setFilterStatus(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-zinc-950/80 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-primary"
+              className="bg-background border border-border rounded-lg px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:border-primary shadow-xs"
             >
               <option value="all">Todos os Status</option>
               <option value="active">Ativo</option>
@@ -823,7 +825,7 @@ export function SuperAdminClients() {
                 setFilterBilling(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-zinc-950/80 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-primary"
+              className="bg-background border border-border rounded-lg px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:border-primary shadow-xs"
             >
               <option value="all">Todas as Cobranças</option>
               <option value="manual">Manual / Direto</option>
@@ -834,7 +836,7 @@ export function SuperAdminClients() {
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as any)}
-              className="bg-zinc-950/80 border border-zinc-800 rounded-md px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-primary"
+              className="bg-background border border-border rounded-lg px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:border-primary shadow-xs"
             >
               <option value="recent">Mais Recentes</option>
               <option value="expiry">Vencimento Próximo</option>
@@ -844,34 +846,34 @@ export function SuperAdminClients() {
         </div>
       </Card>
 
-      {/* Main Table */}
-      <Card className="bg-zinc-900/60 border-zinc-800/80 overflow-hidden shadow-xl">
+      {/* Main Table (Light Mode) */}
+      <Card className="bg-card border-border overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-zinc-300">
-            <thead className="bg-zinc-950/80 border-b border-zinc-800 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          <table className="w-full text-left text-sm text-foreground">
+            <thead className="bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">Cliente</th>
-                <th className="py-3 px-4">Empresa / Workspace</th>
-                <th className="py-3 px-4">Plano</th>
-                <th className="py-3 px-4">Cobrança</th>
-                <th className="py-3 px-4">Situação</th>
-                <th className="py-3 px-4">Vencimento</th>
-                <th className="py-3 px-4">Último Pgto</th>
-                <th className="py-3 px-4 text-right">Ações</th>
+                <th className="py-3.5 px-4">Cliente</th>
+                <th className="py-3.5 px-4">Empresa / Workspace</th>
+                <th className="py-3.5 px-4">Plano</th>
+                <th className="py-3.5 px-4">Cobrança</th>
+                <th className="py-3.5 px-4">Situação</th>
+                <th className="py-3.5 px-4">Vencimento</th>
+                <th className="py-3.5 px-4">Último Pgto</th>
+                <th className="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60">
+            <tbody className="divide-y divide-border/60">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-zinc-400">
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
                     Carregando base de clientes do SaaS...
                   </td>
                 </tr>
               ) : paginatedClients.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-zinc-400">
-                    <Users className="w-8 h-8 mx-auto text-zinc-600 mb-2" />
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
+                    <Users className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
                     Nenhum cliente encontrado com os filtros atuais.
                   </td>
                 </tr>
@@ -883,21 +885,21 @@ export function SuperAdminClients() {
                   return (
                     <tr
                       key={client.userId}
-                      className="hover:bg-zinc-800/30 transition-colors group"
+                      className="hover:bg-muted/30 transition-colors group"
                     >
                       {/* Cliente */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <div className="flex flex-col">
-                          <span className="font-medium text-white flex items-center gap-1.5">
+                          <span className="font-semibold text-foreground flex items-center gap-1.5">
                             {client.fullName}
                             {client.email === "suporte@platafy.com" && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] bg-primary/20 text-primary border border-primary/30">
+                              <span className="px-1.5 py-0.2 rounded text-[10px] bg-primary/10 text-primary border border-primary/20 font-medium">
                                 Você
                               </span>
                             )}
                           </span>
-                          <span className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
-                            <Mail className="w-3 h-3 text-zinc-500" />
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Mail className="w-3 h-3 text-muted-foreground/70" />
                             {client.email}
                           </span>
                           {client.phone && (
@@ -905,9 +907,9 @@ export function SuperAdminClients() {
                               href={`https://wa.me/${client.phone.replace(/\D/g, "")}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-xs text-emerald-400/90 hover:text-emerald-300 flex items-center gap-1 mt-0.5"
+                              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 mt-0.5"
                             >
-                              <Phone className="w-3 h-3 text-emerald-500" />
+                              <Phone className="w-3 h-3 text-emerald-600" />
                               {client.phone}
                             </a>
                           )}
@@ -915,41 +917,41 @@ export function SuperAdminClients() {
                       </td>
 
                       {/* Empresa */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
-                          <Building className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-                          <span className="text-zinc-200 font-medium truncate max-w-[160px]">
+                          <Building className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
+                          <span className="text-foreground font-medium truncate max-w-[160px]">
                             {client.companyName}
                           </span>
                         </div>
-                        <span className="text-[11px] text-zinc-500 block mt-0.5">
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
                           Desde {formatDate(client.createdAt)}
                         </span>
                       </td>
 
                       {/* Plano */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         {renderPlanBadge(sub?.plan?.slug, sub?.plan?.name)}
                       </td>
 
                       {/* Cobrança */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         {sub?.billingType === "manual" ? (
                           <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 text-xs text-blue-400 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-semibold">
                               <Key className="w-3 h-3" /> Manual
                             </span>
-                            <span className="text-[11px] text-zinc-400 uppercase">
+                            <span className="text-[11px] text-muted-foreground uppercase font-medium">
                               {sub.paymentMethod || "Direto"}
                             </span>
                           </div>
                         ) : (
                           <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
                               <CreditCard className="w-3 h-3" /> Mercado Pago
                             </span>
                             {sub?.mercadopagoPaymentId && (
-                              <span className="text-[10px] text-zinc-500 font-mono">
+                              <span className="text-[10px] text-muted-foreground font-mono">
                                 #{sub.mercadopagoPaymentId}
                               </span>
                             )}
@@ -958,36 +960,36 @@ export function SuperAdminClients() {
                       </td>
 
                       {/* Situação */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         {renderStatusBadge(client)}
                       </td>
 
                       {/* Vencimento */}
-                      <td className="py-3 px-4">
-                        <span className="text-xs text-zinc-200 block font-medium">
+                      <td className="py-3.5 px-4">
+                        <span className="text-xs text-foreground block font-semibold">
                           {formatDate(sub?.currentPeriodEnd || sub?.trialEndsAt)}
                         </span>
-                        <span className="text-[10px] text-zinc-500">
+                        <span className="text-[10px] text-muted-foreground">
                           {sub?.status === "trialing" ? "Fim do teste" : "Renovação"}
                         </span>
                       </td>
 
                       {/* Último Pagamento */}
-                      <td className="py-3 px-4">
-                        <span className="text-xs text-zinc-400 block">
+                      <td className="py-3.5 px-4">
+                        <span className="text-xs text-muted-foreground block">
                           {formatDate(sub?.lastPaymentDate)}
                         </span>
                       </td>
 
                       {/* Ações */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             title="Ver detalhes completos"
                             onClick={() => openClientDetails(client)}
-                            className="h-8 w-8 p-0 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -997,7 +999,7 @@ export function SuperAdminClients() {
                             size="sm"
                             title="Alterar Plano"
                             onClick={() => openChangePlan(client)}
-                            className="h-8 w-8 p-0 text-zinc-400 hover:text-primary hover:bg-zinc-800"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -1007,7 +1009,7 @@ export function SuperAdminClients() {
                             size="sm"
                             title="Renovar / Estender Licença"
                             onClick={() => openRenew(client)}
-                            className="h-8 w-8 p-0 text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"
                           >
                             <ArrowUpRight className="w-4 h-4" />
                           </Button>
@@ -1020,8 +1022,8 @@ export function SuperAdminClients() {
                               setSelectedClient(client);
                               setIsSuspendModalOpen(true);
                             }}
-                            className={`h-8 w-8 p-0 hover:bg-zinc-800 ${
-                              isSuspended ? "text-emerald-400 hover:text-emerald-300" : "text-zinc-400 hover:text-rose-400"
+                            className={`h-8 w-8 p-0 ${
+                              isSuspended ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" : "text-muted-foreground hover:text-rose-600 hover:bg-rose-50"
                             }`}
                           >
                             {isSuspended ? <Play className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
@@ -1037,10 +1039,10 @@ export function SuperAdminClients() {
         </div>
 
         {/* Footer com Paginação */}
-        <div className="bg-zinc-950/80 border-t border-zinc-800/80 px-4 py-3 flex items-center justify-between text-xs text-zinc-400">
+        <div className="bg-muted/30 border-t border-border px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
           <div>
-            Mostrando <span className="text-white font-medium">{paginatedClients.length}</span> de{" "}
-            <span className="text-white font-medium">{filteredClients.length}</span> clientes
+            Mostrando <span className="text-foreground font-semibold">{paginatedClients.length}</span> de{" "}
+            <span className="text-foreground font-semibold">{filteredClients.length}</span> clientes
           </div>
 
           <div className="flex items-center gap-2">
@@ -1049,11 +1051,11 @@ export function SuperAdminClients() {
               size="sm"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage <= 1}
-              className="h-7 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 disabled:opacity-40"
+              className="h-7 px-2 border-border bg-card text-foreground disabled:opacity-40"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span>
+            <span className="font-medium">
               Página {currentPage} de {totalPages}
             </span>
             <Button
@@ -1061,7 +1063,7 @@ export function SuperAdminClients() {
               size="sm"
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages}
-              className="h-7 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 disabled:opacity-40"
+              className="h-7 px-2 border-border bg-card text-foreground disabled:opacity-40"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -1069,18 +1071,20 @@ export function SuperAdminClients() {
         </div>
       </Card>
 
-      {/* MODAL 1: Novo Cliente */}
+      {/* MODAL 1: Novo Cliente (Light Mode) */}
       {isNewClientOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold text-white">Cadastrar Novo Cliente</h3>
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Cadastrar Novo Cliente</h3>
               </div>
               <button
                 onClick={() => setIsNewClientOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1089,35 +1093,35 @@ export function SuperAdminClients() {
             <form onSubmit={handleCreateClient} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Nome do Cliente *</Label>
+                  <Label className="text-xs font-semibold text-foreground">Nome do Cliente *</Label>
                   <Input
                     required
                     placeholder="Ex: João da Silva"
                     value={newClientForm.fullName}
                     onChange={e => setNewClientForm(prev => ({ ...prev, fullName: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm"
+                    className="bg-background border-border text-foreground text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">E-mail de Acesso *</Label>
+                  <Label className="text-xs font-semibold text-foreground">E-mail de Acesso *</Label>
                   <Input
                     required
                     type="email"
                     placeholder="joao@empresa.com"
                     value={newClientForm.email}
                     onChange={e => setNewClientForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm"
+                    className="bg-background border-border text-foreground text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-zinc-300">Senha Inicial *</Label>
+                    <Label className="text-xs font-semibold text-foreground">Senha Inicial *</Label>
                     <button
                       type="button"
                       onClick={generateRandomPassword}
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                      className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
                     >
                       <Key className="w-3 h-3" /> Gerar senha forte
                     </button>
@@ -1127,36 +1131,36 @@ export function SuperAdminClients() {
                     placeholder="Mínimo 6 caracteres"
                     value={newClientForm.password}
                     onChange={e => setNewClientForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm font-mono"
+                    className="bg-background border-border text-foreground text-sm font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Empresa / Workspace</Label>
+                  <Label className="text-xs font-semibold text-foreground">Empresa / Workspace</Label>
                   <Input
                     placeholder="Ex: Agência Digital"
                     value={newClientForm.companyName}
                     onChange={e => setNewClientForm(prev => ({ ...prev, companyName: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm"
+                    className="bg-background border-border text-foreground text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">WhatsApp / Telefone</Label>
+                  <Label className="text-xs font-semibold text-foreground">WhatsApp / Telefone</Label>
                   <Input
                     placeholder="(11) 99999-9999"
                     value={newClientForm.phone}
                     onChange={e => setNewClientForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm"
+                    className="bg-background border-border text-foreground text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Plano Contratado *</Label>
+                  <Label className="text-xs font-semibold text-foreground">Plano Contratado *</Label>
                   <select
                     value={newClientForm.planId}
                     onChange={e => setNewClientForm(prev => ({ ...prev, planId: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-primary"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary shadow-xs"
                   >
                     {plans.map(p => (
                       <option key={p.id} value={p.id}>
@@ -1167,11 +1171,11 @@ export function SuperAdminClients() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Tipo de Cobrança *</Label>
+                  <Label className="text-xs font-semibold text-foreground">Tipo de Cobrança *</Label>
                   <select
                     value={newClientForm.billingType}
                     onChange={e => setNewClientForm(prev => ({ ...prev, billingType: e.target.value as any }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-primary"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary shadow-xs"
                   >
                     <option value="manual">Pagamento Manual / Direto</option>
                     <option value="mercadopago">Mercado Pago (Assinatura)</option>
@@ -1179,11 +1183,11 @@ export function SuperAdminClients() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Forma de Pagamento</Label>
+                  <Label className="text-xs font-semibold text-foreground">Forma de Pagamento</Label>
                   <select
                     value={newClientForm.paymentMethod}
                     onChange={e => setNewClientForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-primary"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary shadow-xs"
                   >
                     <option value="pix">PIX</option>
                     <option value="credit_card">Cartão de Crédito</option>
@@ -1194,11 +1198,11 @@ export function SuperAdminClients() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-zinc-300">Status Inicial</Label>
+                  <Label className="text-xs font-semibold text-foreground">Status Inicial</Label>
                   <select
                     value={newClientForm.status}
                     onChange={e => setNewClientForm(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-primary"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary shadow-xs"
                   >
                     <option value="active">Ativo (Liberado)</option>
                     <option value="trialing">Em Teste (Trial)</option>
@@ -1206,17 +1210,17 @@ export function SuperAdminClients() {
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-zinc-300">Vigência Inicial</Label>
+                  <Label className="text-xs font-semibold text-foreground">Vigência Inicial</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {["30", "60", "90", "365"].map(d => (
                       <button
                         key={d}
                         type="button"
                         onClick={() => setNewClientForm(prev => ({ ...prev, periodDays: d, customEndDate: "" }))}
-                        className={`py-1.5 px-3 rounded-md text-xs font-medium border transition-colors ${
+                        className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
                           newClientForm.periodDays === d && !newClientForm.customEndDate
-                            ? "bg-primary/20 border-primary text-primary"
-                            : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                            ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                            : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/50"
                         }`}
                       >
                         +{d === "365" ? "1 ano" : `${d} dias`}
@@ -1226,40 +1230,40 @@ export function SuperAdminClients() {
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-zinc-300">Ou Data de Vencimento Específica</Label>
+                  <Label className="text-xs font-semibold text-foreground">Ou Data de Vencimento Específica</Label>
                   <Input
                     type="date"
                     value={newClientForm.customEndDate}
                     onChange={e => setNewClientForm(prev => ({ ...prev, customEndDate: e.target.value }))}
-                    className="bg-zinc-950 border-zinc-800 text-sm"
+                    className="bg-background border-border text-foreground text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-zinc-300">Observações Administrativas (Opcional)</Label>
+                  <Label className="text-xs font-semibold text-foreground">Observações Administrativas (Opcional)</Label>
                   <textarea
                     rows={2}
                     placeholder="Ex: Pagamento anual via PIX comprovante #123456"
                     value={newClientForm.notes}
                     onChange={e => setNewClientForm(prev => ({ ...prev, notes: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-md p-2 text-sm text-zinc-200 focus:outline-none focus:border-primary resize-none"
+                    className="w-full bg-background border border-border rounded-lg p-2.5 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsNewClientOpen(false)}
-                  className="border-zinc-700 text-zinc-300"
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   disabled={creatingClient}
-                  className="bg-primary text-primary-foreground font-medium"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
                 >
                   {creatingClient ? (
                     <>
@@ -1276,31 +1280,33 @@ export function SuperAdminClients() {
         </div>
       )}
 
-      {/* MODAL 2: Alterar Plano */}
+      {/* MODAL 2: Alterar Plano (Light Mode) */}
       {isChangePlanOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-bold text-white">Alterar Plano do Cliente</h3>
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Alterar Plano do Cliente</h3>
               </div>
               <button
                 onClick={() => setIsChangePlanOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800 text-xs text-zinc-300 space-y-1">
-              <div><strong className="text-white">Cliente:</strong> {selectedClient.fullName} ({selectedClient.email})</div>
-              <div><strong className="text-white">Empresa:</strong> {selectedClient.companyName}</div>
-              <div><strong className="text-white">Plano Atual:</strong> {selectedClient.subscription?.plan?.name || "Nenhum"}</div>
+            <div className="p-3 bg-muted/40 rounded-xl border border-border text-xs text-foreground space-y-1">
+              <div><strong>Cliente:</strong> {selectedClient.fullName} ({selectedClient.email})</div>
+              <div><strong>Empresa:</strong> {selectedClient.companyName}</div>
+              <div><strong>Plano Atual:</strong> {selectedClient.subscription?.plan?.name || "Nenhum"}</div>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-zinc-300">Selecione o Novo Plano:</Label>
+              <Label className="text-xs font-semibold text-foreground">Selecione o Novo Plano:</Label>
               <div className="space-y-2">
                 {plans.map(p => {
                   const isSelected = newPlanId === p.id;
@@ -1308,26 +1314,26 @@ export function SuperAdminClients() {
                     <div
                       key={p.id}
                       onClick={() => setNewPlanId(p.id)}
-                      className={`p-3.5 rounded-lg border cursor-pointer transition-all ${
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-primary/10 border-primary shadow-md shadow-primary/10"
-                          : "bg-zinc-950/60 border-zinc-800 hover:border-zinc-700"
+                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary"
+                          : "bg-card border-border hover:border-muted-foreground/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-white text-sm">{p.name}</span>
+                          <span className="font-bold text-foreground text-sm">{p.name}</span>
                           {p.slug === "pro" && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-blue-500/20 text-blue-400 font-medium">Recomendado</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-semibold">Recomendado</span>
                           )}
                         </div>
-                        <span className="font-bold text-white text-sm">
+                        <span className="font-bold text-foreground text-sm">
                           R$ {p.price.toFixed(2)}/mês
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1">{p.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{p.description}</p>
 
-                      <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-400">
+                      <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-border text-[11px] text-muted-foreground">
                         <span>Redes: {p.limits?.max_channels === -1 ? "Ilimitadas" : p.limits?.max_channels || 3}</span>
                         <span>• Posts: {p.limits?.max_posts === -1 ? "Ilimitados" : p.limits?.max_posts || 50}</span>
                         <span>• IA: {p.limits?.ai_automations ? "Liberada" : "Não"}</span>
@@ -1338,28 +1344,28 @@ export function SuperAdminClients() {
               </div>
 
               <div className="space-y-1.5 pt-2">
-                <Label className="text-xs text-zinc-300">Motivo da Alteração (Opcional):</Label>
+                <Label className="text-xs font-semibold text-foreground">Motivo da Alteração (Opcional):</Label>
                 <Input
                   placeholder="Ex: Upgrade solicitado pelo cliente / Bonificação"
                   value={changePlanReason}
                   onChange={e => setChangePlanReason(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-sm"
+                  className="bg-background border-border text-foreground text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
               <Button
                 variant="outline"
                 onClick={() => setIsChangePlanOpen(false)}
-                className="border-zinc-700 text-zinc-300"
+                className="border-border text-foreground hover:bg-muted"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleUpdatePlan}
                 disabled={updatingPlan || newPlanId === selectedClient.subscription?.planId}
-                className="bg-primary text-primary-foreground font-medium"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
               >
                 {updatingPlan ? "Atualizando..." : "Confirmar Alteração"}
               </Button>
@@ -1368,31 +1374,33 @@ export function SuperAdminClients() {
         </div>
       )}
 
-      {/* MODAL 3: Renovar Licença */}
+      {/* MODAL 3: Renovar Licença (Light Mode) */}
       {isRenewOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
-                <ArrowUpRight className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-bold text-white">Renovar / Estender Licença</h3>
+                <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Renovar / Estender Licença</h3>
               </div>
               <button
                 onClick={() => setIsRenewOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800 text-xs text-zinc-300 space-y-1">
-              <div><strong className="text-white">Cliente:</strong> {selectedClient.fullName}</div>
-              <div><strong className="text-white">Vencimento Atual:</strong> {formatDate(selectedClient.subscription?.currentPeriodEnd || selectedClient.subscription?.trialEndsAt)}</div>
-              <div><strong className="text-white">Plano:</strong> {selectedClient.subscription?.plan?.name || "Starter"}</div>
+            <div className="p-3 bg-muted/40 rounded-xl border border-border text-xs text-foreground space-y-1">
+              <div><strong>Cliente:</strong> {selectedClient.fullName}</div>
+              <div><strong>Vencimento Atual:</strong> {formatDate(selectedClient.subscription?.currentPeriodEnd || selectedClient.subscription?.trialEndsAt)}</div>
+              <div><strong>Plano:</strong> {selectedClient.subscription?.plan?.name || "Starter"}</div>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-zinc-300">Adicionar Período à Licença:</Label>
+              <Label className="text-xs font-semibold text-foreground">Adicionar Período à Licença:</Label>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { label: "+30 dias", val: "30" },
@@ -1409,8 +1417,8 @@ export function SuperAdminClients() {
                     }}
                     className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
                       renewDays === item.val && !renewCustomDate
-                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-sm"
-                        : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/50"
                     }`}
                   >
                     {item.label}
@@ -1419,7 +1427,7 @@ export function SuperAdminClients() {
               </div>
 
               <div className="space-y-1.5 pt-1">
-                <Label className="text-xs text-zinc-300">Ou Definir Nova Data de Vencimento Específica:</Label>
+                <Label className="text-xs font-semibold text-foreground">Ou Definir Nova Data de Vencimento Específica:</Label>
                 <Input
                   type="date"
                   value={renewCustomDate}
@@ -1427,16 +1435,16 @@ export function SuperAdminClients() {
                     setRenewCustomDate(e.target.value);
                     setRenewDays("");
                   }}
-                  className="bg-zinc-950 border-zinc-800 text-sm"
+                  className="bg-background border-border text-foreground text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-zinc-300">Forma de Pagamento Recebida:</Label>
+                <Label className="text-xs font-semibold text-foreground">Forma de Pagamento Recebida:</Label>
                 <select
                   value={renewPaymentMethod}
                   onChange={e => setRenewPaymentMethod(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-primary"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary shadow-xs"
                 >
                   <option value="pix">PIX</option>
                   <option value="credit_card">Cartão de Crédito</option>
@@ -1446,28 +1454,28 @@ export function SuperAdminClients() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-zinc-300">Observações / Comprovante:</Label>
+                <Label className="text-xs font-semibold text-foreground">Observações / Comprovante:</Label>
                 <Input
                   placeholder="Ex: Renovação trimestral comprovante PIX #987654"
                   value={renewNotes}
                   onChange={e => setRenewNotes(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-sm"
+                  className="bg-background border-border text-foreground text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
               <Button
                 variant="outline"
                 onClick={() => setIsRenewOpen(false)}
-                className="border-zinc-700 text-zinc-300"
+                className="border-border text-foreground hover:bg-muted"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleRenewLicense}
                 disabled={renewing}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
               >
                 {renewing ? "Salvando..." : "Confirmar Renovação"}
               </Button>
@@ -1499,60 +1507,60 @@ export function SuperAdminClients() {
         onCancel={() => setIsSuspendModalOpen(false)}
       />
 
-      {/* MODAL 5: Detalhes do Cliente (Drawer) */}
+      {/* MODAL 5: Detalhes do Cliente (Drawer / Light Mode) */}
       {isDetailsOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-3xl w-full p-6 shadow-2xl space-y-4 my-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 my-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3 flex-shrink-0">
+            <div className="flex items-center justify-between border-b border-border pb-3 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-base">
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base border border-primary/20">
                   {selectedClient.fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                     {selectedClient.fullName}
                     {renderPlanBadge(selectedClient.subscription?.plan?.slug, selectedClient.subscription?.plan?.name)}
                   </h3>
-                  <p className="text-xs text-zinc-400">{selectedClient.email} • {selectedClient.companyName}</p>
+                  <p className="text-xs text-muted-foreground">{selectedClient.email} • {selectedClient.companyName}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsDetailsOpen(false)}
-                className="text-zinc-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Abas */}
-            <div className="flex items-center gap-2 border-b border-zinc-800 pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2 border-b border-border pb-2 flex-shrink-0">
               <button
                 onClick={() => setDetailsTab("overview")}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   detailsTab === "overview"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Visão Geral & Licença
               </button>
               <button
                 onClick={() => setDetailsTab("payments")}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   detailsTab === "payments"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Histórico de Pagamentos ({paymentHistory.length})
               </button>
               <button
                 onClick={() => setDetailsTab("audit")}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   detailsTab === "audit"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Auditoria ({auditLogs.length})
@@ -1564,62 +1572,62 @@ export function SuperAdminClients() {
               {detailsTab === "overview" && (
                 <div className="space-y-4">
                   {/* Informações Cadastrais */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-zinc-950 p-4 rounded-lg border border-zinc-800 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-muted/40 p-4 rounded-xl border border-border text-xs">
                     <div>
-                      <span className="text-zinc-500 block">ID do Usuário:</span>
-                      <span className="font-mono text-zinc-300 select-all">{selectedClient.userId}</span>
+                      <span className="text-muted-foreground block font-medium">ID do Usuário:</span>
+                      <span className="font-mono text-foreground select-all font-semibold">{selectedClient.userId}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block">ID do Tenant (Workspace):</span>
-                      <span className="font-mono text-zinc-300 select-all">{selectedClient.tenantId}</span>
+                      <span className="text-muted-foreground block font-medium">ID do Tenant (Workspace):</span>
+                      <span className="font-mono text-foreground select-all font-semibold">{selectedClient.tenantId}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block">Data de Cadastro:</span>
-                      <span className="text-zinc-300 font-medium">{formatDate(selectedClient.createdAt)}</span>
+                      <span className="text-muted-foreground block font-medium">Data de Cadastro:</span>
+                      <span className="text-foreground font-semibold">{formatDate(selectedClient.createdAt)}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block">Telefone / WhatsApp:</span>
-                      <span className="text-zinc-300 font-medium">{selectedClient.phone || "Não informado"}</span>
+                      <span className="text-muted-foreground block font-medium">Telefone / WhatsApp:</span>
+                      <span className="text-foreground font-semibold">{selectedClient.phone || "Não informado"}</span>
                     </div>
                   </div>
 
                   {/* Informações da Licença */}
-                  <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-3">
-                    <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                  <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-3">
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
                       Dados da Licença & Assinatura
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                       <div>
-                        <span className="text-zinc-500 block">Status Atual:</span>
+                        <span className="text-muted-foreground block font-medium">Status Atual:</span>
                         <div className="mt-1">{renderStatusBadge(selectedClient)}</div>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Tipo de Cobrança:</span>
-                        <span className="font-medium text-zinc-200 capitalize block mt-1">
+                        <span className="text-muted-foreground block font-medium">Tipo de Cobrança:</span>
+                        <span className="font-semibold text-foreground capitalize block mt-1">
                           {selectedClient.subscription?.billingType === "manual" ? "Manual / Direto" : "Mercado Pago"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Forma de Pagamento:</span>
-                        <span className="font-medium text-zinc-200 uppercase block mt-1">
+                        <span className="text-muted-foreground block font-medium">Forma de Pagamento:</span>
+                        <span className="font-semibold text-foreground uppercase block mt-1">
                           {selectedClient.subscription?.paymentMethod || "-"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Início da Vigência:</span>
-                        <span className="font-medium text-zinc-200 block mt-1">
+                        <span className="text-muted-foreground block font-medium">Início da Vigência:</span>
+                        <span className="font-semibold text-foreground block mt-1">
                           {formatDate(selectedClient.subscription?.currentPeriodStart)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Vencimento da Licença:</span>
-                        <span className="font-medium text-zinc-200 block mt-1">
+                        <span className="text-muted-foreground block font-medium">Vencimento da Licença:</span>
+                        <span className="font-semibold text-foreground block mt-1">
                           {formatDate(selectedClient.subscription?.currentPeriodEnd || selectedClient.subscription?.trialEndsAt)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-500 block">Último Pagamento:</span>
-                        <span className="font-medium text-zinc-200 block mt-1">
+                        <span className="text-muted-foreground block font-medium">Último Pagamento:</span>
+                        <span className="font-semibold text-foreground block mt-1">
                           {formatDate(selectedClient.subscription?.lastPaymentDate)}
                         </span>
                       </div>
@@ -1627,9 +1635,9 @@ export function SuperAdminClients() {
                   </div>
 
                   {/* Observações Administrativas */}
-                  <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 space-y-2">
+                  <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                      <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
                         Observações Administrativas
                       </h4>
                       <Button
@@ -1637,7 +1645,7 @@ export function SuperAdminClients() {
                         variant="ghost"
                         onClick={handleSaveNotes}
                         disabled={savingNotes}
-                        className="h-7 text-xs text-primary hover:text-primary/80"
+                        className="h-7 text-xs text-primary hover:text-primary/80 font-semibold"
                       >
                         {savingNotes ? "Salvando..." : "Salvar Notas"}
                       </Button>
@@ -1647,7 +1655,7 @@ export function SuperAdminClients() {
                       value={clientNotesInput}
                       onChange={e => setClientNotesInput(e.target.value)}
                       placeholder="Adicione anotações sobre este cliente, acordos, dados bancários de comprovante..."
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-primary resize-none"
+                      className="w-full bg-card border border-border rounded-lg p-2.5 text-xs text-foreground focus:outline-none focus:border-primary resize-none shadow-xs"
                     />
                   </div>
                 </div>
@@ -1656,31 +1664,31 @@ export function SuperAdminClients() {
               {detailsTab === "payments" && (
                 <div className="space-y-3">
                   {loadingDetailsData ? (
-                    <div className="text-center py-8 text-zinc-400 text-xs">Carregando histórico financeiro...</div>
+                    <div className="text-center py-8 text-muted-foreground text-xs">Carregando histórico financeiro...</div>
                   ) : paymentHistory.length === 0 ? (
-                    <div className="text-center py-8 text-zinc-500 text-xs">
+                    <div className="text-center py-8 text-muted-foreground text-xs">
                       Nenhum pagamento registrado para este cliente.
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {paymentHistory.map(p => (
-                        <div key={p.id} className="p-3 bg-zinc-950 rounded-lg border border-zinc-800 flex items-center justify-between text-xs">
+                        <div key={p.id} className="p-3 bg-muted/40 rounded-xl border border-border flex items-center justify-between text-xs">
                           <div>
-                            <span className="font-bold text-white text-sm">
+                            <span className="font-bold text-foreground text-sm">
                               R$ {Number(p.amount || 0).toFixed(2)}
                             </span>
-                            <span className="text-zinc-400 ml-2">
+                            <span className="text-muted-foreground ml-2">
                               • {p.payment_method?.toUpperCase() || "MANUAL"}
                             </span>
-                            <span className="text-zinc-500 block text-[11px] mt-0.5">
+                            <span className="text-muted-foreground block text-[11px] mt-0.5">
                               {new Date(p.created_at).toLocaleString("pt-BR")}
                             </span>
                           </div>
                           <div>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
                               p.status === "approved"
-                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                : "bg-zinc-800 text-zinc-400"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-stone-100 text-stone-600 border border-stone-200"
                             }`}>
                               {p.status === "approved" ? "Aprovado" : p.status}
                             </span>
@@ -1695,28 +1703,28 @@ export function SuperAdminClients() {
               {detailsTab === "audit" && (
                 <div className="space-y-3">
                   {loadingDetailsData ? (
-                    <div className="text-center py-8 text-zinc-400 text-xs">Carregando histórico de auditoria...</div>
+                    <div className="text-center py-8 text-muted-foreground text-xs">Carregando histórico de auditoria...</div>
                   ) : auditLogs.length === 0 ? (
-                    <div className="text-center py-8 text-zinc-500 text-xs">
+                    <div className="text-center py-8 text-muted-foreground text-xs">
                       Nenhuma ação administrativa registrada para este cliente.
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {auditLogs.map(log => (
-                        <div key={log.id} className="p-3 bg-zinc-950 rounded-lg border border-zinc-800 text-xs space-y-1">
+                        <div key={log.id} className="p-3 bg-muted/40 rounded-xl border border-border text-xs space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-primary uppercase text-[11px]">
+                            <span className="font-bold text-primary uppercase text-[11px]">
                               {log.action.replace("_", " ")}
                             </span>
-                            <span className="text-zinc-500 text-[10px]">
+                            <span className="text-muted-foreground text-[10px]">
                               {new Date(log.created_at).toLocaleString("pt-BR")}
                             </span>
                           </div>
-                          <p className="text-zinc-400 text-[11px]">
-                            Executado por: <strong className="text-zinc-300">{log.admin_email}</strong>
+                          <p className="text-muted-foreground text-[11px]">
+                            Executado por: <strong className="text-foreground">{log.admin_email}</strong>
                           </p>
                           {log.details && (
-                            <pre className="p-2 bg-zinc-900/80 rounded border border-zinc-800/60 text-[10px] text-zinc-400 overflow-x-auto">
+                            <pre className="p-2 bg-background rounded-lg border border-border text-[10px] text-muted-foreground overflow-x-auto">
                               {JSON.stringify(log.details, null, 2)}
                             </pre>
                           )}
@@ -1729,7 +1737,7 @@ export function SuperAdminClients() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-zinc-800 pt-3 flex items-center justify-between flex-shrink-0">
+            <div className="border-t border-border pt-3 flex items-center justify-between flex-shrink-0">
               <Button
                 variant="destructive"
                 size="sm"
@@ -1737,7 +1745,7 @@ export function SuperAdminClients() {
                   setIsDetailsOpen(false);
                   setIsDeleteModalOpen(true);
                 }}
-                className="text-xs bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30"
+                className="text-xs bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-semibold"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Excluir Cliente Definitivamente
               </Button>
@@ -1746,7 +1754,7 @@ export function SuperAdminClients() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDetailsOpen(false)}
-                className="border-zinc-700 text-zinc-300"
+                className="border-border text-foreground hover:bg-muted"
               >
                 Fechar
               </Button>
