@@ -1719,17 +1719,6 @@ export default function Home() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("saas_mercadopago")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeTab === "saas_mercadopago"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-              }`}
-            >
-              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago (SaaS)
-            </button>
-            <button
-              type="button"
               onClick={() => setActiveTab("saas_whitelabel")}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                 activeTab === "saas_whitelabel"
@@ -1738,6 +1727,17 @@ export default function Home() {
               }`}
             >
               <Sparkles className="h-3.5 w-3.5" /> White Label
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("saas_mercadopago")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === "saas_mercadopago"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+              }`}
+            >
+              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago (SaaS)
             </button>
           </>
         )}
@@ -1850,17 +1850,6 @@ export default function Home() {
               <Users className="h-4 w-4 text-primary" /> Clientes & Licenças
             </Button>
             <Button
-              variant={activeTab === "saas_mercadopago" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${
-                activeTab === "saas_mercadopago"
-                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setActiveTab("saas_mercadopago")}
-            >
-              <CreditCard className="h-4 w-4 text-primary" /> Mercado Pago (SaaS)
-            </Button>
-            <Button
               variant={activeTab === "saas_whitelabel" ? "secondary" : "ghost"}
               className={`justify-start gap-3 w-full font-medium transition-all ${
                 activeTab === "saas_whitelabel"
@@ -1870,6 +1859,17 @@ export default function Home() {
               onClick={() => setActiveTab("saas_whitelabel")}
             >
               <Sparkles className="h-4 w-4 text-primary" /> White Label
+            </Button>
+            <Button
+              variant={activeTab === "saas_mercadopago" ? "secondary" : "ghost"}
+              className={`justify-start gap-3 w-full font-medium transition-all ${
+                activeTab === "saas_mercadopago"
+                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("saas_mercadopago")}
+            >
+              <CreditCard className="h-4 w-4 text-primary" /> Mercado Pago (SaaS)
             </Button>
           </div>
         )}
@@ -4625,52 +4625,6 @@ export default function Home() {
           <SuperAdminClients />
         )}
 
-        {/* Super Admin Mercado Pago SaaS Tab */}
-        {activeTab === "saas_mercadopago" && isSuperAdmin && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
-              <div>
-                <div className="flex items-center gap-2.5 mb-1.5">
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                    <CreditCard className="w-6 h-6 text-primary" />
-                    Configuração do Mercado Pago (SaaS)
-                  </h1>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Configuração global das credenciais de pagamento e webhook para cobrança das assinaturas dos clientes na plataforma.
-                </p>
-              </div>
-
-              {/* Botões de Navegação Rápida entre Abas do Super Admin */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveTab("clients")}
-                  className="text-xs border-border hover:bg-muted text-foreground"
-                >
-                  <Users className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  Clientes & Licenças
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveTab("saas_whitelabel")}
-                  className="text-xs border-border hover:bg-muted text-foreground"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  White Label
-                </Button>
-              </div>
-            </div>
-
-            <MercadoPagoSettings />
-          </div>
-        )}
-
         {/* Super Admin White Label Tab */}
         {activeTab === "saas_whitelabel" && isSuperAdmin && (
           <div className="space-y-6 animate-fade-in">
@@ -4714,6 +4668,52 @@ export default function Home() {
             </div>
 
             <WhiteLabelSettings />
+          </div>
+        )}
+
+        {/* Super Admin Mercado Pago SaaS Tab */}
+        {activeTab === "saas_mercadopago" && isSuperAdmin && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <CreditCard className="w-6 h-6 text-primary" />
+                    Configuração do Mercado Pago (SaaS)
+                  </h1>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Configuração global das credenciais de pagamento e webhook para cobrança das assinaturas dos clientes na plataforma.
+                </p>
+              </div>
+
+              {/* Botões de Navegação Rápida entre Abas do Super Admin */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("clients")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <Users className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Clientes & Licenças
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("saas_whitelabel")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  White Label
+                </Button>
+              </div>
+            </div>
+
+            <MercadoPagoSettings />
           </div>
         )}
       </div>
