@@ -26,32 +26,73 @@ export default function Login() {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.functions.invoke("login", {
-      body: { email, password },
-    });
 
-    if (error) {
-      setLoading(false);
-      if (error.message?.includes("401") || error.status === 401) {
-        toast.error("E-mail ou senha incorretos.");
-      } else {
-        toast.error(error.message || "Ocorreu um erro ao tentar entrar.");
-      }
-      return;
-    }
+    const cleanEmail = email.trim().toLowerCase();
+    let loginSuccess = false;
 
-    if (data?.error) {
-      setLoading(false);
-      toast.error(data.error);
-      return;
-    }
-
-    if (data?.session) {
-      await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+    // 1. Tenta login via Edge Function
+    try {
+      const { data, error } = await supabase.functions.invoke("login", {
+        body: { email: cleanEmail, password },
       });
+
+      if (!error && data?.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        loginSuccess = true;
+      } else if (error) {
+        let errMessage = "";
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const body = await error.context.json();
+            errMessage = body?.error || "";
+          }
+        } catch {
+          // ignore
+        }
+
+        if (
+          errMessage.toLowerCase().includes("invalid login credentials") ||
+          errMessage.toLowerCase().includes("invalid_credentials") ||
+          error.message?.includes("401") ||
+          error.status === 401
+        ) {
+          setLoading(false);
+          toast.error("E-mail ou senha incorretos.");
+          return;
+        }
+      } else if (data?.error) {
+        setLoading(false);
+        toast.error(data.error);
+        return;
+      }
+    } catch {
+      // Falha de rede ou invocação da função: tenta fallback direto
     }
+
+    // 2. Fallback direto via Supabase Auth caso a Edge Function não tenha autenticado
+    if (!loginSuccess) {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (authError) {
+        setLoading(false);
+        if (
+          authError.message?.toLowerCase().includes("invalid login credentials") ||
+          authError.code === "invalid_credentials"
+        ) {
+          toast.error("E-mail ou senha incorretos.");
+        } else {
+          toast.error(authError.message || "Ocorreu um erro ao tentar entrar.");
+        }
+        return;
+      }
+    }
+
     await refresh();
     setLoading(false);
     toast.success("Bem-vindo!");
