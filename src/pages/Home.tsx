@@ -10,7 +10,7 @@ import {
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
   DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
-  Heart, MessageCircle, Bookmark
+  Heart, MessageCircle, Bookmark, ShieldCheck
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -65,7 +65,7 @@ const getConversationLastMessage = (conv: any): string => {
   return "Nenhuma mensagem";
 };
 
-type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients";
+type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel";
 
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
@@ -1705,17 +1705,41 @@ export default function Home() {
           <HelpCircle className="h-3.5 w-3.5" /> Guia
         </button>
         {isSuperAdmin && (
-          <button
-            type="button"
-            onClick={() => setActiveTab("clients")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-              activeTab === "clients"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-            }`}
-          >
-            <Users className="h-3.5 w-3.5" /> Clientes
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveTab("clients")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === "clients"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" /> Clientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("saas_mercadopago")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === "saas_mercadopago"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+              }`}
+            >
+              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago (SaaS)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("saas_whitelabel")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === "saas_whitelabel"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" /> White Label
+            </button>
+          </>
         )}
         <Link to="/planos" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
           <CreditCard className="h-3.5 w-3.5" /> Planos
@@ -1809,17 +1833,43 @@ export default function Home() {
 
         {/* Navigation Group: Super Admin Gestão SaaS */}
         {isSuperAdmin && (
-          <div className="space-y-1 pt-1">
+          <div className="space-y-1 pt-1 border-t border-border/40 mt-3">
             <p className="px-3 text-[11px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>Super Admin</span>
-              <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono font-bold">SAAS</span>
+              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-bold border border-primary/20">SAAS</span>
             </p>
             <Button
               variant={activeTab === "clients" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "clients" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : "text-primary/90 hover:text-primary hover:bg-primary/10"}`}
+              className={`justify-start gap-3 w-full font-medium transition-all ${
+                activeTab === "clients"
+                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
               onClick={() => setActiveTab("clients")}
             >
-              <Users className="h-4 w-4 text-primary" /> Clientes
+              <Users className="h-4 w-4 text-primary" /> Clientes & Licenças
+            </Button>
+            <Button
+              variant={activeTab === "saas_mercadopago" ? "secondary" : "ghost"}
+              className={`justify-start gap-3 w-full font-medium transition-all ${
+                activeTab === "saas_mercadopago"
+                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("saas_mercadopago")}
+            >
+              <CreditCard className="h-4 w-4 text-primary" /> Mercado Pago (SaaS)
+            </Button>
+            <Button
+              variant={activeTab === "saas_whitelabel" ? "secondary" : "ghost"}
+              className={`justify-start gap-3 w-full font-medium transition-all ${
+                activeTab === "saas_whitelabel"
+                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("saas_whitelabel")}
+            >
+              <Sparkles className="h-4 w-4 text-primary" /> White Label
             </Button>
           </div>
         )}
@@ -1917,17 +1967,9 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="md:col-span-3 flex flex-col w-full min-w-0">
 
-        {/* Settings Tab */}
+        {/* Settings Tab (Configurações do Workspace do Cliente) */}
         {activeTab === "settings" && (
           <div className="space-y-6">
-            {/* Configurações Globais da Plataforma SaaS (Exclusivo para o Super Admin suporte@platafy.com) */}
-            {isSuperAdmin && (
-              <>
-                <WhiteLabelSettings />
-                <MercadoPagoSettings />
-              </>
-            )}
-
             {/* List of Connected Accounts */}
             {config.integrations && config.integrations.length > 0 && (
               <Card>
@@ -4583,6 +4625,97 @@ export default function Home() {
           <SuperAdminClients />
         )}
 
+        {/* Super Admin Mercado Pago SaaS Tab */}
+        {activeTab === "saas_mercadopago" && isSuperAdmin && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <CreditCard className="w-6 h-6 text-primary" />
+                    Configuração do Mercado Pago (SaaS)
+                  </h1>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Configuração global das credenciais de pagamento e webhook para cobrança das assinaturas dos clientes na plataforma.
+                </p>
+              </div>
+
+              {/* Botões de Navegação Rápida entre Abas do Super Admin */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("clients")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <Users className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Clientes & Licenças
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("saas_whitelabel")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  White Label
+                </Button>
+              </div>
+            </div>
+
+            <MercadoPagoSettings />
+          </div>
+        )}
+
+        {/* Super Admin White Label Tab */}
+        {activeTab === "saas_whitelabel" && isSuperAdmin && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                    Personalização White Label
+                  </h1>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Personalize a marca, logotipo, favicon e cores padrão da plataforma exibidas para todos os seus clientes.
+                </p>
+              </div>
+
+              {/* Botões de Navegação Rápida entre Abas do Super Admin */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("clients")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <Users className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Clientes & Licenças
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("saas_mercadopago")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Mercado Pago (SaaS)
+                </Button>
+              </div>
+            </div>
+
+            <WhiteLabelSettings />
+          </div>
+        )}
       </div>
 
       {confirmModal && (
