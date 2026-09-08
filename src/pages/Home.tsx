@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
+import { SuperAdminClients } from "@/components/admin/SuperAdminClients";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 const formatConvTime = (dateStr?: string) => {
@@ -64,7 +65,7 @@ const getConversationLastMessage = (conv: any): string => {
   return "Nenhuma mensagem";
 };
 
-type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide";
+type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients";
 
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
@@ -1703,6 +1704,19 @@ export default function Home() {
         >
           <HelpCircle className="h-3.5 w-3.5" /> Guia
         </button>
+        {isSuperAdmin && (
+          <button
+            type="button"
+            onClick={() => setActiveTab("clients")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+              activeTab === "clients"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" /> Clientes
+          </button>
+        )}
         <Link to="/planos" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
           <CreditCard className="h-3.5 w-3.5" /> Planos
         </Link>
@@ -1792,6 +1806,23 @@ export default function Home() {
             <HelpCircle className="h-4 w-4 text-muted-foreground" /> Guia de Uso
           </Button>
         </div>
+
+        {/* Navigation Group: Super Admin Gestão SaaS */}
+        {isSuperAdmin && (
+          <div className="space-y-1 pt-1">
+            <p className="px-3 text-[11px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Super Admin</span>
+              <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono font-bold">SAAS</span>
+            </p>
+            <Button
+              variant={activeTab === "clients" ? "secondary" : "ghost"}
+              className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "clients" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : "text-primary/90 hover:text-primary hover:bg-primary/10"}`}
+              onClick={() => setActiveTab("clients")}
+            >
+              <Users className="h-4 w-4 text-primary" /> Clientes
+            </Button>
+          </div>
+        )}
 
         {/* Planos CTA Card */}
         <div className="pt-2">
@@ -4545,6 +4576,11 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Super Admin Clientes Tab */}
+        {activeTab === "clients" && isSuperAdmin && (
+          <SuperAdminClients />
         )}
 
       </div>

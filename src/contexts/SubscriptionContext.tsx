@@ -17,17 +17,22 @@ export interface Plan {
   is_popular: boolean;
 }
 
-export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled" | "none";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled" | "suspended" | "none";
 
 export interface SubscriptionData {
   id?: string;
   status: SubscriptionStatus;
   plan_id?: string | null;
   plan?: Plan | null;
+  billing_type?: "mercadopago" | "manual";
+  payment_method?: string | null;
+  notes?: string | null;
+  last_payment_date?: string | null;
   trial_ends_at?: string | null;
   current_period_end?: string | null;
   daysRemaining: number;
   isAccessAllowed: boolean;
+  isSuspended: boolean;
 }
 
 interface SubscriptionContextType {
@@ -37,6 +42,13 @@ interface SubscriptionContextType {
   checkoutLoading: boolean;
   createCheckout: (planId: string) => Promise<string | null>;
   refreshSubscription: () => Promise<void>;
+  hasFeature: (featureName: string) => boolean;
+  getLimit: (limitKey: string, defaultValue?: number) => number;
+  canUseAiAutomations: boolean;
+  canUseWhiteLabel: boolean;
+  maxChannels: number;
+  maxPosts: number;
+  maxContacts: number;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -169,15 +181,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        const isSuspended = sub.status === "suspended";
+
         const subData: SubscriptionData = {
           id: sub.id,
           status: sub.status as SubscriptionStatus,
           plan_id: sub.plan_id,
           plan: sub.plan as Plan,
+          billing_type: sub.billing_type || "mercadopago",
+          payment_method: sub.payment_method || null,
+          notes: sub.notes || null,
+          last_payment_date: sub.last_payment_date || null,
           trial_ends_at: sub.trial_ends_at,
           current_period_end: sub.current_period_end,
           daysRemaining,
-          isAccessAllowed,
+          isAccessAllowed: isSuspended ? false : isAccessAllowed,
+          isSuspended,
         };
 
         startTransition(() => {
@@ -189,6 +208,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           status: "none",
           daysRemaining: 0,
           isAccessAllowed: false,
+          isSuspended: false,
         });
       }
     } catch (err) {
@@ -205,6 +225,27 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
+
+  // Helpers de limites e permissões baseados no plano
+  const hasFeature = useCallback((featureName: string): boolean => {
+    if (!subscription?.isAccessAllowed || !subscription?.plan) return false;
+    const limits = subscription.plan.limits || {};
+    if (limits[featureName] === true) return true;
+    const features = subscription.plan.features || [];
+    return features.some((f: string) => f.toLowerCase().includes(featureName.toLowerCase()));
+  }, [subscription]);
+
+  const getLimit = useCallback((limitKey: string, defaultValue = -1): number => {
+    if (!subscription?.isAccessAllowed || !subscription?.plan) return 0;
+    const limits = subscription.plan.limits || {};
+    return limits[limitKey] !== undefined ? limits[limitKey] : defaultValue;
+  }, [subscription]);
+
+  const canUseAiAutomations = hasFeature("ai_automations") || (subscription?.plan?.limits?.ai_automations === true);
+  const canUseWhiteLabel = hasFeature("white_label") || (subscription?.plan?.limits?.white_label === true);
+  const maxChannels = getLimit("max_channels", 3);
+  const maxPosts = getLimit("max_posts", 50);
+  const maxContacts = getLimit("max_contacts", 100);
 
   // 3. Criar checkout no Mercado Pago
   const createCheckout = async (planId: string): Promise<string | null> => {
@@ -247,6 +288,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         checkoutLoading,
         createCheckout,
         refreshSubscription: fetchSubscription,
+        hasFeature,
+        getLimit,
+        canUseAiAutomations,
+        canUseWhiteLabel,
+        maxChannels,
+        maxPosts,
+        maxContacts,
       }}
     >
       {children}

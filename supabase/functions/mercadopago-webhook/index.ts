@@ -97,6 +97,21 @@ serve(async (req) => {
       const now = new Date()
       const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 dias
 
+      // Verificar se a assinatura existente é manual e já possui vigência maior
+      const { data: existingSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('billing_type, current_period_end')
+        .eq('tenant_id', tenantId)
+        .maybeSingle()
+
+      let finalPeriodEnd = periodEnd
+      if (existingSub?.billing_type === 'manual' && existingSub.current_period_end) {
+        const existingEnd = new Date(existingSub.current_period_end)
+        if (existingEnd > periodEnd) {
+          finalPeriodEnd = existingEnd // Preserva a vigência manual concedida pelo Super Admin
+        }
+      }
+
       const { error: subError } = await supabaseAdmin
         .from('subscriptions')
         .upsert(
@@ -104,9 +119,12 @@ serve(async (req) => {
             tenant_id: tenantId,
             plan_id: planId || undefined,
             status: 'active',
+            billing_type: existingSub?.billing_type === 'manual' ? 'manual' : 'mercadopago',
+            payment_method: payment.payment_method_id || 'mercadopago',
             current_period_start: now.toISOString(),
-            current_period_end: periodEnd.toISOString(),
+            current_period_end: finalPeriodEnd.toISOString(),
             mercadopago_payment_id: String(payment.id),
+            last_payment_date: now.toISOString(),
             updated_at: now.toISOString(),
           },
           { onConflict: 'tenant_id' }
