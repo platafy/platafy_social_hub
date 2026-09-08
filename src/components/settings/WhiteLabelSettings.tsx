@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { 
   Sparkles, Upload, RotateCcw, Check, Palette, Eye, Image as ImageIcon,
-  Globe
+  Globe, Video
 } from "lucide-react";
 
 
@@ -35,6 +35,7 @@ export function WhiteLabelSettings() {
   const [primaryColor, setPrimaryColor] = useState(branding.primary_color);
   const [logoUrl, setLogoUrl] = useState(branding.logo_url);
   const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url);
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState(branding.tutorial_video_url || "/criar-conta.mp4");
 
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -100,6 +101,7 @@ export function WhiteLabelSettings() {
       primary_color: primaryColor || DEFAULT_BRANDING.primary_color,
       logo_url: logoUrl.trim(),
       favicon_url: faviconUrl.trim(),
+      tutorial_video_url: tutorialVideoUrl.trim() || "/criar-conta.mp4",
     });
     setSaving(false);
   }
@@ -114,6 +116,7 @@ export function WhiteLabelSettings() {
     setPrimaryColor(DEFAULT_BRANDING.primary_color);
     setLogoUrl(DEFAULT_BRANDING.logo_url);
     setFaviconUrl(DEFAULT_BRANDING.favicon_url);
+    setTutorialVideoUrl(DEFAULT_BRANDING.tutorial_video_url || "/criar-conta.mp4");
     applyBrandColors(DEFAULT_BRANDING.primary_color);
     setSaving(false);
   }
@@ -360,6 +363,36 @@ export function WhiteLabelSettings() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Vídeo Tutorial do Guia de Uso */}
+            <div className="space-y-3 sm:col-span-2 pt-4 border-t border-border/60">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold flex items-center gap-1.5">
+                  <Video className="h-4 w-4 text-primary" />
+                  Vídeo Tutorial (Aba Guia de Uso)
+                </Label>
+                {tutorialVideoUrl && tutorialVideoUrl !== "/criar-conta.mp4" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTutorialVideoUrl("/criar-conta.mp4")}
+                    className="text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                  >
+                    Restaurar Vídeo Original
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Informe o link do vídeo tutorial exibido na seção <strong>"Guia de Uso & Configuração"</strong> para todos os clientes. Suporta vídeos do YouTube (ex: <code>https://www.youtube.com/watch?v=...</code> ou <code>https://youtu.be/...</code>), Vimeo, Loom ou link direto de vídeo MP4 (ex: <code>/criar-conta.mp4</code> ou URL do Supabase Storage).
+              </p>
+              <Input
+                placeholder="Ex: https://www.youtube.com/watch?v=... ou /criar-conta.mp4"
+                value={tutorialVideoUrl}
+                onChange={(e) => setTutorialVideoUrl(e.target.value)}
+                className="text-xs font-mono"
+              />
             </div>
           </div>
 

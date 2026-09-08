@@ -4,6 +4,7 @@ import { zernio, clearZernioCache, getCacheStats, sanitizeMediaUrls } from "@/li
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import {
   Share2, MessageSquare, BarChart3, Settings,
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
@@ -27,6 +28,43 @@ import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
 import { SuperAdminClients } from "@/components/admin/SuperAdminClients";
 import { LoadingScreen } from "@/components/LoadingScreen";
+
+function getEmbedVideoInfo(url?: string | null) {
+  if (!url) return null;
+  const trimmed = url.trim();
+
+  // YouTube (watch?v=, youtu.be/, embed/, shorts/)
+  const ytMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: "youtube",
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
+      thumbnailUrl: `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`,
+    };
+  }
+
+  // Vimeo
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)/i);
+  if (vimeoMatch && vimeoMatch[3]) {
+    return {
+      type: "vimeo",
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1`,
+      thumbnailUrl: null,
+    };
+  }
+
+  // Loom
+  const loomMatch = trimmed.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/i);
+  if (loomMatch && loomMatch[1]) {
+    return {
+      type: "loom",
+      embedUrl: `https://www.loom.com/embed/${loomMatch[1]}?autoplay=1`,
+      thumbnailUrl: null,
+    };
+  }
+
+  return null;
+}
 
 const formatConvTime = (dateStr?: string) => {
   if (!dateStr) return "";
@@ -69,6 +107,8 @@ type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "s
 
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
+  const { branding } = useBranding();
+  const tutorialVideoUrl = branding.tutorial_video_url || "/criar-conta.mp4";
   const [activeTab, setActiveTab] = useState<TabType>(() => (sessionStorage.getItem("zernio_active_tab") as TabType) || "dashboard");
   const [config, setConfig] = useState<{ connected: boolean; profileId: string | null; hasKey: boolean; integrations?: any[] }>({
     connected: false,
@@ -4468,22 +4508,42 @@ export default function Home() {
                       <p className="text-xs text-muted-foreground mt-1">
                         Acesse <a href="https://zernio.com/signup" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">zernio.com/signup</a> e crie a sua conta para começar.
                       </p>
-                      <div
-                        onClick={() => setVideoModalOpen(true)}
-                        className="mt-3 max-w-md rounded-lg overflow-hidden border border-border bg-secondary/20 relative group cursor-pointer aspect-video flex items-center justify-center"
-                      >
-                        <video className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-300">
-                          <source src="/criar-conta.mp4#t=1" type="video/mp4" />
-                        </video>
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/45 transition-colors flex items-center justify-center">
-                          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                            <span className="text-white text-base ml-1">▶</span>
+                      {/* Vídeo Tutorial Dinâmico (White Label) */}
+                      {(() => {
+                        const embedInfo = getEmbedVideoInfo(tutorialVideoUrl);
+                        return (
+                          <div
+                            onClick={() => setVideoModalOpen(true)}
+                            className="mt-3 max-w-md rounded-lg overflow-hidden border border-border bg-secondary/20 relative group cursor-pointer aspect-video flex items-center justify-center shadow-xs"
+                          >
+                            {embedInfo?.thumbnailUrl ? (
+                              <img
+                                src={embedInfo.thumbnailUrl}
+                                alt="Tutorial thumbnail"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : embedInfo ? (
+                              <div className="w-full h-full bg-stone-900 flex flex-col items-center justify-center text-center p-4">
+                                <span className="text-xs font-semibold text-white/90">Vídeo Tutorial</span>
+                                <span className="text-[10px] text-white/60 mt-1 uppercase tracking-wider">{embedInfo.type}</span>
+                              </div>
+                            ) : (
+                              <video className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-300">
+                                <source src={`${tutorialVideoUrl}#t=1`} type="video/mp4" />
+                              </video>
+                            )}
+
+                            <div className="absolute inset-0 bg-black/25 group-hover:bg-black/45 transition-colors flex items-center justify-center">
+                              <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                                <span className="text-white text-base ml-1">▶</span>
+                              </div>
+                            </div>
+                            <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-2 py-0.5 rounded font-semibold">
+                              Assistir tutorial {tutorialVideoUrl === "/criar-conta.mp4" ? "(0:30)" : ""}
+                            </div>
                           </div>
-                        </div>
-                        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-2 py-0.5 rounded font-semibold">
-                          Assistir tutorial (0:30)
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="relative">
@@ -4738,11 +4798,27 @@ export default function Home() {
           >
             <X className="h-6 w-6" />
           </button>
-          <div className="w-full max-w-4xl aspect-video rounded-xl overflow-hidden shadow-2xl border border-white/10">
-            <video controls autoPlay className="w-full h-full object-contain bg-black">
-              <source src="/criar-conta.mp4" type="video/mp4" />
-              Seu navegador não suporta a exibição de vídeos.
-            </video>
+          <div className="w-full max-w-4xl aspect-video rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black">
+            {(() => {
+              const embedInfo = getEmbedVideoInfo(tutorialVideoUrl);
+              if (embedInfo) {
+                return (
+                  <iframe
+                    src={embedInfo.embedUrl}
+                    title="Vídeo Tutorial"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                );
+              }
+              return (
+                <video controls autoPlay className="w-full h-full object-contain bg-black">
+                  <source src={tutorialVideoUrl} type="video/mp4" />
+                  Seu navegador não suporta a exibição de vídeos.
+                </video>
+              );
+            })()}
           </div>
         </div>
       )}

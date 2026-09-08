@@ -10,6 +10,7 @@ export interface BrandingSettings {
   primary_color: string;
   logo_url: string;
   favicon_url: string;
+  tutorial_video_url?: string;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
@@ -18,6 +19,7 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   primary_color: "#4d5b9a",
   logo_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/logo-65aaac69-3248-446c-b846-fc602d67e8e5-1788795478376.png",
   favicon_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/favicon-65aaac69-3248-446c-b846-fc602d67e8e5-1788795485699.png",
+  tutorial_video_url: "/criar-conta.mp4",
 };
 
 const STORAGE_KEY = "platafy_branding_settings";
@@ -31,6 +33,7 @@ export function sanitizeBranding(raw: any): BrandingSettings {
     primary_color: isLegacy ? DEFAULT_BRANDING.primary_color : (raw.primary_color || DEFAULT_BRANDING.primary_color),
     logo_url: (isLegacy || !raw.logo_url) ? DEFAULT_BRANDING.logo_url : raw.logo_url,
     favicon_url: (isLegacy || !raw.favicon_url) ? DEFAULT_BRANDING.favicon_url : raw.favicon_url,
+    tutorial_video_url: raw.tutorial_video_url || DEFAULT_BRANDING.tutorial_video_url,
   };
 }
 
