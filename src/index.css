@@ -33,7 +33,7 @@
     --card-foreground: #1c1917;
     --popover: #ffffff;
     --popover-foreground: #1c1917;
-    --primary: #ff451a;
+    --primary: #4d5b9a;
     --primary-foreground: #ffffff;
     --secondary: #efede8;
     --secondary-foreground: #1c1917;
@@ -44,7 +44,7 @@
     --destructive: #dc2626;
     --border: #e7e5e4;
     --input: #e7e5e4;
-    --ring: #ff451a;
+    --ring: #4d5b9a;
   }
 }
 

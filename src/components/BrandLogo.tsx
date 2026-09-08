@@ -54,7 +54,7 @@ export function BrandLogo({
       {!imageOnly && (
         <div className="flex items-center gap-1.5">
           <span className={`${textSizes[size]} text-foreground transition-colors`}>
-            {branding.app_name || "Social Hub"}
+            {branding.app_name || "PLATAFY Social"}
           </span>
           {showTagline && branding.app_tagline && (
             <span

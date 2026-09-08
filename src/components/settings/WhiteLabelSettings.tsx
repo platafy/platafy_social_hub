@@ -382,7 +382,7 @@ export function WhiteLabelSettings() {
                     }}
                   />
                   <span className="text-lg font-black tracking-tight text-foreground">
-                    {appName || "Social Hub"}
+                    {appName || "PLATAFY Social"}
                   </span>
                   {appTagline && (
                     <span
@@ -415,7 +415,7 @@ export function WhiteLabelSettings() {
 
               {/* Simulação de elemento com badge e texto */}
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Título da aba: <strong className="text-foreground">{appName || "Social Hub"}{appTagline ? ` ${appTagline}` : ""} - Gestão Inteligente</strong></span>
+                <span>Título da aba: <strong className="text-foreground">{appName || "PLATAFY Social"}{appTagline ? ` ${appTagline}` : ""} - Gestão Inteligente</strong></span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: primaryColor }} />
                   Tema Ativo
