@@ -98,7 +98,7 @@ export function InstallPwaPrompt() {
                 {appName}
               </p>
               <p className="text-[11px] text-muted-foreground truncate">
-                Instale o App no celular
+                Instale o App
               </p>
             </div>
           </div>
