@@ -1969,36 +1969,36 @@ export default function Home() {
         {/* Cache Controls Card */}
         {config.connected && (
           <div className="pt-2 border-t border-border/50 space-y-2">
-            <div className="p-3 rounded-2xl border border-border/50 bg-secondary/20 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <div className="p-3 rounded-2xl border border-border/60 bg-card/60 space-y-2.5">
+              <Label className="text-[11px] font-bold text-muted-foreground block uppercase tracking-wider">
+                CACHE
+              </Label>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <DatabaseZap className="h-3.5 w-3.5 text-primary" /> Memória: {cacheStats.memory}
+                  <DatabaseZap className="h-3.5 w-3.5 text-primary" /> {cacheStats.memory} em memória
                 </span>
-                <span>Sessão: {cacheStats.session}</span>
+                <span>{cacheStats.session} em sessão</span>
               </div>
-              <div className="flex gap-1.5 pt-1">
-                <Button
-                  id="btn-refresh-data"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 justify-center gap-1.5 text-xs h-8 rounded-xl"
-                  onClick={handleRefresh}
-                  disabled={loading || !selectedProfileId}
-                >
-                  <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
-                <Button
-                  id="btn-clear-cache"
-                  variant="ghost"
-                  size="sm"
-                  className="px-2.5 h-8 rounded-xl text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleClearCache}
-                  title="Limpar Cache"
-                >
-                  <Trash className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <Button
+                id="btn-refresh-data"
+                variant="outline"
+                size="sm"
+                className="w-full justify-center gap-1.5 text-xs h-8 rounded-xl"
+                onClick={handleRefresh}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar Dados
+              </Button>
+              <button
+                id="btn-clear-cache"
+                type="button"
+                className="w-full text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1.5 pt-0.5 transition-colors cursor-pointer"
+                onClick={handleClearCache}
+              >
+                <Trash className="h-3.5 w-3.5" />
+                Limpar Cache
+              </button>
             </div>
           </div>
         )}
