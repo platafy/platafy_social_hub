@@ -182,7 +182,24 @@ export async function zernioApiCall(path: string, options: ZernioRequestOptions 
     });
 
     if (error) {
-      throw error;
+      let detailedMsg = error.message;
+      try {
+        if ('context' in error && (error as any).context) {
+          const res = (error as any).context as Response;
+          if (res && typeof res.clone === 'function') {
+            const body = await res.clone().json().catch(() => null);
+            if (body && (body.error || body.message)) {
+              detailedMsg = body.error || body.message;
+            } else {
+              const text = await res.clone().text().catch(() => '');
+              if (text) detailedMsg = text;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not extract error details:', e);
+      }
+      throw new Error(detailedMsg);
     }
 
     if (data && data.success === false && data.error) {

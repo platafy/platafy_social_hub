@@ -82,7 +82,10 @@ serve(async (req) => {
             zernio_profile_id: profileId !== undefined ? profileId : null,
             updated_at: new Date().toISOString()
           }
-          if (name) updateObj.name = name
+          if (name) {
+            updateObj.name = name
+            updateObj.account_name = name
+          }
           if (finalApiKey) updateObj.api_key = finalApiKey
 
           const { error: updateError } = await supabaseClient
@@ -106,13 +109,15 @@ serve(async (req) => {
             })
           }
 
+          const accountLabel = name || body.account_name || 'Conta Principal'
           const { error: insertError } = await supabaseClient
             .from('zernio_integrations')
             .insert({
               tenant_id: tenantId,
               api_key: finalApiKey,
               zernio_profile_id: profileId || null,
-              name: name || 'Conta Principal'
+              name: accountLabel,
+              account_name: accountLabel
             })
 
           if (insertError) {
@@ -128,20 +133,27 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       } else if (req.method === 'GET') {
-        const { data: integrations } = await supabaseClient
+        const { data: integrations, error: fetchError } = await supabaseClient
           .from('zernio_integrations')
-          .select('id, name, zernio_profile_id, api_key')
+          .select('id, name, account_name, zernio_profile_id, api_key')
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: true })
+
+        if (fetchError) {
+          return new Response(JSON.stringify({ error: fetchError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
 
         const list = integrations || []
         return new Response(JSON.stringify({
           connected: list.length > 0,
           profileId: list[0]?.zernio_profile_id || null,
           hasKey: !!list[0]?.api_key,
-          integrations: list.map(i => ({
+          integrations: list.map((i: any) => ({
             id: i.id,
-            name: i.name,
+            name: i.name || i.account_name || 'Conta Principal',
             profileId: i.zernio_profile_id,
             hasKey: !!i.api_key
           }))
