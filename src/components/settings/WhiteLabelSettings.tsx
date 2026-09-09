@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useBranding, DEFAULT_BRANDING } from "@/contexts/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,19 +9,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { 
   Sparkles, Upload, RotateCcw, Check, Palette, Eye, Image as ImageIcon,
-  Globe, Video
+  Video, Sun, Moon, Globe
 } from "lucide-react";
 
-
-const PRESET_COLORS = [
-  { name: "Laranja Platafy", hex: "#ff451a" },
+const PRESET_LIGHT_COLORS = [
+  { name: "Azul Platafy", hex: "#4d5b9a" },
+  { name: "Laranja Platafy", hex: "#fca102" },
   { name: "Azul Royal", hex: "#2563eb" },
   { name: "Roxo Tech", hex: "#7c3aed" },
-  { name: "Verde Esmeralda", hex: "#10b981" },
-  { name: "Rosa Coral", hex: "#f43f5e" },
-  { name: "Índigo Profundo", hex: "#4f46e5" },
-  { name: "Turquesa Cyber", hex: "#06b6d4" },
+  { name: "Verde Esmeralda", hex: "#059669" },
+  { name: "Rosa Coral", hex: "#e11d48" },
+  { name: "Índigo Profundo", hex: "#4338ca" },
   { name: "Grafite Minimal", hex: "#1e293b" },
+];
+
+const PRESET_DARK_COLORS = [
+  { name: "Laranja Ouro", hex: "#fca102" },
+  { name: "Índigo Neon", hex: "#6366f1" },
+  { name: "Ciano Cyber", hex: "#06b6d4" },
+  { name: "Verde Neon", hex: "#10b981" },
+  { name: "Violeta Tech", hex: "#8b5cf6" },
+  { name: "Rosa Flamingo", hex: "#f43f5e" },
+  { name: "Azul Celeste", hex: "#38bdf8" },
+  { name: "Âmbar Solar", hex: "#f59e0b" },
 ];
 
 export function WhiteLabelSettings() {
@@ -32,10 +42,25 @@ export function WhiteLabelSettings() {
 
   const [appName, setAppName] = useState(branding.app_name);
   const [appTagline, setAppTagline] = useState(branding.app_tagline);
-  const [primaryColor, setPrimaryColor] = useState(branding.primary_color);
+  
+  // Duas cores primárias independentes: Modo Light e Modo Dark
+  const [primaryColorLight, setPrimaryColorLight] = useState(
+    branding.primary_color_light || "#4d5b9a"
+  );
+  const [primaryColorDark, setPrimaryColorDark] = useState(
+    branding.primary_color_dark || branding.primary_color || "#fca102"
+  );
+
   const [logoUrl, setLogoUrl] = useState(branding.logo_url);
   const [faviconUrl, setFaviconUrl] = useState(branding.favicon_url);
   const [tutorialVideoUrl, setTutorialVideoUrl] = useState(branding.tutorial_video_url || "/criar-conta.mp4");
+
+  const [previewTheme, setPreviewTheme] = useState<"light" | "dark">(() => {
+    if (typeof document !== "undefined" && document.documentElement.classList.contains("dark")) {
+      return "dark";
+    }
+    return "light";
+  });
 
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -43,6 +68,17 @@ export function WhiteLabelSettings() {
 
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizar estados locais se o branding global for atualizado remotamente
+  useEffect(() => {
+    setAppName(branding.app_name);
+    setAppTagline(branding.app_tagline);
+    setPrimaryColorLight(branding.primary_color_light || "#4d5b9a");
+    setPrimaryColorDark(branding.primary_color_dark || branding.primary_color || "#fca102");
+    setLogoUrl(branding.logo_url);
+    setFaviconUrl(branding.favicon_url);
+    setTutorialVideoUrl(branding.tutorial_video_url || "/criar-conta.mp4");
+  }, [branding]);
 
   // Manipular upload de arquivos de imagem no Supabase Storage
   async function handleFileUpload(file: File, type: "logo" | "favicon") {
@@ -88,9 +124,14 @@ export function WhiteLabelSettings() {
     }
   }
 
-  function handleColorChange(newColor: string) {
-    setPrimaryColor(newColor);
-    applyBrandColors(newColor);
+  function handleLightColorChange(newColor: string) {
+    setPrimaryColorLight(newColor);
+    applyBrandColors(newColor, primaryColorDark);
+  }
+
+  function handleDarkColorChange(newColor: string) {
+    setPrimaryColorDark(newColor);
+    applyBrandColors(primaryColorLight, newColor);
   }
 
   async function handleSave() {
@@ -98,7 +139,9 @@ export function WhiteLabelSettings() {
     await updateBranding({
       app_name: appName.trim() || DEFAULT_BRANDING.app_name,
       app_tagline: appTagline.trim(),
-      primary_color: primaryColor || DEFAULT_BRANDING.primary_color,
+      primary_color: primaryColorDark || primaryColorLight,
+      primary_color_light: primaryColorLight,
+      primary_color_dark: primaryColorDark,
       logo_url: logoUrl.trim(),
       favicon_url: faviconUrl.trim(),
       tutorial_video_url: tutorialVideoUrl.trim() || "/criar-conta.mp4",
@@ -106,20 +149,22 @@ export function WhiteLabelSettings() {
     setSaving(false);
   }
 
-
   async function handleReset() {
     if (!confirm("Deseja restaurar a identidade visual para as configurações padrão?")) return;
     setSaving(true);
     await resetToDefault();
     setAppName(DEFAULT_BRANDING.app_name);
     setAppTagline(DEFAULT_BRANDING.app_tagline);
-    setPrimaryColor(DEFAULT_BRANDING.primary_color);
+    setPrimaryColorLight(DEFAULT_BRANDING.primary_color_light);
+    setPrimaryColorDark(DEFAULT_BRANDING.primary_color_dark);
     setLogoUrl(DEFAULT_BRANDING.logo_url);
     setFaviconUrl(DEFAULT_BRANDING.favicon_url);
     setTutorialVideoUrl(DEFAULT_BRANDING.tutorial_video_url || "/criar-conta.mp4");
-    applyBrandColors(DEFAULT_BRANDING.primary_color);
+    applyBrandColors(DEFAULT_BRANDING.primary_color_light, DEFAULT_BRANDING.primary_color_dark);
     setSaving(false);
   }
+
+  const currentPreviewColor = previewTheme === "dark" ? primaryColorDark : primaryColorLight;
 
   return (
     <div className="space-y-6">
@@ -148,7 +193,7 @@ export function WhiteLabelSettings() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-7">
           {/* 1. Nome da Marca e Tagline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -184,55 +229,195 @@ export function WhiteLabelSettings() {
             </div>
           </div>
 
-          {/* 2. Cores da Marca */}
-          <div className="space-y-3 pt-2 border-t border-border/50">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold flex items-center gap-1.5">
-                <Palette className="h-4 w-4 text-primary" />
-                Cor Primária da Interface
-              </Label>
-              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-muted">
-                {primaryColor}
-              </span>
+          {/* 2. Cores da Marca: Modo Light e Modo Dark */}
+          <div className="space-y-4 pt-2 border-t border-border/50">
+            <div>
+              <div className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">
+                  Cores Primárias da Interface (Paletas Light & Dark)
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Configure duas paletas independentes: uma cor primária sob medida para o <strong>Modo Claro</strong> e outra para o <strong>Modo Escuro</strong>.
+              </p>
             </div>
 
-            {/* Paleta Rápida */}
-            <div className="flex flex-wrap gap-2.5 items-center">
-              {PRESET_COLORS.map((col) => (
-                <button
-                  key={col.hex}
-                  type="button"
-                  onClick={() => handleColorChange(col.hex)}
-                  className={`group relative h-9 w-9 rounded-full transition-all flex items-center justify-center border-2 ${
-                    primaryColor.toLowerCase() === col.hex.toLowerCase()
-                      ? "border-foreground scale-110 shadow-md"
-                      : "border-transparent hover:scale-105"
-                  }`}
-                  style={{ backgroundColor: col.hex }}
-                  title={col.name}
-                >
-                  {primaryColor.toLowerCase() === col.hex.toLowerCase() && (
-                    <Check className="h-4 w-4 text-white drop-shadow-sm" />
-                  )}
-                </button>
-              ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Paleta Modo Claro (Light) */}
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                      <Sun className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                        Cor Primária (Modo Claro)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Ativa quando o tema Claro estiver em uso.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-background border border-border/60">
+                    {primaryColorLight}
+                  </span>
+                </div>
 
-              {/* Seletor Customizado Nativo */}
-              <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => handleColorChange(e.target.value)}
-                  className="h-9 w-9 rounded-lg cursor-pointer border border-border bg-transparent p-0.5"
-                  title="Escolha qualquer cor personalizada"
-                />
-                <Input
-                  value={primaryColor}
-                  onChange={(e) => handleColorChange(e.target.value)}
-                  placeholder="#000000"
-                  className="w-24 h-9 font-mono text-xs uppercase"
-                  maxLength={7}
-                />
+                {/* Swatches Light */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Cores Recomendadas para Fundo Claro
+                  </span>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {PRESET_LIGHT_COLORS.map((col) => {
+                      const isSelected = primaryColorLight.toLowerCase() === col.hex.toLowerCase();
+                      return (
+                        <button
+                          key={col.hex}
+                          type="button"
+                          onClick={() => handleLightColorChange(col.hex)}
+                          className={`group relative h-8 w-8 rounded-full transition-all flex items-center justify-center border-2 ${
+                            isSelected
+                              ? "border-foreground scale-110 shadow-md ring-2 ring-primary/30"
+                              : "border-transparent hover:scale-105"
+                          }`}
+                          style={{ backgroundColor: col.hex }}
+                          title={`${col.name} (${col.hex})`}
+                        >
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Seletor Customizado Nativo */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={primaryColorLight}
+                      onChange={(e) => handleLightColorChange(e.target.value)}
+                      className="h-8 w-8 rounded-lg cursor-pointer border border-border bg-transparent p-0.5"
+                      title="Escolha qualquer cor personalizada para Modo Claro"
+                    />
+                    <Input
+                      value={primaryColorLight}
+                      onChange={(e) => handleLightColorChange(e.target.value)}
+                      placeholder="#000000"
+                      className="w-24 h-8 font-mono text-xs uppercase"
+                      maxLength={7}
+                    />
+                  </div>
+
+                  {/* Mini Preview Card Claro */}
+                  <div className="px-2.5 py-1.5 rounded-lg bg-stone-100 border border-stone-200 flex items-center gap-2">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-2xs"
+                      style={{ backgroundColor: primaryColorLight }}
+                    >
+                      Botão
+                    </span>
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.2 rounded uppercase"
+                      style={{ backgroundColor: `${primaryColorLight}20`, color: primaryColorLight }}
+                    >
+                      Tag
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Paleta Modo Escuro (Dark) */}
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+                      <Moon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                        Cor Primária (Modo Escuro)
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Ativa quando o tema Escuro estiver em uso.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-background border border-border/60">
+                    {primaryColorDark}
+                  </span>
+                </div>
+
+                {/* Swatches Dark */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Cores Recomendadas para Fundo Escuro
+                  </span>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {PRESET_DARK_COLORS.map((col) => {
+                      const isSelected = primaryColorDark.toLowerCase() === col.hex.toLowerCase();
+                      return (
+                        <button
+                          key={col.hex}
+                          type="button"
+                          onClick={() => handleDarkColorChange(col.hex)}
+                          className={`group relative h-8 w-8 rounded-full transition-all flex items-center justify-center border-2 ${
+                            isSelected
+                              ? "border-foreground scale-110 shadow-md ring-2 ring-primary/30"
+                              : "border-transparent hover:scale-105"
+                          }`}
+                          style={{ backgroundColor: col.hex }}
+                          title={`${col.name} (${col.hex})`}
+                        >
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Seletor Customizado Nativo */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50 gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={primaryColorDark}
+                      onChange={(e) => handleDarkColorChange(e.target.value)}
+                      className="h-8 w-8 rounded-lg cursor-pointer border border-border bg-transparent p-0.5"
+                      title="Escolha qualquer cor personalizada para Modo Escuro"
+                    />
+                    <Input
+                      value={primaryColorDark}
+                      onChange={(e) => handleDarkColorChange(e.target.value)}
+                      placeholder="#000000"
+                      className="w-24 h-8 font-mono text-xs uppercase"
+                      maxLength={7}
+                    />
+                  </div>
+
+                  {/* Mini Preview Card Escuro */}
+                  <div className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-2xs"
+                      style={{ backgroundColor: primaryColorDark }}
+                    >
+                      Botão
+                    </span>
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.2 rounded uppercase"
+                      style={{ backgroundColor: `${primaryColorDark}25`, color: primaryColorDark }}
+                    >
+                      Tag
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -310,13 +495,13 @@ export function WhiteLabelSettings() {
               </Label>
 
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-xl border border-border/80 bg-muted/30 flex items-center justify-center overflow-hidden p-1">
+                <div className="h-16 w-16 rounded-xl border border-border/80 bg-muted/30 flex items-center justify-center overflow-hidden p-2">
                   <img
-                    src={faviconUrl || "/favicon.svg"}
+                    src={faviconUrl || "/favicon.ico"}
                     alt="Favicon preview"
-                    className="h-8 w-8 object-contain"
+                    className="max-h-full max-w-full object-contain"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/favicon.svg";
+                      (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
                     }}
                   />
                 </div>
@@ -324,7 +509,7 @@ export function WhiteLabelSettings() {
                   <input
                     type="file"
                     ref={faviconFileInputRef}
-                    accept="image/png,image/x-icon,image/svg+xml"
+                    accept="image/png,image/x-icon,image/svg+xml,image/jpeg,image/webp"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -396,50 +581,99 @@ export function WhiteLabelSettings() {
             </div>
           </div>
 
-          {/* 4. Live Preview Box */}
-          <div className="space-y-2 pt-2 border-t border-border/50">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Eye className="h-3.5 w-3.5" />
-              Pré-visualização em Tempo Real (Live Preview)
-            </Label>
-            <div className="rounded-xl border border-border bg-card/80 p-4 shadow-sm space-y-4">
+          {/* 4. Live Preview Box com alternância de tema */}
+          <div className="space-y-3 pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5" />
+                Pré-visualização em Tempo Real (Live Preview)
+              </Label>
+
+              {/* Seletor de Tema para o Preview */}
+              <div className="inline-flex rounded-xl bg-muted p-1 border border-border">
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme("light")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    previewTheme === "light"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Sun className="h-3 w-3 text-amber-500" /> Modo Claro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme("dark")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    previewTheme === "dark"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Moon className="h-3 w-3 text-indigo-400" /> Modo Escuro
+                </button>
+              </div>
+            </div>
+
+            {/* Container do Preview Dinâmico */}
+            <div
+              className={`rounded-2xl border p-5 shadow-sm space-y-4 transition-all ${
+                previewTheme === "dark"
+                  ? "bg-slate-950 border-slate-800 text-slate-100"
+                  : "bg-white border-stone-200 text-stone-900"
+              }`}
+            >
               {/* Simulação de Header */}
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <div
+                className={`flex items-center justify-between border-b pb-3.5 ${
+                  previewTheme === "dark" ? "border-slate-800" : "border-stone-200"
+                }`}
+              >
                 <div className="flex items-center gap-2.5">
                   <img
                     src={logoUrl || "/logo.png"}
                     alt="Logo"
-                    className="h-7 w-7 object-contain rounded"
+                    className="h-8 w-8 object-contain rounded"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = "/logo.png";
                     }}
                   />
-                  <span className="text-lg font-black tracking-tight text-foreground">
+                  <span
+                    className={`text-lg font-black tracking-tight ${
+                      previewTheme === "dark" ? "text-white" : "text-stone-900"
+                    }`}
+                  >
                     {appName || "PLATAFY Social"}
                   </span>
                   {appTagline && (
                     <span
-                      className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                      className="text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider transition-colors"
                       style={{
-                        backgroundColor: `${primaryColor}20`,
-                        color: primaryColor,
+                        backgroundColor: `${currentPreviewColor}20`,
+                        color: currentPreviewColor,
                       }}
                     >
                       {appTagline}
                     </span>
                   )}
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white shadow-sm transition-all"
-                    style={{ backgroundColor: primaryColor }}
+                    className="px-3.5 py-1.5 text-xs font-bold rounded-xl text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                    style={{ backgroundColor: currentPreviewColor }}
                   >
                     Botão de Ação
                   </button>
                   <button
                     type="button"
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-foreground hover:bg-muted"
+                    className={`px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors ${
+                      previewTheme === "dark"
+                        ? "border-slate-800 text-slate-300 hover:bg-slate-900"
+                        : "border-stone-300 text-stone-700 hover:bg-stone-100"
+                    }`}
                   >
                     Cancelar
                   </button>
@@ -447,18 +681,40 @@ export function WhiteLabelSettings() {
               </div>
 
               {/* Simulação de elemento com badge e texto */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Título da aba: <strong className="text-foreground">{appName || "PLATAFY Social"}{appTagline ? ` ${appTagline}` : ""} - Gestão Inteligente</strong></span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: primaryColor }} />
-                  Tema Ativo
+              <div
+                className={`flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 pt-1 ${
+                  previewTheme === "dark" ? "text-slate-400" : "text-stone-500"
+                }`}
+              >
+                <span>
+                  Título da aba:{" "}
+                  <strong className={previewTheme === "dark" ? "text-white" : "text-stone-900"}>
+                    {appName || "PLATAFY Social"}
+                    {appTagline ? ` ${appTagline}` : ""} - Gestão Inteligente
+                  </strong>
                 </span>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                    style={{
+                      backgroundColor: `${currentPreviewColor}18`,
+                      color: currentPreviewColor,
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: currentPreviewColor }}
+                    />
+                    Paleta {previewTheme === "dark" ? "Escuro" : "Claro"} ({currentPreviewColor})
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-3 pt-2 border-t border-border/40">
+        <CardFooter className="flex justify-end gap-3 pt-4 border-t border-border/40">
           <Button
             onClick={handleSave}
             disabled={saving || uploadingLogo || uploadingFavicon}

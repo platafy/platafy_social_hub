@@ -7,7 +7,9 @@ import { toast } from "sonner";
 export interface BrandingSettings {
   app_name: string;
   app_tagline: string;
-  primary_color: string;
+  primary_color: string; // fallback / compatibilidade legado
+  primary_color_light: string;
+  primary_color_dark: string;
   logo_url: string;
   favicon_url: string;
   tutorial_video_url?: string;
@@ -16,9 +18,11 @@ export interface BrandingSettings {
 export const DEFAULT_BRANDING: BrandingSettings = {
   app_name: "PLATAFY Social",
   app_tagline: "Hub",
-  primary_color: "#4d5b9a",
-  logo_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/logo-65aaac69-3248-446c-b846-fc602d67e8e5-1788795478376.png",
-  favicon_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/favicon-65aaac69-3248-446c-b846-fc602d67e8e5-1788795485699.png",
+  primary_color: "#fca102",
+  primary_color_light: "#4d5b9a",
+  primary_color_dark: "#fca102",
+  logo_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/logo-65aaac69-3248-446c-b846-fc602d67e8e5-1788896633632.png",
+  favicon_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/favicon-65aaac69-3248-446c-b846-fc602d67e8e5-1788896641236.png",
   tutorial_video_url: "/criar-conta.mp4",
 };
 
@@ -27,10 +31,29 @@ const STORAGE_KEY = "platafy_branding_settings";
 export function sanitizeBranding(raw: any): BrandingSettings {
   if (!raw || typeof raw !== "object") return DEFAULT_BRANDING;
   const isLegacy = raw.app_name === "Social Hub" || raw.primary_color === "#ff451a";
+
+  const fallbackColor = isLegacy
+    ? DEFAULT_BRANDING.primary_color
+    : (raw.primary_color || DEFAULT_BRANDING.primary_color);
+
+  const colorLight = raw.primary_color_light
+    ? raw.primary_color_light
+    : (raw.primary_color && raw.primary_color !== "#ff451a" && raw.primary_color !== "#fca102"
+        ? raw.primary_color
+        : DEFAULT_BRANDING.primary_color_light);
+
+  const colorDark = raw.primary_color_dark
+    ? raw.primary_color_dark
+    : (raw.primary_color && raw.primary_color !== "#ff451a"
+        ? raw.primary_color
+        : DEFAULT_BRANDING.primary_color_dark);
+
   return {
     app_name: isLegacy ? DEFAULT_BRANDING.app_name : (raw.app_name || DEFAULT_BRANDING.app_name),
     app_tagline: raw.app_tagline || DEFAULT_BRANDING.app_tagline,
-    primary_color: isLegacy ? DEFAULT_BRANDING.primary_color : (raw.primary_color || DEFAULT_BRANDING.primary_color),
+    primary_color: fallbackColor,
+    primary_color_light: colorLight || DEFAULT_BRANDING.primary_color_light,
+    primary_color_dark: colorDark || DEFAULT_BRANDING.primary_color_dark,
     logo_url: (isLegacy || !raw.logo_url) ? DEFAULT_BRANDING.logo_url : raw.logo_url,
     favicon_url: (isLegacy || !raw.favicon_url) ? DEFAULT_BRANDING.favicon_url : raw.favicon_url,
     tutorial_video_url: raw.tutorial_video_url || DEFAULT_BRANDING.tutorial_video_url,
@@ -40,30 +63,51 @@ export function sanitizeBranding(raw: any): BrandingSettings {
 interface BrandingContextType {
   branding: BrandingSettings;
   loading: boolean;
+  activePrimaryColor: string;
   updateBranding: (newSettings: Partial<BrandingSettings>) => Promise<boolean>;
   resetToDefault: () => Promise<boolean>;
-  applyBrandColors: (primaryColor: string) => void;
+  applyBrandColors: (lightColor?: string, darkColor?: string) => void;
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
-function applyBrandingToDOM(settings: BrandingSettings) {
+export function applyBrandingToDOM(settings: BrandingSettings) {
   if (typeof document === "undefined") return;
 
-  // 1. Injetar cores CSS primárias e acentos no :root
-  if (settings.primary_color) {
-    document.documentElement.style.setProperty("--primary", settings.primary_color);
-    document.documentElement.style.setProperty("--ring", settings.primary_color);
-    document.documentElement.style.setProperty("--accent", settings.primary_color);
+  const lightColor = settings.primary_color_light || settings.primary_color || DEFAULT_BRANDING.primary_color_light;
+  const darkColor = settings.primary_color_dark || settings.primary_color || DEFAULT_BRANDING.primary_color_dark;
+
+  // 1. Limpar inline styles antigos no documentElement para não sobrepor as regras de tema
+  document.documentElement.style.removeProperty("--primary");
+  document.documentElement.style.removeProperty("--ring");
+  document.documentElement.style.removeProperty("--accent");
+
+  // 2. Injetar ou atualizar tag <style id="platafy-brand-theme-styles">
+  let styleEl = document.getElementById("platafy-brand-theme-styles") as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "platafy-brand-theme-styles";
+    document.head.appendChild(styleEl);
   }
 
-  // 2. Atualizar título da aba do navegador
+  styleEl.textContent = `
+    :root {
+      --primary: ${lightColor} !important;
+      --ring: ${lightColor} !important;
+    }
+    .dark {
+      --primary: ${darkColor} !important;
+      --ring: ${darkColor} !important;
+    }
+  `;
+
+  // 3. Atualizar título da aba do navegador
   if (settings.app_name) {
     const tagline = settings.app_tagline ? ` ${settings.app_tagline}` : "";
     document.title = `${settings.app_name}${tagline} - Gestão Inteligente`;
   }
 
-  // 3. Atualizar favicon
+  // 4. Atualizar favicon
   if (settings.favicon_url) {
     let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
     if (!link) {
@@ -97,12 +141,70 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   const [loading, setLoading] = useState(false);
 
-  const applyBrandColors = useCallback((primaryColor: string) => {
+  // Cor primária ativa conforme tema resolvido
+  const [activePrimaryColor, setActivePrimaryColor] = useState<string>(() => {
+    if (typeof document !== "undefined" && document.documentElement.classList.contains("dark")) {
+      return branding.primary_color_dark || branding.primary_color || DEFAULT_BRANDING.primary_color_dark;
+    }
+    return branding.primary_color_light || branding.primary_color || DEFAULT_BRANDING.primary_color_light;
+  });
+
+  // Atualizar cor ativa quando o tema escuro/claro mudar em tempo real
+  useEffect(() => {
+    const updateActiveColor = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setActivePrimaryColor(
+        isDark
+          ? (branding.primary_color_dark || branding.primary_color || DEFAULT_BRANDING.primary_color_dark)
+          : (branding.primary_color_light || branding.primary_color || DEFAULT_BRANDING.primary_color_light)
+      );
+    };
+
+    updateActiveColor();
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "attributes" && mutation.attributeName === "class") {
+          updateActiveColor();
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    return () => observer.disconnect();
+  }, [branding]);
+
+  const applyBrandColors = useCallback((lightColor?: string, darkColor?: string) => {
     if (typeof document === "undefined") return;
-    document.documentElement.style.setProperty("--primary", primaryColor);
-    document.documentElement.style.setProperty("--ring", primaryColor);
-    document.documentElement.style.setProperty("--accent", primaryColor);
-  }, []);
+    const lColor = lightColor || branding.primary_color_light || branding.primary_color || DEFAULT_BRANDING.primary_color_light;
+    const dColor = darkColor || branding.primary_color_dark || branding.primary_color || DEFAULT_BRANDING.primary_color_dark;
+
+    document.documentElement.style.removeProperty("--primary");
+    document.documentElement.style.removeProperty("--ring");
+    document.documentElement.style.removeProperty("--accent");
+
+    let styleEl = document.getElementById("platafy-brand-theme-styles") as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "platafy-brand-theme-styles";
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent = `
+      :root {
+        --primary: ${lColor} !important;
+        --ring: ${lColor} !important;
+      }
+      .dark {
+        --primary: ${dColor} !important;
+        --ring: ${dColor} !important;
+      }
+    `;
+
+    const isDark = document.documentElement.classList.contains("dark");
+    setActivePrimaryColor(isDark ? dColor : lColor);
+  }, [branding]);
 
   // 1. Carregar a identidade global da plataforma (platform_branding) para todos os usuários
   useEffect(() => {
@@ -189,6 +291,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     const updated: BrandingSettings = {
       ...branding,
       ...newSettings,
+      primary_color: newSettings.primary_color_dark || newSettings.primary_color_light || newSettings.primary_color || branding.primary_color,
     };
 
     setLoading(true);
@@ -205,7 +308,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         console.warn("Erro ao salvar platform_branding:", platformError);
       }
 
-      // 2. Atualizar também o tenant do administrador
+      // 2. Atualizar também o tenant do administrador se existir
       if (tenantId) {
         await (supabase.from("tenants" as any) as any)
           .update({
@@ -244,6 +347,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       value={{
         branding,
         loading,
+        activePrimaryColor,
         updateBranding,
         resetToDefault,
         applyBrandColors,
