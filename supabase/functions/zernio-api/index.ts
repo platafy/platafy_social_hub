@@ -311,6 +311,64 @@ serve(async (req) => {
       })
     }
 
+    // Validação de limite comercial de Perfis Ativos
+    if (subPath === '/v1/profiles' && req.method === 'POST') {
+      try {
+        const { data: sub } = await supabaseClient
+          .from('subscriptions')
+          .select('status, plan_id, plans(slug, limits)')
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+
+        const planLimits = (sub?.plans as any)?.limits || {};
+        let maxProfiles = 1;
+        if (typeof planLimits.max_profiles === 'number') {
+          maxProfiles = planLimits.max_profiles;
+        } else if (typeof planLimits.max_channels === 'number') {
+          maxProfiles = planLimits.max_channels === -1 ? -1 : Math.max(1, Math.ceil(planLimits.max_channels / 2));
+        }
+
+        if (maxProfiles !== -1) {
+          const { data: tenantIntegrations } = await supabaseClient
+            .from('zernio_integrations')
+            .select('id, api_key')
+            .eq('tenant_id', tenantId);
+
+          let totalActiveProfiles = 0;
+          if (tenantIntegrations && tenantIntegrations.length > 0) {
+            for (const integ of tenantIntegrations) {
+              if (!integ.api_key) continue;
+              try {
+                const checkRes = await fetch('https://zernio.com/api/v1/profiles', {
+                  headers: { Authorization: `Bearer ${integ.api_key}` }
+                });
+                if (checkRes.ok) {
+                  const pData = await checkRes.json().catch(() => null);
+                  if (Array.isArray(pData?.profiles)) {
+                    totalActiveProfiles += pData.profiles.length;
+                  }
+                }
+              } catch (err) {
+                console.warn('Error checking profiles for quota:', err);
+              }
+            }
+          }
+
+          if (totalActiveProfiles >= maxProfiles) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Limite de Perfis Ativos atingido (${totalActiveProfiles}/${maxProfiles}). Cada Perfil Ativo permite conectar até 2 contas no Zernio. Faça upgrade do seu plano para criar novos perfis.`
+            }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+        }
+      } catch (limitErr) {
+        console.warn('Erro ao validar limite de perfis:', limitErr);
+      }
+    }
+
     // Build target Zernio API URL
     const zernioUrl = `https://zernio.com/api${subPath}${url.search}`
 

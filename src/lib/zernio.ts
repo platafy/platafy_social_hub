@@ -251,6 +251,7 @@ export const zernio = {
   // Profiles
   getProfiles: (integrationId?: string) => zernioApiCall('/v1/profiles', { integrationId }),
   createProfile: (name: string, integrationId?: string) => zernioApiCall('/v1/profiles', { method: 'POST', body: { name }, integrationId }),
+  deleteProfile: (profileId: string, integrationId?: string) => zernioApiCall(`/v1/profiles/${profileId}`, { method: 'DELETE', integrationId }),
 
   // Accounts
   getAccounts: (profileId: string, integrationId?: string) => zernioApiCall(`/v1/accounts?profileId=${profileId}`, { integrationId }),

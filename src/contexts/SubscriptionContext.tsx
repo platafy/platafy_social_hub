@@ -47,6 +47,7 @@ interface SubscriptionContextType {
   getLimit: (limitKey: string, defaultValue?: number) => number;
   canUseAiAutomations: boolean;
   canUseWhiteLabel: boolean;
+  maxProfiles: number;
   maxChannels: number;
   maxPosts: number;
   maxContacts: number;
@@ -64,13 +65,13 @@ export const DEFAULT_PLANS: Plan[] = [
     currency: "BRL",
     interval: "monthly",
     features: [
-      "Até 3 redes sociais conectadas",
+      "1 Perfil Ativo (até 2 contas sociais)",
       "50 posts agendados por mês",
       "Inbox e DMs unificados",
       "Gestão de até 100 contatos",
       "Suporte por e-mail"
     ],
-    limits: { max_channels: 3, max_posts: 50, max_contacts: 100, ai_automations: false },
+    limits: { max_profiles: 1, max_channels: 2, max_posts: 50, max_contacts: 100, ai_automations: false },
     is_popular: false
   },
   {
@@ -82,14 +83,14 @@ export const DEFAULT_PLANS: Plan[] = [
     currency: "BRL",
     interval: "monthly",
     features: [
-      "Até 10 redes sociais conectadas",
+      "Até 5 Perfis Ativos (até 10 contas sociais)",
       "Publicações e agendamentos ilimitados",
       "Automação com IA (Gemini, OpenAI, Claude)",
       "Moderação inteligente de comentários",
       "CRM completo de contatos",
       "Suporte prioritário"
     ],
-    limits: { max_channels: 10, max_posts: -1, max_contacts: 1000, ai_automations: true },
+    limits: { max_profiles: 5, max_channels: 10, max_posts: -1, max_contacts: 1000, ai_automations: true },
     is_popular: true
   },
   {
@@ -101,14 +102,14 @@ export const DEFAULT_PLANS: Plan[] = [
     currency: "BRL",
     interval: "monthly",
     features: [
-      "Redes sociais ilimitadas",
+      "Perfis Ativos ilimitados",
       "Múltiplas contas Zernio integradas",
       "Automação com IA com todas as LLMs",
       "Personalização White Label completa",
       "Acesso prioritário a novos recursos",
       "Gerente de conta dedicado"
     ],
-    limits: { max_channels: -1, max_posts: -1, max_contacts: -1, ai_automations: true, white_label: true },
+    limits: { max_profiles: -1, max_channels: -1, max_posts: -1, max_contacts: -1, ai_automations: true, white_label: true },
     is_popular: false
   }
 ];
@@ -244,7 +245,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const canUseAiAutomations = hasFeature("ai_automations") || (subscription?.plan?.limits?.ai_automations === true);
   const canUseWhiteLabel = hasFeature("white_label") || (subscription?.plan?.limits?.white_label === true);
-  const maxChannels = getLimit("max_channels", 3);
+  const rawMaxProfiles = getLimit("max_profiles", -999);
+  const maxChannels = getLimit("max_channels", 2);
+  const maxProfiles = rawMaxProfiles !== -999
+    ? rawMaxProfiles
+    : (maxChannels === -1 ? -1 : Math.max(1, Math.ceil(maxChannels / 2)));
   const maxPosts = getLimit("max_posts", 50);
   const maxContacts = getLimit("max_contacts", 100);
 
@@ -294,6 +299,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         getLimit,
         canUseAiAutomations,
         canUseWhiteLabel,
+        maxProfiles,
         maxChannels,
         maxPosts,
         maxContacts,

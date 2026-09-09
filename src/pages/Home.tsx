@@ -5,13 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import {
   Share2, MessageSquare, BarChart3, Settings,
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
   DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
-  Heart, MessageCircle, Bookmark, ShieldCheck
+  Heart, MessageCircle, Bookmark, ShieldCheck, Lock
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -109,6 +110,7 @@ type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "s
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
   const { branding } = useBranding();
+  const { maxProfiles } = useSubscription();
   const tutorialVideoUrl = branding.tutorial_video_url || "/criar-conta.mp4";
   const [activeTab, setActiveTab] = useState<TabType>(() => (sessionStorage.getItem("zernio_active_tab") as TabType) || "dashboard");
   const [config, setConfig] = useState<{ connected: boolean; profileId: string | null; hasKey: boolean; integrations?: any[] }>({
@@ -133,6 +135,10 @@ export default function Home() {
   // States for general data
   const [profiles, setProfiles] = useState<any[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
+  const [isNewProfileModalOpen, setIsNewProfileModalOpen] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
+  const [newProfileIntegrationId, setNewProfileIntegrationId] = useState("");
+  const [creatingProfile, setCreatingProfile] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -1957,10 +1963,20 @@ export default function Home() {
         {/* Perfil Ativo Selector Card */}
         {config.connected && profiles.length > 0 && (
           <div className="pt-2 border-t border-border/50">
-            <div className="p-3 rounded-2xl border border-border/60 bg-card/60 space-y-2">
-              <Label className="text-[11px] font-bold text-muted-foreground block uppercase tracking-wider">
-                Perfil Ativo
-              </Label>
+            <div className="p-3 rounded-2xl border border-border/60 bg-card/60 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-primary" /> Perfil Ativo
+                </Label>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  maxProfiles !== -1 && profiles.length >= maxProfiles
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                    : "bg-primary/10 text-primary border border-primary/20"
+                }`}>
+                  {profiles.length}/{maxProfiles === -1 ? '∞' : maxProfiles}
+                </span>
+              </div>
+
               <select
                 value={selectedProfileId}
                 onChange={async (e) => {
@@ -1979,12 +1995,30 @@ export default function Home() {
                 }}
                 className="w-full text-xs font-medium bg-background border border-border/80 rounded-xl p-2 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
               >
-                {profiles.map((p, index) => (
-                  <option key={p._id || p.id || `profile-${index}`} value={p._id || p.id || index}>
-                    {p.name} ({p.integrationName})
-                  </option>
-                ))}
+                {profiles.map((p, index) => {
+                  const pId = p._id || p.id;
+                  const pAccounts = accounts.filter(a => a.profileId === pId);
+                  const countLabel = pAccounts.length > 0 ? ` (${pAccounts.length}/2 contas)` : '';
+                  return (
+                    <option key={pId || `profile-${index}`} value={pId || index}>
+                      {p.name}{countLabel}
+                    </option>
+                  );
+                })}
               </select>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-[10px] text-muted-foreground">
+                  Até 2 contas por perfil
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsNewProfileModalOpen(true)}
+                  className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-bold transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> Novo Perfil
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2327,21 +2361,35 @@ export default function Home() {
               <>
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Canais Conectados */}
+                  {/* Perfis Ativos */}
                   <div className="card-hover p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs shadow-xs flex flex-col justify-between">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Canais Ativos</p>
-                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">{accounts.length}</h3>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Perfis Ativos</p>
+                        <h3 className="text-3xl font-extrabold tracking-tight mt-1">
+                          {profiles.length}
+                          <span className="text-lg font-normal text-muted-foreground ml-1.5">
+                            / {maxProfiles === -1 ? '∞' : maxProfiles}
+                          </span>
+                        </h3>
                       </div>
                       <div className="p-2.5 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                        <Share2 className="h-5 w-5" />
+                        <Users className="h-5 w-5" />
                       </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-3 flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                      Contas conectadas ao perfil
-                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span>{accounts.length} {accounts.length === 1 ? 'conta conectada' : 'contas conectadas'}</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsNewProfileModalOpen(true)}
+                        className="text-[11px] text-primary hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" /> Adicionar
+                      </button>
+                    </div>
                   </div>
 
                   {/* Agendados */}
@@ -3048,14 +3096,30 @@ export default function Home() {
           <div className="space-y-6">
             <Card>
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <CardTitle className="text-xl">Canais Sociais Conectados</CardTitle>
-                    <CardDescription>Canais sociais integrados disponíveis para disparo e monitoramento.</CardDescription>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      <Share2 className="w-5 h-5 text-primary" />
+                      Canais Sociais Conectados
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Visualizando contas do perfil selecionado. Cada Perfil Ativo permite conectar até <strong>2 contas gratuitas</strong> pelo Zernio.
+                    </CardDescription>
                   </div>
-                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-secondary/80 text-foreground border border-border/60">
-                    {accounts.length} {accounts.length === 1 ? 'canal ativo' : 'canais ativos'}
-                  </span>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Franquia: {profiles.length} / {maxProfiles === -1 ? '∞' : maxProfiles} Perfis Ativos
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsNewProfileModalOpen(true)}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Novo Perfil
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -4825,6 +4889,170 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Modal Adicionar Novo Perfil / Bloqueio de Limite */}
+      {isNewProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+            {maxProfiles !== -1 && profiles.length >= maxProfiles ? (
+              /* Estado: Limite Atingido */
+              <div className="space-y-4 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-500/30">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-black text-foreground">Limite de Perfis Atingido</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Seu plano atual permite até <strong>{maxProfiles} {maxProfiles === 1 ? 'Perfil Ativo' : 'Perfis Ativos'}</strong> ({maxProfiles * 2} contas sociais no total). Você já atingiu a franquia contratada de <strong>{profiles.length}/{maxProfiles}</strong> perfis.
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-muted/40 border border-border text-xs text-muted-foreground text-left space-y-1.5">
+                  <p className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" /> Quer expandir seu alcance?
+                  </p>
+                  <p>
+                    Faça upgrade para um plano superior (como o Plano <strong>Pro</strong> com até 5 perfis ou <strong>Agência</strong> com perfis ilimitados) para criar novos perfis e conectar mais contas.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2.5 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsNewProfileModalOpen(false)}
+                    className="flex-1 rounded-xl"
+                  >
+                    Fechar
+                  </Button>
+                  <Link to="/planos" className="flex-1" onClick={() => setIsNewProfileModalOpen(false)}>
+                    <Button className="w-full rounded-xl bg-primary font-bold shadow-xs">
+                      <Sparkles className="w-4 h-4 mr-1.5" /> Fazer Upgrade
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              /* Estado: Formulário de Criação */
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newProfileName.trim()) {
+                  toast.error("Informe o nome do perfil.");
+                  return;
+                }
+                if (maxProfiles !== -1 && profiles.length >= maxProfiles) {
+                  toast.error(`Limite de Perfis Ativos atingido (${profiles.length}/${maxProfiles}). Faça upgrade do plano.`);
+                  return;
+                }
+                setCreatingProfile(true);
+                try {
+                  const integrationToUse = newProfileIntegrationId || config.integrations?.[0]?.id;
+                  const created = await zernio.createProfile(newProfileName.trim(), integrationToUse);
+                  const newId = created?._id || created?.id;
+                  toast.success("Perfil Ativo criado com sucesso!");
+                  setNewProfileName("");
+                  setIsNewProfileModalOpen(false);
+                  clearZernioCache();
+                  if (newId) {
+                    setSelectedProfileId(newId);
+                  }
+                  if (config.integrations && config.integrations.length > 0) {
+                    await fetchMultiAccountData(config.integrations);
+                  }
+                } catch (err: any) {
+                  console.error("Erro ao criar perfil:", err);
+                  toast.error(err.message || "Erro ao criar perfil no Zernio.");
+                } finally {
+                  setCreatingProfile(false);
+                }
+              }} className="space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">Adicionar Novo Perfil</h3>
+                      <p className="text-[11px] text-muted-foreground">
+                        {profiles.length} de {maxProfiles === -1 ? '∞' : maxProfiles} perfis utilizados
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewProfileModalOpen(false)}
+                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-xs text-violet-800 dark:text-violet-300 space-y-1">
+                  <p className="font-semibold">💡 Regra do Plano</p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Cada Perfil Ativo permite conectar até <strong>2 contas gratuitas</strong> de redes sociais através do Zernio.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-foreground">Nome do Perfil</Label>
+                  <Input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="Ex: Marca Principal, Cliente XPTO..."
+                    value={newProfileName}
+                    onChange={(e) => setNewProfileName(e.target.value)}
+                    className="rounded-xl h-10 text-sm"
+                  />
+                </div>
+
+                {config.integrations && config.integrations.length > 1 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">Conta Zernio</Label>
+                    <select
+                      value={newProfileIntegrationId}
+                      onChange={(e) => setNewProfileIntegrationId(e.target.value)}
+                      className="w-full text-xs rounded-xl border border-border bg-background p-2.5 outline-none"
+                    >
+                      {config.integrations.map((integ) => (
+                        <option key={integ.id} value={integ.id}>
+                          {integ.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsNewProfileModalOpen(false)}
+                    className="rounded-xl"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creatingProfile || !newProfileName.trim()}
+                    className="rounded-xl bg-primary font-bold shadow-xs cursor-pointer"
+                  >
+                    {creatingProfile ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        Criar Perfil
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {confirmModal && (
         <ConfirmModal

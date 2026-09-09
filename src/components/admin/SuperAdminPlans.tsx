@@ -21,7 +21,8 @@ import {
   Sliders,
   DollarSign,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Users
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -35,6 +36,7 @@ interface PlanFormState {
   interval: string;
   features: string[];
   limits: {
+    max_profiles?: number;
     max_channels?: number;
     max_posts?: number;
     max_contacts?: number;
@@ -587,12 +589,46 @@ export function SuperAdminPlans() {
                       <span className="text-[10px] text-muted-foreground">(-1 = ilimitado)</span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block mb-1">Canais</span>
+                    {/* Perfis Ativos (Unidade Principal do Limite Comercial) */}
+                    <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-violet-700 dark:text-violet-300 flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5" /> Perfis Ativos
+                        </Label>
+                        <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400">
+                          {plan.limits?.max_profiles === -1
+                            ? "Ilimitados"
+                            : `${plan.limits?.max_profiles ?? (plan.slug === 'starter' ? 1 : plan.slug === 'pro' ? 5 : 1)} perfis × 2 = até ${(plan.limits?.max_profiles ?? (plan.slug === 'starter' ? 1 : plan.slug === 'pro' ? 5 : 1)) * 2} contas`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <Input
                           type="number"
-                          value={plan.limits?.max_channels !== undefined ? plan.limits.max_channels : 3}
+                          value={plan.limits?.max_profiles !== undefined ? plan.limits.max_profiles : (plan.limits?.max_channels === -1 ? -1 : Math.max(1, Math.ceil((plan.limits?.max_channels || 2) / 2)))}
+                          onChange={e => {
+                            const val = parseInt(e.target.value);
+                            const numProfiles = isNaN(val) ? 0 : val;
+                            handleUpdateLimit(plan.id, "max_profiles", numProfiles);
+                            const derivedChannels = numProfiles === -1 ? -1 : numProfiles * 2;
+                            handleUpdateLimit(plan.id, "max_channels", derivedChannels);
+                          }}
+                          className="h-8 text-xs font-bold bg-background border-violet-500/40 focus-visible:ring-violet-500"
+                        />
+                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                          {plan.limits?.max_profiles === -1 ? "Ilimitados" : "Perfis Ativos"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        Cada Perfil Ativo permite até 2 contas gratuitas conectadas através do Zernio.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block mb-1">Contas Sociais</span>
+                        <Input
+                          type="number"
+                          value={plan.limits?.max_channels !== undefined ? plan.limits.max_channels : ((plan.limits?.max_profiles ?? 1) === -1 ? -1 : (plan.limits?.max_profiles ?? 1) * 2)}
                           onChange={e =>
                             handleUpdateLimit(plan.id, "max_channels", parseInt(e.target.value) || 0)
                           }

@@ -34,6 +34,16 @@ export interface ClientRecord {
   phone?: string | null;
   companyName: string;
   createdAt: string;
+  activeProfilesCount?: number;
+  maxProfiles?: number;
+  channelsCount?: number;
+  clientProfiles?: Array<{
+    id: string;
+    name: string;
+    account_name?: string;
+    profileId?: string;
+    channelsCount: number;
+  }>;
   subscription?: {
     id: string;
     planId?: string | null;
@@ -148,6 +158,13 @@ export function SuperAdminClients() {
 
       if (subsError) throw subsError;
 
+      // Buscar integrações e canais Zernio
+      const { data: integrationsData } = await (supabase.from("zernio_integrations" as any) as any)
+        .select("id, tenant_id, name, account_name, zernio_profile_id");
+
+      const { data: channelsData } = await (supabase.from("zernio_integration_channels" as any) as any)
+        .select("id, tenant_id, integration_id, platform, name, username");
+
       // Mapear assinaturas por tenant_id
       const subsMap = new Map<string, any>();
       (subsData || []).forEach((s: any) => {
@@ -157,6 +174,28 @@ export function SuperAdminClients() {
       // Montar lista de clientes
       const combined: ClientRecord[] = (profilesData || []).map((p: any) => {
         const sub = subsMap.get(p.tenant_id);
+        const clientInteg = (integrationsData || []).filter((i: any) => i.tenant_id === p.tenant_id);
+        const clientChans = (channelsData || []).filter((c: any) => c.tenant_id === p.tenant_id);
+
+        const planLimits = sub?.plan?.limits || {};
+        const maxProfiles = planLimits.max_profiles !== undefined
+          ? planLimits.max_profiles
+          : (planLimits.max_channels === -1 ? -1 : Math.max(1, Math.ceil((planLimits.max_channels || 2) / 2)));
+
+        const activeProfilesCount = clientInteg.length;
+        const channelsCount = clientChans.length;
+
+        const clientProfiles = clientInteg.map((integ: any) => {
+          const chanCount = clientChans.filter((c: any) => c.integration_id === integ.id).length;
+          return {
+            id: integ.id,
+            name: integ.name || integ.account_name || 'Perfil Principal',
+            account_name: integ.account_name,
+            profileId: integ.zernio_profile_id,
+            channelsCount: chanCount,
+          };
+        });
+
         return {
           userId: p.id,
           tenantId: p.tenant_id,
@@ -165,6 +204,10 @@ export function SuperAdminClients() {
           phone: p.phone,
           companyName: p.tenant?.name || "Sem nome",
           createdAt: p.created_at,
+          activeProfilesCount,
+          maxProfiles,
+          channelsCount,
+          clientProfiles,
           subscription: sub ? {
             id: sub.id,
             planId: sub.plan_id,
@@ -929,9 +972,14 @@ export function SuperAdminClients() {
                         </span>
                       </td>
 
-                      {/* Plano */}
+                      {/* Plano & Perfis */}
                       <td className="py-3.5 px-4">
-                        {renderPlanBadge(sub?.plan?.slug, sub?.plan?.name)}
+                        <div className="space-y-1">
+                          {renderPlanBadge(sub?.plan?.slug, sub?.plan?.name)}
+                          <span className="text-[11px] text-muted-foreground block font-medium">
+                            Perfis: <strong className="text-foreground">{client.activeProfilesCount ?? 0}</strong> / {client.maxProfiles === -1 ? '∞' : (client.maxProfiles ?? 1)}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Cobrança */}
@@ -1631,6 +1679,54 @@ export function SuperAdminClients() {
                           {formatDate(selectedClient.subscription?.lastPaymentDate)}
                         </span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Uso de Perfis Ativos & Contas Zernio */}
+                  <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-4 h-4 text-primary" />
+                        Franquia de Perfis Ativos & Contas
+                      </h4>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20">
+                        {selectedClient.activeProfilesCount ?? 0} / {selectedClient.maxProfiles === -1 ? '∞' : (selectedClient.maxProfiles ?? 1)} Perfis
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Cada Perfil Ativo permite conectar até 2 contas gratuitas através do Zernio. Limite contratado: <strong>{selectedClient.maxProfiles === -1 ? 'Ilimitado' : `${selectedClient.maxProfiles} perfis`}</strong> (potencial de até {selectedClient.maxProfiles === -1 ? 'ilimitadas' : (selectedClient.maxProfiles ?? 1) * 2} contas).
+                    </p>
+
+                    {/* Lista de Perfis do Cliente */}
+                    <div className="space-y-2 pt-1">
+                      {selectedClient.clientProfiles && selectedClient.clientProfiles.length > 0 ? (
+                        selectedClient.clientProfiles.map((prof: any, pIdx: number) => (
+                          <div key={prof.id || pIdx} className="p-3 bg-card border border-border rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center font-bold text-xs border border-violet-500/20">
+                                {pIdx + 1}
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-foreground">{prof.name || `Perfil ${pIdx + 1}`}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {prof.account_name && prof.account_name !== prof.name ? `${prof.account_name} • ` : ''}
+                                  {prof.profileId ? `Zernio ID: ${prof.profileId.slice(0, 8)}...` : 'ID padrão'}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-secondary text-foreground border border-border">
+                              {prof.channelsCount || 0} / 2 contas
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 bg-card/60 border border-dashed border-border rounded-xl text-center">
+                          <p className="text-xs text-muted-foreground italic">
+                            Nenhum perfil ativo ou conta Zernio conectada ainda por este cliente.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { 
   Check, Sparkles, ArrowLeft, ShieldCheck, Zap, CreditCard, 
-  CheckCircle2, Clock
+  CheckCircle2, Clock, Users
 } from "lucide-react";
 
 export default function Planos() {
@@ -162,6 +162,25 @@ export default function Planos() {
                       <span className="text-xs text-muted-foreground font-medium">/mês</span>
                     </div>
 
+                    {/* Destaque Perfis Ativos */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-xs">
+                      <div className="p-2 rounded-xl bg-violet-500/20 text-violet-600 dark:text-violet-400 shrink-0">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-violet-700 dark:text-violet-300 block">
+                          {plan.limits?.max_profiles === -1
+                            ? "Perfis Ativos Ilimitados"
+                            : `${plan.limits?.max_profiles ?? (plan.slug === 'starter' ? 1 : plan.slug === 'pro' ? 5 : 1)} ${plan.limits?.max_profiles === 1 ? 'Perfil Ativo' : 'Perfis Ativos'}`}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block">
+                          {plan.limits?.max_profiles === -1
+                            ? "Conexões ilimitadas no Zernio"
+                            : `Até ${(plan.limits?.max_profiles ?? (plan.slug === 'starter' ? 1 : plan.slug === 'pro' ? 5 : 1)) * 2} contas no Zernio (2 por perfil)`}
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Lista de Recursos */}
                     <div className="space-y-3 pt-4 border-t border-border/40">
                       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -237,6 +256,13 @@ export default function Planos() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="rounded-xl border border-border p-4 space-y-1.5 bg-card">
+            <h4 className="font-bold text-foreground">Como funcionam os Perfis Ativos?</h4>
+            <p className="text-muted-foreground">
+              Cada <strong>Perfil Ativo</strong> representa uma marca, empresa ou cliente que você administra. Através da integração com o Zernio, cada perfil ativo permite conectar até <strong>2 contas de redes sociais gratuitas</strong> (por exemplo, 1 perfil = até 2 contas; 5 perfis = até 10 contas).
+            </p>
+          </div>
+
           <div className="rounded-xl border border-border p-4 space-y-1.5 bg-card">
             <h4 className="font-bold text-foreground">Como funciona a cobrança?</h4>
             <p className="text-muted-foreground">
