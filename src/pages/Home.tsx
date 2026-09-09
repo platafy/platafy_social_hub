@@ -1139,7 +1139,7 @@ export default function Home() {
 
   const fetchConfig = async (showToast = false) => {
     try {
-      const res = await zernio.getConfig();
+      const res = await zernio.getConfig(true);
       setConfig(res);
       if (res.connected && res.integrations && res.integrations.length > 0) {
         if (showToast) {
@@ -1147,7 +1147,7 @@ export default function Home() {
         }
 
         let targetId = selectedIntegrationIdForAiKeys;
-        if (!targetId) {
+        if (!targetId || !res.integrations.some((i: any) => i.id === targetId)) {
           targetId = res.integrations[0].id;
           setSelectedIntegrationIdForAiKeys(targetId);
         }

@@ -13,8 +13,8 @@ interface CacheEntry {
 const memCache = new Map<string, CacheEntry>();
 
 // TTL per route prefix (ms). Mutating routes (POST/PUT/DELETE) bypass cache.
+// Note: /config is intentionally NEVER cached so workspace status is always live and immediate.
 const TTL_MAP: Array<[string, number]> = [
-  ["/config", 5 * 60_000],   // 5 min
   ["/v1/profiles", 5 * 60_000],   // 5 min
   ["/v1/accounts", 3 * 60_000],    // 3 min
   ["/v1/posts", 2 * 60_000],   // 2 min
@@ -232,11 +232,15 @@ export async function zernioApiCall(path: string, options: ZernioRequestOptions 
 
 export const zernio = {
   // Config
-  getConfig: () => zernioApiCall('/config', { method: 'GET' }),
-  saveConfig: (apiKey: string, profileId?: string, id?: string, name?: string) =>
-    zernioApiCall('/config', { method: 'POST', body: { apiKey, profileId, id, name } }),
-  deleteConfig: (id: string) =>
-    zernioApiCall('/config', { method: 'DELETE', body: { id } }),
+  getConfig: (skipCache = true) => zernioApiCall('/config', { method: 'GET', skipCache }),
+  saveConfig: async (apiKey: string, profileId?: string, id?: string, name?: string) => {
+    clearZernioCache();
+    return zernioApiCall('/config', { method: 'POST', body: { apiKey, profileId, id, name } });
+  },
+  deleteConfig: async (id: string) => {
+    clearZernioCache();
+    return zernioApiCall('/config', { method: 'DELETE', body: { id } });
+  },
   getWebhooksSettings: (integrationId?: string) =>
     zernioApiCall('/v1/webhooks/settings', { method: 'GET', integrationId }),
   createWebhook: (body: any, integrationId?: string) =>

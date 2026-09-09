@@ -109,16 +109,68 @@ serve(async (req) => {
             })
           }
 
-          const accountLabel = name || body.account_name || 'Conta Principal'
-          const { error: insertError } = await supabaseClient
-            .from('zernio_integrations')
-            .insert({
-              tenant_id: tenantId,
-              api_key: finalApiKey,
-              zernio_profile_id: profileId || null,
-              name: accountLabel,
-              account_name: accountLabel
+          let resolvedProfileId = profileId || null
+
+          // Pre-validate key with Zernio API and resolve default profile
+          try {
+            const valRes = await fetch('https://zernio.com/api/v1/profiles', {
+              headers: { Authorization: `Bearer ${finalApiKey}` }
             })
+            if (valRes.status === 401) {
+              return new Response(JSON.stringify({ error: 'Chave de API inválida ou não autorizada pela Zernio. Verifique se a chave foi copiada corretamente de https://zernio.com/dashboard/api-keys' }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              })
+            }
+            if (valRes.ok) {
+              const pData = await valRes.json().catch(() => null)
+              if (pData?.profiles && pData.profiles.length > 0) {
+                if (!resolvedProfileId) {
+                  resolvedProfileId = pData.profiles[0]._id || pData.profiles[0].id || null
+                }
+              }
+            }
+          } catch (vErr) {
+            console.warn('Could not pre-validate key with Zernio:', vErr)
+          }
+
+          const accountLabel = name || body.account_name || 'Conta Principal'
+
+          // Check if an integration already exists for this tenant
+          const { data: existingList } = await supabaseClient
+            .from('zernio_integrations')
+            .select('id, name, account_name, api_key')
+            .eq('tenant_id', tenantId)
+
+          const match = existingList?.find((e: any) => 
+            e.api_key === finalApiKey || e.name === accountLabel || e.account_name === accountLabel
+          )
+
+          let insertError = null
+          if (match) {
+            const { error } = await supabaseClient
+              .from('zernio_integrations')
+              .update({
+                api_key: finalApiKey,
+                zernio_profile_id: resolvedProfileId,
+                name: accountLabel,
+                account_name: accountLabel,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', match.id)
+            insertError = error
+          } else {
+            const { error } = await supabaseClient
+              .from('zernio_integrations')
+              .insert({
+                tenant_id: tenantId,
+                api_key: finalApiKey,
+                zernio_profile_id: resolvedProfileId,
+                name: accountLabel,
+                account_name: accountLabel
+              })
+            insertError = error
+          }
 
           if (insertError) {
             return new Response(JSON.stringify({ error: 'Failed to save configuration: ' + insertError.message }), {
@@ -147,6 +199,13 @@ serve(async (req) => {
         }
 
         const list = integrations || []
+        const noCacheHeaders = {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
         return new Response(JSON.stringify({
           connected: list.length > 0,
           profileId: list[0]?.zernio_profile_id || null,
@@ -159,7 +218,7 @@ serve(async (req) => {
           }))
         }), {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: noCacheHeaders,
         })
       } else if (req.method === 'DELETE') {
         const body = await req.json().catch(() => ({}))
