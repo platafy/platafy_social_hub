@@ -357,6 +357,65 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 6. Operação: save-plan
+    if (action === 'save-plan') {
+      const { id, name, description, price, features, limits, is_popular, is_active } = body;
+
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'ID do plano é obrigatório' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: currentPlan } = await supabaseAdmin
+        .from('plans')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      const updatePayload: Record<string, any> = {};
+      if (price !== undefined) updatePayload.price = Number(price);
+      if (name !== undefined) updatePayload.name = name;
+      if (description !== undefined) updatePayload.description = description;
+      if (features !== undefined) updatePayload.features = features;
+      if (limits !== undefined) updatePayload.limits = limits;
+      if (is_popular !== undefined) updatePayload.is_popular = Boolean(is_popular);
+      if (is_active !== undefined) updatePayload.is_active = Boolean(is_active);
+
+      const { data: updatedPlan, error: updateError } = await supabaseAdmin
+        .from('plans')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        return new Response(JSON.stringify({ error: updateError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Registrar auditoria
+      await supabaseAdmin.from('admin_audit_logs').insert({
+        admin_email: SUPER_ADMIN_EMAIL,
+        action: 'plan_pricing_updated',
+        details: {
+          plan_id: id,
+          plan_name: updatedPlan.name,
+          old_price: currentPlan?.price,
+          new_price: updatedPlan.price,
+          updated_fields: Object.keys(updatePayload),
+        },
+      });
+
+      return new Response(JSON.stringify({ success: true, plan: updatedPlan }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: `Ação desconhecida: ${action}` }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

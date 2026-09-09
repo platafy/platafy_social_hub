@@ -42,6 +42,7 @@ interface SubscriptionContextType {
   checkoutLoading: boolean;
   createCheckout: (planId: string) => Promise<string | null>;
   refreshSubscription: () => Promise<void>;
+  refreshPlans: () => Promise<void>;
   hasFeature: (featureName: string) => boolean;
   getLimit: (limitKey: string, defaultValue?: number) => number;
   canUseAiAutomations: boolean;
@@ -288,6 +289,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         checkoutLoading,
         createCheckout,
         refreshSubscription: fetchSubscription,
+        refreshPlans: fetchPlans,
         hasFeature,
         getLimit,
         canUseAiAutomations,

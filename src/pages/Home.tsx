@@ -27,6 +27,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { WhiteLabelSettings } from "@/components/settings/WhiteLabelSettings";
 import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
 import { SuperAdminClients } from "@/components/admin/SuperAdminClients";
+import { SuperAdminPlans } from "@/components/admin/SuperAdminPlans";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 function getEmbedVideoInfo(url?: string | null) {
@@ -103,7 +104,7 @@ const getConversationLastMessage = (conv: any): string => {
   return "Nenhuma mensagem";
 };
 
-type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel";
+type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel" | "saas_plans";
 
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
@@ -1759,6 +1760,17 @@ export default function Home() {
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab("saas_plans")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === "saas_plans"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+              }`}
+            >
+              <CreditCard className="h-3.5 w-3.5" /> Planos (SaaS)
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab("saas_whitelabel")}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                 activeTab === "saas_whitelabel"
@@ -1888,6 +1900,17 @@ export default function Home() {
               onClick={() => setActiveTab("clients")}
             >
               <Users className="h-4 w-4 text-primary" /> Clientes & Licenças
+            </Button>
+            <Button
+              variant={activeTab === "saas_plans" ? "secondary" : "ghost"}
+              className={`justify-start gap-3 w-full font-medium transition-all ${
+                activeTab === "saas_plans"
+                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab("saas_plans")}
+            >
+              <CreditCard className="h-4 w-4 text-primary" /> Planos & Preços
             </Button>
             <Button
               variant={activeTab === "saas_whitelabel" ? "secondary" : "ghost"}
@@ -4718,6 +4741,15 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setActiveTab("saas_plans")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Planos & Preços
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setActiveTab("saas_mercadopago")}
                   className="text-xs border-border hover:bg-muted text-foreground"
                 >
@@ -4764,6 +4796,15 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setActiveTab("saas_plans")}
+                  className="text-xs border-border hover:bg-muted text-foreground"
+                >
+                  <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                  Planos & Preços
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setActiveTab("saas_whitelabel")}
                   className="text-xs border-border hover:bg-muted text-foreground"
                 >
@@ -4774,6 +4815,13 @@ export default function Home() {
             </div>
 
             <MercadoPagoSettings />
+          </div>
+        )}
+
+        {/* Super Admin Planos & Preços Tab */}
+        {activeTab === "saas_plans" && isSuperAdmin && (
+          <div className="space-y-6 animate-fade-in">
+            <SuperAdminPlans />
           </div>
         )}
       </div>
