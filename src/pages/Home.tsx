@@ -2267,13 +2267,13 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { id: 'seekai', label: 'SeekAI', hint: 'sk-...', link: 'https://platafy.com/seekai', model: 'Gateway Multi-modelo (OpenAI Compatible)', referral: true, promo: 'Ganhe U$ 200,00 em créditos diversas LLM' },
+                    { id: 'seekai', label: 'SeekAI', hint: 'sk-...', link: 'https://platafy.com/seekai', model: 'Ganhe U$ 200,00 em créditos diversas LLM', referral: true },
                     { id: 'gemini', label: 'Google Gemini', hint: 'AIza...', link: 'https://aistudio.google.com/app/apikey', model: 'Gemini 2.0 Flash' },
                     { id: 'openai', label: 'OpenAI', hint: 'sk-...', link: 'https://platform.openai.com/api-keys', model: 'GPT-4o Mini' },
                     { id: 'anthropic', label: 'Anthropic (Claude)', hint: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys', model: 'Claude 3 Haiku' },
                     { id: 'mistral', label: 'Mistral AI', hint: '32+ chars', link: 'https://console.mistral.ai/api-keys/', model: 'Mistral Small' },
                     { id: 'groq', label: 'Groq Cloud', hint: 'gsk_...', link: 'https://console.groq.com/keys', model: 'Llama 3.1 8B' },
-                  ].map(({ id, label, hint, link, model, referral, promo }: any) => {
+                  ].map(({ id, label, hint, link, model, referral }: any) => {
                     const saved = aiKeys[id as keyof typeof aiKeys] === '••••••••';
                     const val = aiKeys[id as keyof typeof aiKeys];
                     return (
@@ -2283,8 +2283,9 @@ export default function Home() {
                             <p className="text-sm font-semibold">{label}</p>
                             {saved && <span className="text-[10px] bg-emerald-500/15 text-emerald-600 px-1.5 py-0.5 rounded font-medium">✓ Conectado</span>}
                           </div>
-                          {promo && <p className="text-[10px] text-emerald-500 font-medium mb-0.5">🎁 {promo}</p>}
-                          <p className="text-[10px] text-muted-foreground">{model} · Chave começa com {hint}</p>
+                          <p className={`text-[11px] ${referral ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                            {model} · Chave começa com {hint}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {!saved ? (
