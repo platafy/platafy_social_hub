@@ -168,6 +168,7 @@ export default function Home() {
   const [activeChat, setActiveChat] = useState<any>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [replyText, setReplyText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   // Comments interactive states
@@ -1616,16 +1617,37 @@ export default function Home() {
   };
 
   const handleSendMessage = async () => {
-    if (!replyText || !activeChat) return;
+    if (!replyText.trim() || !activeChat || sendingMessage) return;
     const convId = activeChat._id || activeChat.id;
+
+    // Detecta se a última mensagem do contato tem mais de 24 horas
+    const lastIncomingMsg = chatMessages
+      ? [...chatMessages].reverse().find((m: any) => m.direction !== 'outgoing' && m.direction !== 'outbound')
+      : null;
+    const lastIncomingTime = lastIncomingMsg?.createdAt
+      ? new Date(lastIncomingMsg.createdAt).getTime()
+      : (activeChat?.lastMessageAt ? new Date(activeChat.lastMessageAt).getTime() : null);
+
+    const hoursSinceLastMessage = lastIncomingTime ? (Date.now() - lastIncomingTime) / (1000 * 60 * 60) : 0;
+    const isPast24Hours = hoursSinceLastMessage > 24;
+
+    setSendingMessage(true);
     try {
-      await zernio.sendMessage(convId, activeChat.accountId, replyText, activeChat.integrationId);
-      toast.success("Mensagem enviada!");
+      await zernio.sendMessage(
+        convId,
+        activeChat.accountId,
+        replyText.trim(),
+        activeChat.integrationId,
+        { forceHumanAgent: isPast24Hours }
+      );
+      toast.success(isPast24Hours ? "Mensagem enviada (via Agente Humano Meta)!" : "Mensagem enviada!");
       setReplyText("");
       // Refresh chat
       handleSelectChat(activeChat);
     } catch (err: any) {
       toast.error("Erro ao enviar mensagem: " + err.message);
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -3598,7 +3620,19 @@ export default function Home() {
             {/* Content Window */}
             <div className="md:col-span-2 flex flex-col h-full min-h-0 bg-card/40">
               {inboxType === "dms" ? (
-                activeChat ? (
+                activeChat ? (() => {
+                  const lastIncomingMsg = chatMessages
+                    ? [...chatMessages].reverse().find((m: any) => m.direction !== 'outgoing' && m.direction !== 'outbound')
+                    : null;
+                  const lastIncomingTime = lastIncomingMsg?.createdAt
+                    ? new Date(lastIncomingMsg.createdAt).getTime()
+                    : (activeChat?.lastMessageAt ? new Date(activeChat.lastMessageAt).getTime() : null);
+
+                  const hoursSinceLastMessage = lastIncomingTime ? (Date.now() - lastIncomingTime) / (1000 * 60 * 60) : 0;
+                  const isPast24Hours = hoursSinceLastMessage > 24;
+                  const isPast7Days = hoursSinceLastMessage > (24 * 7);
+
+                  return (
                   <>
                     {/* Active Header */}
                     <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-card/80">
@@ -3608,9 +3642,17 @@ export default function Home() {
                         </div>
                         <div>
                           <h4 className="font-bold text-sm text-foreground">{activeChat.participantName || activeChat.contactName || "Contato"}</h4>
-                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Conversa Ativa
+                          <p className={`text-[11px] flex items-center gap-1 font-medium ${
+                            isPast7Days
+                              ? "text-rose-600 dark:text-rose-400"
+                              : isPast24Hours
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-emerald-600 dark:text-emerald-400"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              isPast7Days ? "bg-rose-500" : isPast24Hours ? "bg-amber-500" : "bg-emerald-500 animate-pulse"
+                            }`}></span>
+                            {isPast7Days ? "Janela Meta Expirada (>7d)" : isPast24Hours ? "Janela 24h Expirada (Agente Humano Ativo)" : "Conversa Ativa"}
                           </p>
                         </div>
                       </div>
@@ -3635,20 +3677,39 @@ export default function Home() {
                       })}
                     </div>
 
+                    {/* Meta 24h Window Notice */}
+                    {isPast7Days ? (
+                      <div className="px-4 py-2.5 bg-rose-500/10 border-t border-rose-500/20 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>
+                          <strong>Janela de 7 dias da Meta expirada:</strong> Pelas regras oficiais do Instagram/Facebook, o contato precisa enviar uma nova mensagem para que novas respostas sejam autorizadas.
+                        </span>
+                      </div>
+                    ) : isPast24Hours ? (
+                      <div className="px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        <span>
+                          <strong>Janela padrão de 24h expirada:</strong> Sua mensagem será enviada com a tag <strong>Agente Humano</strong> (permitido pela Meta em até 7 dias da última mensagem do contato).
+                        </span>
+                      </div>
+                    ) : null}
+
                     {/* Send Input */}
                     <div className="p-4 border-t border-border/40 flex gap-2">
                       <Input
-                        placeholder="Escreva sua resposta..."
+                        placeholder={isPast7Days ? "Janela de 7 dias expirada pela Meta. Aguardando nova mensagem..." : "Escreva sua resposta..."}
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        onKeyDown={(e) => e.key === 'Enter' && !sendingMessage && handleSendMessage()}
+                        disabled={sendingMessage}
                       />
-                      <Button onClick={handleSendMessage} size="icon">
-                        <Send className="h-4 w-4" />
+                      <Button onClick={handleSendMessage} size="icon" disabled={sendingMessage || !replyText.trim()}>
+                        {sendingMessage ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
                     </div>
                   </>
-                ) : (
+                  );
+                })() : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                     <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 mb-3">
                       <MessageSquare className="h-8 w-8 text-muted-foreground" />

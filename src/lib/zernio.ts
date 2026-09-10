@@ -283,12 +283,81 @@ export const zernio = {
     zernioApiCall(`/v1/inbox/conversations?profileId=${profileId}&contactId=${contactId}&limit=1`, { integrationId, skipCache: true }),
   getMessages: (conversationId: string, accountId: string, integrationId?: string) =>
     zernioApiCall(`/v1/inbox/conversations/${conversationId}/messages?accountId=${accountId}`, { integrationId }),
-  sendMessage: (conversationId: string, accountId: string, text: string, integrationId?: string) =>
-    zernioApiCall(`/v1/inbox/conversations/${conversationId}/messages`, {
-      method: 'POST',
-      body: { accountId, message: text },
-      integrationId
-    }),
+  sendMessage: async (
+    conversationId: string,
+    accountId: string,
+    text: string,
+    integrationId?: string,
+    options?: { messageTag?: string; messagingType?: string; forceHumanAgent?: boolean }
+  ) => {
+    const isHumanAgent = options?.forceHumanAgent || !!options?.messageTag;
+    const initialBody: any = {
+      accountId,
+      message: text,
+      content: text,
+    };
+
+    if (isHumanAgent) {
+      initialBody.messagingType = options?.messagingType || 'MESSAGE_TAG';
+      initialBody.messageTag = options?.messageTag || 'HUMAN_AGENT';
+    }
+
+    try {
+      return await zernioApiCall(`/v1/inbox/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        body: initialBody,
+        integrationId
+      });
+    } catch (err: any) {
+      const rawMsg = err.message || '';
+      const lower = rawMsg.toLowerCase();
+
+      // Se falhou por estar fora da janela permitida (24h) e ainda não usamos a tag HUMAN_AGENT:
+      const isWindowError =
+        lower.includes('outside of allowed window') ||
+        lower.includes('allowed window') ||
+        lower.includes('messaging window') ||
+        lower.includes('24-hour') ||
+        lower.includes('24 hour');
+
+      if (!isHumanAgent && isWindowError) {
+        console.warn('Mensagem fora da janela de 24h. Reenviando automaticamente com tag HUMAN_AGENT (janela estendida de 7 dias da Meta)...');
+        try {
+          return await zernioApiCall(`/v1/inbox/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            body: {
+              accountId,
+              message: text,
+              content: text,
+              messagingType: 'MESSAGE_TAG',
+              messageTag: 'HUMAN_AGENT'
+            },
+            integrationId
+          });
+        } catch (retryErr: any) {
+          const retryLower = (retryErr.message || '').toLowerCase();
+          if (
+            retryLower.includes('outside of allowed window') ||
+            retryLower.includes('allowed window') ||
+            retryLower.includes('messaging window')
+          ) {
+            throw new Error(
+              'A janela de atendimento da Meta expirou (mais de 7 dias sem interação do contato). Pelas políticas oficiais do Instagram/Facebook, o cliente precisa enviar uma nova mensagem para reabrir o canal.'
+            );
+          }
+          throw retryErr;
+        }
+      }
+
+      if (isHumanAgent && isWindowError) {
+        throw new Error(
+          'A janela de atendimento da Meta expirou (mais de 7 dias sem interação do contato). Pelas políticas oficiais do Instagram/Facebook, o cliente precisa enviar uma nova mensagem para reabrir o canal.'
+        );
+      }
+
+      throw err;
+    }
+  },
 
   // Inbox - Comments
   getComments: (profileId: string, integrationId?: string) => zernioApiCall(`/v1/inbox/comments?profileId=${profileId}`, { integrationId }),
