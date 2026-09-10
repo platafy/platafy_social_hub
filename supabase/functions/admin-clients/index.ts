@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
 
     // 5. Operação: delete-client
     if (action === 'delete-client') {
-      const { user_id, tenant_id, reason = '' } = body;
+      const { user_id, tenant_id, reason = '', email } = body;
 
       if (!user_id && !tenant_id) {
         return new Response(JSON.stringify({ error: 'user_id ou tenant_id é necessário' }), {
@@ -335,20 +335,48 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Registrar auditoria antes da deleção
-      await supabaseAdmin.from('admin_audit_logs').insert({
-        admin_email: SUPER_ADMIN_EMAIL,
-        target_tenant_id: tenant_id || null,
-        target_user_id: user_id || null,
-        action: 'client_deleted',
-        details: { reason },
-      });
-
-      if (user_id) {
-        await supabaseAdmin.auth.admin.deleteUser(user_id);
+      // Proteção de segurança: nunca permitir excluir a conta do Super Admin
+      if (
+        (user_id && user_id === user.id) ||
+        (email && email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase())
+      ) {
+        return new Response(JSON.stringify({ error: 'A conta principal do Super Admin não pode ser excluída.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
+
+      // Registrar auditoria antes da deleção
+      try {
+        await supabaseAdmin.from('admin_audit_logs').insert({
+          admin_email: SUPER_ADMIN_EMAIL,
+          target_tenant_id: tenant_id || null,
+          target_user_id: user_id || null,
+          action: 'client_deleted',
+          details: { reason, email },
+        });
+      } catch (auditErr) {
+        console.warn('Aviso ao registrar auditoria de exclusão:', auditErr);
+      }
+
+      // 1. Deletar o tenant (as chaves estrangeiras com CASCADE removem assinaturas, canais, integrações e posts)
       if (tenant_id) {
-        await supabaseAdmin.from('tenants').delete().eq('id', tenant_id);
+        const { error: delTenantError } = await supabaseAdmin.from('tenants').delete().eq('id', tenant_id);
+        if (delTenantError) {
+          console.error('Erro ao deletar tenant:', delTenantError);
+        }
+      }
+
+      // 2. Deletar o usuário do auth (o perfil vinculado ao auth.users é removido por CASCADE)
+      if (user_id) {
+        try {
+          const { error: delUserError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+          if (delUserError) {
+            console.warn('Aviso ao deletar usuário auth:', delUserError);
+          }
+        } catch (delErr: any) {
+          console.warn('Exceção ao deletar auth user:', delErr?.message || delErr);
+        }
       }
 
       return new Response(JSON.stringify({ success: true }), {

@@ -88,6 +88,7 @@ export function SuperAdminClients() {
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Cliente selecionado para ação
@@ -609,25 +610,36 @@ export function SuperAdminClients() {
   const handleDeleteClient = async () => {
     if (!selectedClient) return;
 
+    if (selectedClient.email?.toLowerCase().trim() === "suporte@platafy.com") {
+      toast.error("Não é permitido excluir a conta principal do Super Admin.");
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    setDeletingClient(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-clients", {
         body: {
           action: "delete-client",
           user_id: selectedClient.userId,
           tenant_id: selectedClient.tenantId,
+          email: selectedClient.email,
           reason: "Exclusão manual definitiva pelo Super Admin",
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message || "Erro de conexão com o servidor");
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Cliente e registros associados foram excluídos.");
+      toast.success(`Cliente ${selectedClient.fullName || selectedClient.email} foi excluído permanentemente.`);
       setIsDeleteModalOpen(false);
-      loadData(true);
+      setSelectedClient(null);
+      await loadData(true);
     } catch (err: any) {
       console.error("Erro ao excluir cliente:", err);
       toast.error("Falha ao excluir cliente: " + err.message);
+    } finally {
+      setDeletingClient(false);
     }
   };
 
@@ -924,6 +936,7 @@ export function SuperAdminClients() {
                 paginatedClients.map((client) => {
                   const sub = client.subscription;
                   const isSuspended = sub?.status === "suspended";
+                  const isSuperAdminClient = client.email?.toLowerCase().trim() === "suporte@platafy.com";
 
                   return (
                     <tr
@@ -1075,6 +1088,25 @@ export function SuperAdminClients() {
                             }`}
                           >
                             {isSuspended ? <Play className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                          </Button>
+
+                          {/* Botão de Excluir Cliente */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={isSuperAdminClient ? "Conta Principal do Super Admin (não pode ser excluída)" : "Excluir Cliente Definitivamente"}
+                            disabled={isSuperAdminClient}
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className={`h-8 w-8 p-0 ${
+                              isSuperAdminClient
+                                ? "text-muted-foreground/30 cursor-not-allowed"
+                                : "text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                            }`}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -1863,11 +1895,15 @@ export function SuperAdminClients() {
       <ConfirmModal
         open={isDeleteModalOpen}
         title="Excluir Cliente Definitivamente"
-        message={`ATENÇÃO: Deseja realmente excluir permanentemente o cliente ${selectedClient?.fullName} (${selectedClient?.email}) e todos os seus dados, canais, mensagens e configurações? Esta ação é irreversível.`}
-        confirmLabel="Excluir Definitivamente"
+        message={`ATENÇÃO: Deseja realmente excluir permanentemente o cliente "${selectedClient?.fullName || selectedClient?.companyName}" (${selectedClient?.email}) e todos os seus dados, canais, integrações e configurações? Esta ação é irreversível e apagará o workspace por completo.`}
+        confirmLabel={deletingClient ? "Excluindo..." : "Excluir Definitivamente"}
         variant="danger"
         onConfirm={handleDeleteClient}
-        onCancel={() => setIsDeleteModalOpen(false)}
+        onCancel={() => {
+          if (!deletingClient) {
+            setIsDeleteModalOpen(false);
+          }
+        }}
       />
     </div>
   );
