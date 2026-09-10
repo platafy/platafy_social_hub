@@ -35,7 +35,7 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   login_headline: "Transforme Conversas em\nVendas com Agentes de IA",
   login_subheadline: "A PLATAFY reúne Agentes de Inteligência Artificial, automação de atendimento, CRM, WhatsApp e múltiplos canais para acelerar o crescimento da sua empresa 24 horas por dia.",
   login_stats_enabled: false,
-  login_logo_position: "left",
+  login_logo_position: "right",
   login_bg_image_url: "/login-bg.webp",
   login_bg_layout: "split-left",
   footer_text: "© 2026 PLATAFY. Todos os direitos reservados.",

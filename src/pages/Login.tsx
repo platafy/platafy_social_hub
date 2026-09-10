@@ -31,6 +31,9 @@ export default function Login() {
   const bgLayout = branding.login_bg_layout || "split-left";
   const statsEnabled = !!branding.login_stats_enabled;
   const footerText = branding.footer_text || `© ${new Date().getFullYear()} ${branding.app_name || "PLATAFY"}. Todos os direitos reservados.`;
+  const logoPosition = branding.login_logo_position || "right";
+  const isLogoOnLeft = logoPosition === "left";
+  const isLogoOnRight = logoPosition !== "left";
 
   const headlineParts = headline.split("\n");
   const isSplitRight = bgLayout === "split-right";
@@ -193,10 +196,14 @@ export default function Login() {
           {/* Subtle gradient overlay to enhance text contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/30 pointer-events-none" />
 
-          {/* Top Logo */}
-          <div className="relative z-10">
-            <BrandLogo size="lg" />
-          </div>
+          {/* Top Logo se estiver configurado na esquerda */}
+          {isLogoOnLeft ? (
+            <div className="relative z-10">
+              <BrandLogo size="lg" />
+            </div>
+          ) : (
+            <div className="relative z-10 h-10" />
+          )}
 
           {/* Bottom Content */}
           <div className="relative z-10 space-y-4 max-w-lg mt-auto">
@@ -239,14 +246,14 @@ export default function Login() {
       <div
         className={`w-full ${
           isFullscreen ? "max-w-md mx-auto" : "lg:w-1/2"
-        } min-h-screen flex items-center justify-center p-6 sm:p-10 relative z-10`}
+        } min-h-screen flex flex-col justify-between p-6 sm:p-10 xl:p-14 relative z-10`}
       >
-        <div className="w-full max-w-[420px] space-y-7">
-          {/* Logo no mobile */}
-          <div className="lg:hidden flex items-center justify-center mb-4">
-            <BrandLogo size="lg" />
-          </div>
+        {/* Top Logo na coluna da direita */}
+        <div className={`w-full flex items-center justify-center lg:justify-start ${isLogoOnRight ? "flex" : "lg:hidden"}`}>
+          <BrandLogo size="lg" />
+        </div>
 
+        <div className="w-full max-w-[420px] mx-auto my-auto py-6 space-y-7">
           {/* Cabeçalho do formulário */}
           <div className="space-y-1.5 text-center lg:text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -391,6 +398,9 @@ export default function Login() {
             </div>
           </form>
         </div>
+
+        {/* Espaçador inferior para equilibrar o justify-between */}
+        <div className="hidden lg:block h-10" />
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export function WhiteLabelSettings() {
   );
   const [loginStatsEnabled, setLoginStatsEnabled] = useState(!!branding.login_stats_enabled);
   const [loginLogoPosition, setLoginLogoPosition] = useState<"left" | "right" | "top">(
-    branding.login_logo_position || "left"
+    branding.login_logo_position || "right"
   );
   const [loginBgImageUrl, setLoginBgImageUrl] = useState(
     branding.login_bg_image_url || "/login-bg.webp"
@@ -124,7 +124,7 @@ export function WhiteLabelSettings() {
         "A PLATAFY reúne Agentes de Inteligência Artificial, automação de atendimento, CRM, WhatsApp e múltiplos canais para acelerar o crescimento da sua empresa 24 horas por dia."
     );
     setLoginStatsEnabled(!!branding.login_stats_enabled);
-    setLoginLogoPosition(branding.login_logo_position || "left");
+    setLoginLogoPosition(branding.login_logo_position || "right");
     setLoginBgImageUrl(branding.login_bg_image_url || "/login-bg.webp");
     setLoginBgLayout(branding.login_bg_layout || "split-left");
   }, [branding]);
@@ -224,7 +224,7 @@ export function WhiteLabelSettings() {
     setLoginHeadline(DEFAULT_BRANDING.login_headline || "Transforme Conversas em\nVendas com Agentes de IA");
     setLoginSubheadline(DEFAULT_BRANDING.login_subheadline || "");
     setLoginStatsEnabled(false);
-    setLoginLogoPosition("left");
+    setLoginLogoPosition("right");
     setLoginBgImageUrl("/login-bg.webp");
     setLoginBgLayout("split-left");
     applyBrandColors(DEFAULT_BRANDING.primary_color_light, DEFAULT_BRANDING.primary_color_dark);
