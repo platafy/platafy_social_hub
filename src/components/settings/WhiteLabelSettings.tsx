@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { 
   Sparkles, Upload, RotateCcw, Check, Palette, Eye, Image as ImageIcon,
   Sun, Moon, LogIn, Type, LayoutGrid, Save, Loader2, RefreshCw,
-  Share2, MessageCircle, ExternalLink, CheckCheck
+  Share2, MessageCircle, ExternalLink, CheckCheck, ShieldCheck
 } from "lucide-react";
 
 const PRESET_LIGHT_COLORS = [
@@ -37,6 +37,80 @@ const PRESET_DARK_COLORS = [
   { name: "Azul Celeste", hex: "#38bdf8" },
   { name: "Âmbar Solar", hex: "#f59e0b" },
 ];
+
+function SecureUrlField({
+  value,
+  onChange,
+  placeholder = "Ou cole a URL direta de uma imagem externa",
+  label,
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  label?: string;
+  className?: string;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const isSupabase = Boolean(value && value.includes(".supabase.co"));
+
+  if (isSupabase && !showInput) {
+    return (
+      <div className={`space-y-1.5 ${className || ""}`}>
+        {label && <Label className="text-xs">{label}</Label>}
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs shadow-xs">
+          <div className="flex items-center gap-2 text-emerald-400 font-medium">
+            <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span>Imagem protegida no Storage da Plataforma</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowInput(true)}
+            className="text-[11px] text-muted-foreground hover:text-foreground underline ml-2 transition-colors cursor-pointer"
+          >
+            Editar link externo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`space-y-1.5 ${className || ""}`}>
+      {label && (
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">{label}</Label>
+          {isSupabase && (
+            <button
+              type="button"
+              onClick={() => setShowInput(false)}
+              className="text-[10px] text-emerald-400 hover:underline cursor-pointer"
+            >
+              Ocultar URL segura
+            </button>
+          )}
+        </div>
+      )}
+      <div className="relative">
+        <Input
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 text-xs font-mono pr-16"
+        />
+        {isSupabase && !label && (
+          <button
+            type="button"
+            onClick={() => setShowInput(false)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-emerald-400 hover:underline bg-card/90 px-1.5 py-0.5 rounded border border-emerald-500/20 cursor-pointer"
+          >
+            Ocultar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function WhiteLabelSettings() {
   const { branding, updateBranding, resetToDefault, applyBrandColors } = useBranding();
@@ -463,11 +537,10 @@ export function WhiteLabelSettings() {
                       )}
                     </div>
 
-                    <Input
-                      placeholder="Ou cole a URL direta da imagem"
+                    <SecureUrlField
+                      placeholder="Ou cole a URL direta de uma imagem externa"
                       value={loginBgImageUrl}
-                      onChange={(e) => setLoginBgImageUrl(e.target.value)}
-                      className="h-8 text-xs font-mono"
+                      onChange={setLoginBgImageUrl}
                     />
 
                     <p className="text-[11px] text-muted-foreground">
@@ -599,15 +672,12 @@ export function WhiteLabelSettings() {
                     )}
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs">URL direta da imagem (Open Graph / WhatsApp):</Label>
-                    <Input
-                      placeholder="https://..."
-                      value={ogImageUrl}
-                      onChange={(e) => setOgImageUrl(e.target.value)}
-                      className="h-8 text-xs font-mono"
-                    />
-                  </div>
+                  <SecureUrlField
+                    label="URL da imagem (Open Graph / WhatsApp):"
+                    placeholder="Ou cole a URL direta de uma imagem externa (https://...)"
+                    value={ogImageUrl}
+                    onChange={setOgImageUrl}
+                  />
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     💡 <strong>Dica de alta conversão:</strong> Recomendamos imagens de <strong>1200x630 pixels</strong> (proporção 1.91:1) em formato JPG ou PNG de até 1MB para renderização perfeita no WhatsApp Desktop, iOS e Android.
@@ -698,11 +768,10 @@ export function WhiteLabelSettings() {
                         <Upload className="h-3.5 w-3.5" />
                         {uploadingLogo ? "Enviando..." : "Upload Logo"}
                       </Button>
-                      <Input
+                      <SecureUrlField
                         placeholder="Ou URL direta do logo"
                         value={logoUrl}
-                        onChange={(e) => setLogoUrl(e.target.value)}
-                        className="h-8 text-xs"
+                        onChange={setLogoUrl}
                       />
                     </div>
                   </div>
@@ -740,11 +809,10 @@ export function WhiteLabelSettings() {
                         <Upload className="h-3.5 w-3.5" />
                         {uploadingFavicon ? "Enviando..." : "Upload Favicon"}
                       </Button>
-                      <Input
+                      <SecureUrlField
                         placeholder="Ou URL direta do favicon"
                         value={faviconUrl}
-                        onChange={(e) => setFaviconUrl(e.target.value)}
-                        className="h-8 text-xs"
+                        onChange={setFaviconUrl}
                       />
                     </div>
                   </div>
@@ -1177,11 +1245,10 @@ export function WhiteLabelSettings() {
                     )}
                   </div>
 
-                  <Input
+                  <SecureUrlField
                     placeholder="Ou cole a URL direta da imagem (ex: https://...)"
                     value={ogImageUrl}
-                    onChange={(e) => setOgImageUrl(e.target.value)}
-                    className="h-8 text-xs font-mono"
+                    onChange={setOgImageUrl}
                   />
                 </div>
               </CardContent>
