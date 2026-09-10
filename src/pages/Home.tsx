@@ -1795,7 +1795,7 @@ export default function Home() {
                   : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
               }`}
             >
-              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago (SaaS)
+              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago
             </button>
           </>
         )}
@@ -1938,7 +1938,7 @@ export default function Home() {
               }`}
               onClick={() => setActiveTab("saas_mercadopago")}
             >
-              <CreditCard className="h-4 w-4 text-primary" /> Mercado Pago (SaaS)
+              <CreditCard className="h-4 w-4 text-primary" /> Mercado Pago
             </Button>
           </div>
         )}
@@ -4818,7 +4818,7 @@ export default function Home() {
                   className="text-xs border-border hover:bg-muted text-foreground"
                 >
                   <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                  Mercado Pago (SaaS)
+                  Mercado Pago
                 </Button>
               </div>
             </div>
@@ -4835,7 +4835,7 @@ export default function Home() {
                 <div className="flex items-center gap-2.5 mb-1.5">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                     <CreditCard className="w-6 h-6 text-primary" />
-                    Configuração do Mercado Pago (SaaS)
+                    Configuração do Mercado Pago
                   </h1>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/25">
                     <ShieldCheck className="w-3.5 h-3.5" /> Super Admin

@@ -132,7 +132,7 @@ export function MercadoPagoSettings() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
-              <CardTitle className="text-xl">Configuração do Mercado Pago (SaaS)</CardTitle>
+              <CardTitle className="text-xl">Configuração do Mercado Pago</CardTitle>
             </div>
             <CardDescription>
               Configure sua conta do Mercado Pago para receber pagamentos e assinaturas de clientes.
