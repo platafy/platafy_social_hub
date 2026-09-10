@@ -21,6 +21,10 @@ export interface BrandingSettings {
   login_bg_image_url?: string;
   login_bg_layout?: "split-left" | "split-right" | "fullscreen";
   footer_text?: string;
+  // SEO & Compartilhamento Social (WhatsApp / Open Graph)
+  og_image_url?: string;
+  og_title?: string;
+  og_description?: string;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
@@ -39,6 +43,9 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   login_bg_image_url: "/login-bg.webp",
   login_bg_layout: "split-left",
   footer_text: "© 2026 PLATAFY. Todos os direitos reservados.",
+  og_image_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg",
+  og_title: "PLATAFY Social Hub - Gestão Inteligente de Redes Sociais",
+  og_description: "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.",
 };
 
 const STORAGE_KEY = "platafy_branding_settings";
@@ -79,6 +86,9 @@ export function sanitizeBranding(raw: any): BrandingSettings {
     login_bg_image_url: raw.login_bg_image_url !== undefined ? raw.login_bg_image_url : DEFAULT_BRANDING.login_bg_image_url,
     login_bg_layout: raw.login_bg_layout || DEFAULT_BRANDING.login_bg_layout,
     footer_text: raw.footer_text || DEFAULT_BRANDING.footer_text,
+    og_image_url: raw.og_image_url !== undefined ? raw.og_image_url : DEFAULT_BRANDING.og_image_url,
+    og_title: raw.og_title !== undefined ? raw.og_title : DEFAULT_BRANDING.og_title,
+    og_description: raw.og_description !== undefined ? raw.og_description : DEFAULT_BRANDING.og_description,
   };
 }
 
@@ -138,6 +148,35 @@ export function applyBrandingToDOM(settings: BrandingSettings) {
       document.getElementsByTagName("head")[0].appendChild(link);
     }
     link.href = settings.favicon_url;
+  }
+
+  // 5. Atualizar metatags Open Graph & Twitter dinamicamente no DOM
+  const ogImg = settings.og_image_url || DEFAULT_BRANDING.og_image_url;
+  const ogTit = settings.og_title || (settings.app_name ? `${settings.app_name} ${settings.app_tagline || ""}`.trim() : DEFAULT_BRANDING.og_title);
+  const ogDesc = settings.og_description || DEFAULT_BRANDING.og_description;
+
+  const updateOrCreateMeta = (selector: string, attr: "property" | "name", key: string, content: string) => {
+    let meta = document.querySelector<HTMLMetaElement>(selector);
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute(attr, key);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", content);
+  };
+
+  if (ogImg) {
+    updateOrCreateMeta("meta[property='og:image']", "property", "og:image", ogImg);
+    updateOrCreateMeta("meta[property='og:image:secure_url']", "property", "og:image:secure_url", ogImg);
+    updateOrCreateMeta("meta[name='twitter:image']", "name", "twitter:image", ogImg);
+  }
+  if (ogTit) {
+    updateOrCreateMeta("meta[property='og:title']", "property", "og:title", ogTit);
+    updateOrCreateMeta("meta[name='twitter:title']", "name", "twitter:title", ogTit);
+  }
+  if (ogDesc) {
+    updateOrCreateMeta("meta[property='og:description']", "property", "og:description", ogDesc);
+    updateOrCreateMeta("meta[name='twitter:description']", "name", "twitter:description", ogDesc);
   }
 }
 

@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { 
   Sparkles, Upload, RotateCcw, Check, Palette, Eye, Image as ImageIcon,
-  Sun, Moon, Globe, LogIn, Type, LayoutGrid, Save, Loader2, RefreshCw
+  Sun, Moon, LogIn, Type, LayoutGrid, Save, Loader2, RefreshCw,
+  Share2, MessageCircle, ExternalLink, CheckCheck
 } from "lucide-react";
 
 const PRESET_LIGHT_COLORS = [
@@ -86,15 +87,23 @@ export function WhiteLabelSettings() {
   const [poweredByText, setPoweredByText] = useState("Powered by PLATAFY");
   const [hideWidgetBranding, setHideWidgetBranding] = useState(false);
 
-  // SEO
-  const [seoTitle, setSeoTitle] = useState(`${branding.app_name || "PLATAFY"} - Gestão Inteligente`);
-  const [seoDescription, setSeoDescription] = useState("Gestão inteligente de redes sociais, automação com IA e múltiplos canais.");
+  // SEO & Compartilhamento Social (WhatsApp / Open Graph)
+  const [ogImageUrl, setOgImageUrl] = useState(
+    branding.og_image_url || "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg"
+  );
+  const [ogTitle, setOgTitle] = useState(
+    branding.og_title || `${branding.app_name || "PLATAFY"} - Gestão Inteligente`
+  );
+  const [ogDescription, setOgDescription] = useState(
+    branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial."
+  );
 
   // Estados de upload e salvamento
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadingLoginBg, setUploadingLoginBg] = useState(false);
+  const [uploadingOgImage, setUploadingOgImage] = useState(false);
 
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">(() => {
     if (typeof document !== "undefined" && document.documentElement.classList.contains("dark")) {
@@ -106,6 +115,7 @@ export function WhiteLabelSettings() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
   const loginBgFileInputRef = useRef<HTMLInputElement>(null);
+  const ogImageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar com branding global quando houver mudanças externas
   useEffect(() => {
@@ -127,10 +137,13 @@ export function WhiteLabelSettings() {
     setLoginLogoPosition(branding.login_logo_position || "right");
     setLoginBgImageUrl(branding.login_bg_image_url || "/login-bg.webp");
     setLoginBgLayout(branding.login_bg_layout || "split-left");
+    setOgImageUrl(branding.og_image_url || "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg");
+    setOgTitle(branding.og_title || `${branding.app_name || "PLATAFY"} - Gestão Inteligente`);
+    setOgDescription(branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
   }, [branding]);
 
   // Upload no Supabase Storage
-  async function handleFileUpload(file: File, type: "logo" | "favicon" | "login_bg") {
+  async function handleFileUpload(file: File, type: "logo" | "favicon" | "login_bg" | "og_image") {
     if (!file) return;
 
     if (file.size > 6 * 1024 * 1024) {
@@ -140,7 +153,8 @@ export function WhiteLabelSettings() {
 
     if (type === "logo") setUploadingLogo(true);
     else if (type === "favicon") setUploadingFavicon(true);
-    else setUploadingLoginBg(true);
+    else if (type === "login_bg") setUploadingLoginBg(true);
+    else setUploadingOgImage(true);
 
     try {
       const ext = file.name.split(".").pop() || "png";
@@ -163,9 +177,12 @@ export function WhiteLabelSettings() {
       } else if (type === "favicon") {
         setFaviconUrl(url);
         toast.success("Favicon enviado com sucesso!");
-      } else {
+      } else if (type === "login_bg") {
         setLoginBgImageUrl(url);
         toast.success("Imagem de fundo do login enviada com sucesso!");
+      } else {
+        setOgImageUrl(url);
+        toast.success("Imagem em destaque (Open Graph/WhatsApp) enviada com sucesso!");
       }
     } catch (err: any) {
       console.error("Erro no upload:", err);
@@ -173,7 +190,8 @@ export function WhiteLabelSettings() {
     } finally {
       if (type === "logo") setUploadingLogo(false);
       else if (type === "favicon") setUploadingFavicon(false);
-      else setUploadingLoginBg(false);
+      else if (type === "login_bg") setUploadingLoginBg(false);
+      else setUploadingOgImage(false);
     }
   }
 
@@ -205,6 +223,9 @@ export function WhiteLabelSettings() {
       login_logo_position: loginLogoPosition,
       login_bg_image_url: loginBgImageUrl.trim(),
       login_bg_layout: loginBgLayout,
+      og_image_url: ogImageUrl.trim(),
+      og_title: ogTitle.trim(),
+      og_description: ogDescription.trim(),
     });
     setSaving(false);
   }
@@ -223,10 +244,13 @@ export function WhiteLabelSettings() {
     setFooterText(DEFAULT_BRANDING.footer_text || "© 2026 PLATAFY. Todos os direitos reservados.");
     setLoginHeadline(DEFAULT_BRANDING.login_headline || "Transforme Conversas em\nVendas com Agentes de IA");
     setLoginSubheadline(DEFAULT_BRANDING.login_subheadline || "");
-    setLoginStatsEnabled(false);
-    setLoginLogoPosition("right");
-    setLoginBgImageUrl("/login-bg.webp");
-    setLoginBgLayout("split-left");
+    setLoginStatsEnabled(!!DEFAULT_BRANDING.login_stats_enabled);
+    setLoginLogoPosition(DEFAULT_BRANDING.login_logo_position || "right");
+    setLoginBgImageUrl(DEFAULT_BRANDING.login_bg_image_url || "/login-bg.webp");
+    setLoginBgLayout(DEFAULT_BRANDING.login_bg_layout || "split-left");
+    setOgImageUrl(DEFAULT_BRANDING.og_image_url || "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg");
+    setOgTitle(DEFAULT_BRANDING.og_title || `${DEFAULT_BRANDING.app_name || "PLATAFY"} - Gestão Inteligente`);
+    setOgDescription(DEFAULT_BRANDING.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
     applyBrandColors(DEFAULT_BRANDING.primary_color_light, DEFAULT_BRANDING.primary_color_dark);
     setSaving(false);
   }
@@ -289,8 +313,8 @@ export function WhiteLabelSettings() {
             Widgets
           </TabsTrigger>
           <TabsTrigger value="seo" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            SEO
+            <Share2 className="h-4 w-4" />
+            SEO & Redes
           </TabsTrigger>
         </TabsList>
 
@@ -470,6 +494,112 @@ export function WhiteLabelSettings() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Card Adicional na Aba Login: Imagem de Destaque no Compartilhamento Social */}
+          <Card className="border border-border/70 bg-card shadow-sm mt-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Share2 className="w-5 h-5 text-amber-500" />
+                    Imagem de Destaque ao Compartilhar Links de Login e Cadastro (WhatsApp / Redes)
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    Exibida em destaque quando qualquer link de <strong>Login</strong> (<code>#/login</code>) ou <strong>Cadastro</strong> (<code>#/cadastro</code>) for enviado no WhatsApp, Facebook, LinkedIn ou Twitter/X.
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveTab("seo")}
+                  className="text-xs gap-1 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                >
+                  Ver Simulador WhatsApp
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                {/* Visual Preview */}
+                <div className="relative w-full h-44 rounded-xl overflow-hidden border border-border/80 bg-slate-950 flex items-center justify-center group shadow-inner">
+                  {ogImageUrl ? (
+                    <img
+                      src={ogImageUrl}
+                      alt="Open Graph preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-muted-foreground text-xs p-4 text-center">
+                      <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                      <span>Nenhuma imagem de destaque configurada</span>
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-[10px] font-mono text-amber-400 border border-amber-500/30">
+                    Proporção 16:9 (1200x630)
+                  </div>
+                </div>
+
+                {/* Controles de Ação e Upload */}
+                <div className="md:col-span-2 space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => ogImageFileInputRef.current?.click()}
+                      disabled={uploadingOgImage}
+                      className="text-xs gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/30"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-primary" />
+                      {uploadingOgImage ? "Enviando imagem..." : "Upload Nova Imagem em Destaque"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOgImageUrl("https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg")}
+                      className="text-xs gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+                      Usar Imagem Oficial Platafy
+                    </Button>
+
+                    {ogImageUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOgImageUrl("")}
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">URL direta da imagem (Open Graph / WhatsApp):</Label>
+                    <Input
+                      placeholder="https://..."
+                      value={ogImageUrl}
+                      onChange={(e) => setOgImageUrl(e.target.value)}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    💡 <strong>Dica de alta conversão:</strong> Recomendamos imagens de <strong>1200x630 pixels</strong> (proporção 1.91:1) em formato JPG ou PNG de até 1MB para renderização perfeita no WhatsApp Desktop, iOS e Android.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ========================================================= */}
@@ -911,39 +1041,220 @@ export function WhiteLabelSettings() {
         </TabsContent>
 
         {/* ========================================================= */}
-        {/* ABA: SEO                                                  */}
+        {/* ABA: SEO & COMPARTILHAMENTO SOCIAL (WHATSAPP / OPEN GRAPH)*/}
         {/* ========================================================= */}
         <TabsContent value="seo" className="space-y-6">
-          <Card className="border border-border/70 bg-card shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold">Otimização para Buscadores (SEO)</CardTitle>
-              <CardDescription>
-                Meta tags exibidas quando o link da plataforma é compartilhado em redes sociais e WhatsApp.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 max-w-xl">
-              <div className="space-y-2">
-                <Label htmlFor="seoTitle">Título da Página (Browser Title)</Label>
-                <Input
-                  id="seoTitle"
-                  value={seoTitle}
-                  onChange={(e) => setSeoTitle(e.target.value)}
-                  placeholder="PLATAFY Social Hub - Gestão Inteligente"
-                />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Coluna Esquerda: Edição de Metadados e Imagem */}
+            <Card className="border border-border/70 bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-amber-500" />
+                  Meta Tags & Compartilhamento Social
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Configure o título, descrição e imagem em destaque exibidos quando os links da plataforma (como <code>/#/login</code> e <code>/#/cadastro</code>) forem compartilhados no WhatsApp e redes sociais.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="ogTitle">Título de Compartilhamento (og:title)</Label>
+                  <Input
+                    id="ogTitle"
+                    value={ogTitle}
+                    onChange={(e) => setOgTitle(e.target.value)}
+                    placeholder="PLATAFY Social Hub - Gestão Inteligente de Redes Sociais"
+                    className="h-10 text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Exibido em negrito no card de preview do WhatsApp.</p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="seoDescription">Meta Descrição</Label>
-                <Textarea
-                  id="seoDescription"
-                  value={seoDescription}
-                  onChange={(e) => setSeoDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Descrição da plataforma para previews..."
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="ogDescription">Descrição de Compartilhamento (og:description)</Label>
+                  <Textarea
+                    id="ogDescription"
+                    value={ogDescription}
+                    onChange={(e) => setOgDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Automatize comentários, DMs e publicações multicanais com Inteligência Artificial..."
+                    className="text-sm leading-relaxed"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Subtítulo explicativo que acompanha o card social.</p>
+                </div>
+
+                {/* Imagem em Destaque */}
+                <div className="space-y-3 pt-3 border-t border-border/50">
+                  <Label className="text-sm font-semibold flex items-center justify-between">
+                    <span>Imagem em Destaque (WhatsApp / Open Graph)</span>
+                    <span className="text-[11px] font-mono text-amber-400">1200x630 (16:9)</span>
+                  </Label>
+
+                  {/* Visual Preview */}
+                  <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border/80 bg-slate-950 flex items-center justify-center group">
+                    {ogImageUrl ? (
+                      <img
+                        src={ogImageUrl}
+                        alt="Open Graph Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg";
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center text-muted-foreground text-xs p-4 text-center">
+                        <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                        <span>Nenhuma imagem em destaque configurada</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input de Arquivo Oculto */}
+                  <input
+                    type="file"
+                    ref={ogImageFileInputRef}
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, "og_image");
+                    }}
+                  />
+
+                  {/* Botões de Ação */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => ogImageFileInputRef.current?.click()}
+                      disabled={uploadingOgImage}
+                      className="text-xs gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/30"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-primary" />
+                      {uploadingOgImage ? "Enviando..." : "Upload Nova Imagem"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setOgImageUrl("https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg")}
+                      className="text-xs gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 text-amber-500" />
+                      Usar Imagem Oficial Platafy
+                    </Button>
+
+                    {ogImageUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOgImageUrl("")}
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        Remover
+                      </Button>
+                    )}
+                  </div>
+
+                  <Input
+                    placeholder="Ou cole a URL direta da imagem (ex: https://...)"
+                    value={ogImageUrl}
+                    onChange={(e) => setOgImageUrl(e.target.value)}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coluna Direita: Simulador Realista de Compartilhamento no WhatsApp */}
+            <div className="space-y-4">
+              <Card className="border border-border/70 bg-card shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5 text-emerald-500" />
+                      Simulador em Tempo Real: WhatsApp
+                    </CardTitle>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Visualização Fiel
+                    </span>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Veja exatamente como seu cliente visualizará o card ao receber o link no WhatsApp.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* Container estilo tela do WhatsApp */}
+                  <div className="p-4 rounded-2xl bg-[#0b141a] border border-emerald-950/40 relative overflow-hidden shadow-2xl">
+                    {/* Background pattern sutil do WhatsApp */}
+                    <div className="absolute inset-0 opacity-5 pointer-events-none bg-[radial-gradient(#25d366_1px,transparent_1px)] [background-size:16px_16px]" />
+
+                    {/* Balão de mensagem enviada (verde escuro do WhatsApp) */}
+                    <div className="relative max-w-[340px] sm:max-w-[380px] ml-auto rounded-2xl rounded-tr-none bg-[#005c4b] text-white p-2 text-xs shadow-lg space-y-2 border border-emerald-700/30">
+                      {/* Card de Preview de Link */}
+                      <div className="rounded-xl overflow-hidden bg-[#025142] border border-emerald-600/30">
+                        {/* Imagem do Preview */}
+                        <div className="relative w-full h-44 bg-black/50 overflow-hidden flex items-center justify-center">
+                          {ogImageUrl ? (
+                            <img
+                              src={ogImageUrl}
+                              alt="WhatsApp Preview"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg";
+                              }}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-emerald-200/50 p-4">
+                              <ImageIcon className="w-8 h-8 mb-1" />
+                              <span className="text-[10px]">Sem imagem de destaque</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Textos do Card de Preview */}
+                        <div className="p-2.5 space-y-1 bg-[#025142]">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-200/80 block">
+                            socialhub.platafy.com
+                          </span>
+                          <h4 className="font-bold text-sm text-white line-clamp-1 leading-snug">
+                            {ogTitle || "PLATAFY Social Hub - Gestão Inteligente"}
+                          </h4>
+                          <p className="text-[11px] text-emerald-100/70 line-clamp-2 leading-relaxed">
+                            {ogDescription || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial."}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Texto que acompanha a mensagem no WhatsApp */}
+                      <div className="px-1 pt-1 text-[12px] text-emerald-50 leading-relaxed">
+                        Por favor faça o cadastro no <strong>{appName || "PLATAFY SOCIAL HUB"}</strong> no link abaixo: 👇👇
+                        <br />
+                        <span className="text-cyan-300 underline font-mono text-[11px] break-all">
+                          https://socialhub.platafy.com/#/cadastro
+                        </span>
+                      </div>
+
+                      {/* Hora e checks azuis do WhatsApp */}
+                      <div className="flex items-center justify-end gap-1 text-[10px] text-emerald-200/70 pt-0.5 pr-1">
+                        <span>14:48</span>
+                        <CheckCheck className="w-3.5 h-3.5 text-cyan-400 inline" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-muted/20 border border-border/60 text-xs text-muted-foreground flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>
+                      Compatível também com <strong>Facebook Messenger</strong>, <strong>Instagram Direct</strong>, <strong>Telegram</strong> e <strong>Twitter/X</strong>.
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
