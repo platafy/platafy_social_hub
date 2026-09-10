@@ -502,7 +502,7 @@ export function WhiteLabelSettings() {
                 <div>
                   <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <Share2 className="w-5 h-5 text-amber-500" />
-                    Imagem de Destaque ao Compartilhar Links de Login e Cadastro (WhatsApp / Redes)
+                    Imagem de Destaque (Redes Sociais)
                   </CardTitle>
                   <CardDescription className="text-xs mt-1">
                     Exibida em destaque quando qualquer link de <strong>Login</strong> (<code>#/login</code>) ou <strong>Cadastro</strong> (<code>#/cadastro</code>) for enviado no WhatsApp, Facebook, LinkedIn ou Twitter/X.
