@@ -13,6 +13,14 @@ export interface BrandingSettings {
   logo_url: string;
   favicon_url: string;
   tutorial_video_url?: string;
+  // Login customization fields
+  login_headline?: string;
+  login_subheadline?: string;
+  login_stats_enabled?: boolean;
+  login_logo_position?: "left" | "right" | "top";
+  login_bg_image_url?: string;
+  login_bg_layout?: "split-left" | "split-right" | "fullscreen";
+  footer_text?: string;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
@@ -24,6 +32,13 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   logo_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/logo-65aaac69-3248-446c-b846-fc602d67e8e5-1788896633632.png",
   favicon_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/favicon-65aaac69-3248-446c-b846-fc602d67e8e5-1788896641236.png",
   tutorial_video_url: "/criar-conta.mp4",
+  login_headline: "Transforme Conversas em\nVendas com Agentes de IA",
+  login_subheadline: "A PLATAFY reúne Agentes de Inteligência Artificial, automação de atendimento, CRM, WhatsApp e múltiplos canais para acelerar o crescimento da sua empresa 24 horas por dia.",
+  login_stats_enabled: false,
+  login_logo_position: "left",
+  login_bg_image_url: "/login-bg.webp",
+  login_bg_layout: "split-left",
+  footer_text: "© 2026 PLATAFY. Todos os direitos reservados.",
 };
 
 const STORAGE_KEY = "platafy_branding_settings";
@@ -57,6 +72,13 @@ export function sanitizeBranding(raw: any): BrandingSettings {
     logo_url: (isLegacy || !raw.logo_url) ? DEFAULT_BRANDING.logo_url : raw.logo_url,
     favicon_url: (isLegacy || !raw.favicon_url) ? DEFAULT_BRANDING.favicon_url : raw.favicon_url,
     tutorial_video_url: raw.tutorial_video_url || DEFAULT_BRANDING.tutorial_video_url,
+    login_headline: raw.login_headline !== undefined ? raw.login_headline : DEFAULT_BRANDING.login_headline,
+    login_subheadline: raw.login_subheadline !== undefined ? raw.login_subheadline : DEFAULT_BRANDING.login_subheadline,
+    login_stats_enabled: raw.login_stats_enabled !== undefined ? !!raw.login_stats_enabled : DEFAULT_BRANDING.login_stats_enabled,
+    login_logo_position: raw.login_logo_position || DEFAULT_BRANDING.login_logo_position,
+    login_bg_image_url: raw.login_bg_image_url !== undefined ? raw.login_bg_image_url : DEFAULT_BRANDING.login_bg_image_url,
+    login_bg_layout: raw.login_bg_layout || DEFAULT_BRANDING.login_bg_layout,
+    footer_text: raw.footer_text || DEFAULT_BRANDING.footer_text,
   };
 }
 

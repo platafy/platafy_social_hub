@@ -35,13 +35,14 @@ function Layout({ children }: { children: React.ReactNode }) {
   const isLoginPage = location.pathname === "/login" || location.pathname === "/cadastro" || location.pathname === "/recuperar-senha" || location.pathname === "/auth-error";
 
   if (isLoginPage) {
+    const isDedicatedLogin = location.pathname === "/login";
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col relative">
         <div className="absolute top-4 right-4 z-50">
           <ThemeToggle />
         </div>
         <SupabaseConfigAlert />
-        <div className="flex-1 flex items-center justify-center">
+        <div className={`flex-1 ${isDedicatedLogin ? "flex flex-col" : "flex items-center justify-center p-4"}`}>
           {children}
         </div>
         <InstallPwaPrompt />
