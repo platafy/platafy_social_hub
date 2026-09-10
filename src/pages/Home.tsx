@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { zernio, clearZernioCache, getCacheStats, sanitizeMediaUrls } from "@/lib/zernio";
+import { zernio, zernioApiCall, clearZernioCache, getCacheStats, sanitizeMediaUrls } from "@/lib/zernio";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1094,14 +1094,15 @@ export default function Home() {
     loadSelectedAutomationConfig();
   }, [selectedAutomationAccount, automationType, loadSelectedAutomationConfig]);
 
-  // Load posts for the selected automation account
-  useEffect(() => {
-    if (!selectedAutomationAccount) {
+  // Robust multi-tier fetch for automation posts (account-specific external + profile external fallback + zernio posts)
+  const fetchAutomationPosts = useCallback(async (forcedAccountId?: string) => {
+    const targetAccountId = forcedAccountId || selectedAutomationAccount;
+    if (!targetAccountId) {
       setAutomationPosts([]);
       return;
     }
     setLoadingAutomationPosts(true);
-    const matchedAccount = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+    const matchedAccount = accounts.find(a => (a._id || a.id) === targetAccountId);
     const integrationId = matchedAccount?.integrationId;
     
     // Resolve the real profile ID belonging to this specific account
@@ -1118,29 +1119,45 @@ export default function Home() {
       return;
     }
 
-    // Fetch both external (historical Instagram/Facebook posts) and zernio-authored posts for this account
-    Promise.allSettled([
-      zernio.getPostsByAccount(accProfileId, selectedAutomationAccount, 'external', integrationId, true),
-      zernio.getPostsByAccount(accProfileId, selectedAutomationAccount, 'zernio', integrationId, true),
-    ]).then(([extRes, zernioRes]) => {
-      const extPosts = extRes.status === 'fulfilled' ? (extRes.value?.posts || []) : [];
+    try {
+      // 1. Fetch external posts filtered by account
+      // 2. Fetch external posts for the profile (as fallback in case accountId wasn't indexed by Zernio)
+      // 3. Fetch zernio-authored posts
+      const [accExtRes, profileExtRes, zernioRes] = await Promise.allSettled([
+        zernio.getPostsByAccount(accProfileId, targetAccountId, 'external', integrationId, true),
+        zernioApiCall(`/v1/posts?profileId=${accProfileId}&source=external&limit=50`, { integrationId, skipCache: true }),
+        zernio.getPostsByAccount(accProfileId, targetAccountId, 'zernio', integrationId, true),
+      ]);
+
+      const accExtPosts = accExtRes.status === 'fulfilled' ? (accExtRes.value?.posts || []) : [];
+      const rawProfileExtPosts = profileExtRes.status === 'fulfilled' ? (profileExtRes.value?.posts || []) : [];
       const zernioPosts = zernioRes.status === 'fulfilled' ? (zernioRes.value?.posts || []) : [];
-      // Merge and deduplicate by id
+
+      // Filter profile external posts for this specific account
+      const filteredProfileExt = rawProfileExtPosts.filter((p: any) => {
+        if (p.accountId === targetAccountId) return true;
+        return p.platforms?.some((plat: any) => {
+          const pAccId = typeof plat.accountId === 'object' ? (plat.accountId?._id || plat.accountId?.id) : plat.accountId;
+          return pAccId === targetAccountId;
+        });
+      });
+
+      // Merge and deduplicate by ID
       const seen = new Set<string>();
-      let merged = [...extPosts, ...zernioPosts].filter(p => {
+      let merged = [...accExtPosts, ...filteredProfileExt, ...zernioPosts].filter(p => {
         const id = p._id || p.id;
         if (!id || seen.has(id)) return false;
         seen.add(id);
         return true;
       });
 
-      // Local fallback: if API returned 0 posts, check existing posts state in memory
+      // Memory fallback: if still 0, check global posts in state
       if (merged.length === 0 && posts.length > 0) {
         const localMatched = posts.filter((p: any) => {
-          return p.accountId === selectedAutomationAccount ||
+          return p.accountId === targetAccountId ||
             p.platforms?.some((plat: any) => {
               const pAccId = typeof plat.accountId === 'object' ? (plat.accountId?._id || plat.accountId?.id) : plat.accountId;
-              return pAccId === selectedAutomationAccount;
+              return pAccId === targetAccountId;
             });
         });
         if (localMatched.length > 0) {
@@ -1149,11 +1166,22 @@ export default function Home() {
       }
 
       setAutomationPosts(merged);
-    }).catch(err => {
+    } catch (err) {
       console.error("Erro ao carregar postagens para automação:", err);
       setAutomationPosts([]);
-    }).finally(() => setLoadingAutomationPosts(false));
+    } finally {
+      setLoadingAutomationPosts(false);
+    }
   }, [selectedAutomationAccount, accounts, config.integrations, selectedProfileId, posts]);
+
+  // Trigger post loading whenever selected account changes
+  useEffect(() => {
+    if (selectedAutomationAccount) {
+      fetchAutomationPosts(selectedAutomationAccount);
+    } else {
+      setAutomationPosts([]);
+    }
+  }, [selectedAutomationAccount, fetchAutomationPosts]);
 
   // Save active tab to sessionStorage
   useEffect(() => {
@@ -4085,6 +4113,7 @@ export default function Home() {
                           onClick={() => {
                             if (isSupported) {
                               setSelectedAutomationAccount(accId);
+                              fetchAutomationPosts(accId);
                               if (platformLower === "youtube") {
                                 setAutomationType("comment_reply");
                               }
@@ -4380,10 +4409,30 @@ export default function Home() {
                       {/* Target Posts selection */}
                       {automationType !== "dm_reply" && (
                         <div className="space-y-3">
-                          <Label className="font-semibold text-sm block">Filtrar por Postagens</Label>
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="font-semibold text-sm">Filtrar por Postagens</Label>
+                            {automationTargetPostsType === "specific" && (
+                              <button
+                                type="button"
+                                disabled={loadingAutomationPosts}
+                                onClick={() => fetchAutomationPosts()}
+                                className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors disabled:opacity-50"
+                              >
+                                <RefreshCw className={`h-3 w-3 ${loadingAutomationPosts ? 'animate-spin' : ''}`} />
+                                Atualizar postagens
+                              </button>
+                            )}
+                          </div>
+
                           <select
                             value={automationTargetPostsType}
-                            onChange={(e) => setAutomationTargetPostsType(e.target.value as any)}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              setAutomationTargetPostsType(val);
+                              if (val === "specific" && automationPosts.length === 0) {
+                                fetchAutomationPosts();
+                              }
+                            }}
                             className="text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
                           >
                             <option value="all">Todas as postagens da conta</option>
@@ -4391,19 +4440,37 @@ export default function Home() {
                           </select>
 
                           {automationTargetPostsType === "specific" && (
-                            <div className="border border-border/40 rounded-md bg-card p-3 max-h-[220px] overflow-y-auto space-y-2">
+                            <div className="border border-border/40 rounded-md bg-card p-3 max-h-[280px] overflow-y-auto space-y-2">
                               {loadingAutomationPosts ? (
-                                <p className="text-xs text-muted-foreground text-center py-4 flex items-center justify-center gap-2">
-                                  <RefreshCw className="h-3 w-3 animate-spin" /> Carregando postagens...
+                                <p className="text-xs text-muted-foreground text-center py-6 flex items-center justify-center gap-2">
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" /> Carregando postagens da conta...
                                 </p>
                               ) : automationPosts.length === 0 ? (
-                                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma postagem no histórico.</p>
+                                <div className="text-center py-6 space-y-2.5">
+                                  <p className="text-xs text-muted-foreground">Nenhuma postagem encontrada para esta conta.</p>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={loadingAutomationPosts}
+                                    onClick={() => fetchAutomationPosts()}
+                                    className="text-xs h-7 px-3 gap-1.5"
+                                  >
+                                    <RefreshCw className={`h-3 w-3 ${loadingAutomationPosts ? 'animate-spin' : ''}`} />
+                                    Buscar postagens agora
+                                  </Button>
+                                </div>
                               ) : (
                                 automationPosts.map((post, idx) => {
                                   const pId = post._id || post.id || `post-${idx}`;
                                   const platformPostId = post.platforms?.[0]?.platformPostId;
                                   const isChecked = automationTargetPostIds.includes(pId) || (platformPostId && automationTargetPostIds.includes(platformPostId));
-                                  const thumbUrl = post.mediaItems?.[0]?.url || post.mediaItems?.[0]?.thumbnail || post.mediaItems?.[0]?.thumbnailUrl || post.thumbnailUrl || '';
+                                  const thumbUrl = post.mediaItems?.[0]?.thumbnail
+                                    || post.mediaItems?.[0]?.url
+                                    || post.mediaItems?.[0]?.thumbnailUrl
+                                    || post.thumbnailUrl
+                                    || (Array.isArray(post.mediaUrls) ? post.mediaUrls[0] : '')
+                                    || '';
                                   const postDate = post.scheduledFor || post.scheduledAt || post.publishedAt || post.createdAt;
                                   const postText = post.content || post.text || '';
                                   return (
@@ -4425,11 +4492,26 @@ export default function Home() {
                                         className="shrink-0 accent-primary"
                                       />
                                       {/* Thumbnail */}
-                                      <div className="shrink-0 h-12 w-12 rounded overflow-hidden border border-border/40 bg-secondary/20 flex items-center justify-center">
+                                      <div className="shrink-0 h-12 w-12 rounded overflow-hidden border border-border/40 bg-secondary/20 flex items-center justify-center relative">
                                         {thumbUrl ? (
-                                          <img src={thumbUrl} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                          <img
+                                            src={thumbUrl}
+                                            alt=""
+                                            referrerPolicy="no-referrer"
+                                            className="h-full w-full object-cover"
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.style.display = 'none';
+                                              if (target.parentElement) {
+                                                const fallbackSpan = document.createElement('span');
+                                                fallbackSpan.className = 'text-base select-none';
+                                                fallbackSpan.textContent = '📸';
+                                                target.parentElement.appendChild(fallbackSpan);
+                                              }
+                                            }}
+                                          />
                                         ) : (
-                                          <span className="text-lg select-none">🖼️</span>
+                                          <span className="text-base select-none">🖼️</span>
                                         )}
                                       </div>
                                       {/* Info */}
