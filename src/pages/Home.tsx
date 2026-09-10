@@ -122,7 +122,7 @@ export default function Home() {
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [profileIdInput, setProfileIdInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [aiKeys, setAiKeys] = useState({ gemini: '', openai: '', anthropic: '', mistral: '', groq: '' });
+  const [aiKeys, setAiKeys] = useState({ gemini: '', openai: '', anthropic: '', mistral: '', groq: '', seekai: '' });
 
   // Multi-account states
   const [selectedIntegrationIdForAiKeys, setSelectedIntegrationIdForAiKeys] = useState<string>("");
@@ -195,7 +195,7 @@ export default function Home() {
   const [isAutomationEnabled, setIsAutomationEnabled] = useState<boolean>(true);
   const [automationTriggerType, setAutomationTriggerType] = useState<"all" | "keyword">("all");
   const [automationKeywords, setAutomationKeywords] = useState<string>("");
-  const [automationAiProvider, setAutomationAiProvider] = useState<"static" | "gemini" | "openai" | "anthropic" | "mistral" | "groq">("static");
+  const [automationAiProvider, setAutomationAiProvider] = useState<"static" | "gemini" | "openai" | "anthropic" | "mistral" | "groq" | "seekai">("static");
   const [automationAiPrompt, setAutomationAiPrompt] = useState<string>("");
   const [automationLogs, setAutomationLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -1199,7 +1199,7 @@ export default function Home() {
     try {
       const { data } = await supabase
         .from('zernio_integrations' as any)
-        .select('ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key')
+        .select('ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
         .eq('id', targetId)
         .maybeSingle();
       if (data) {
@@ -1210,9 +1210,10 @@ export default function Home() {
           anthropic: d.ai_anthropic_key ? '••••••••' : '',
           mistral: d.ai_mistral_key ? '••••••••' : '',
           groq: d.ai_groq_key ? '••••••••' : '',
+          seekai: d.ai_seekai_key ? '••••••••' : '',
         });
       } else {
-        setAiKeys({ gemini: '', openai: '', anthropic: '', mistral: '', groq: '' });
+        setAiKeys({ gemini: '', openai: '', anthropic: '', mistral: '', groq: '', seekai: '' });
       }
     } catch (err) {
       console.warn('Could not load AI keys:', err);
@@ -1229,6 +1230,7 @@ export default function Home() {
         anthropic: 'ai_anthropic_key',
         mistral: 'ai_mistral_key',
         groq: 'ai_groq_key',
+        seekai: 'ai_seekai_key',
       };
       const col = colMap[provider];
       if (!col) return;
@@ -1256,6 +1258,7 @@ export default function Home() {
         anthropic: 'ai_anthropic_key',
         mistral: 'ai_mistral_key',
         groq: 'ai_groq_key',
+        seekai: 'ai_seekai_key',
       };
       const col = colMap[provider];
       if (!col) return;
@@ -2267,9 +2270,10 @@ export default function Home() {
                     { id: 'gemini', label: 'Google Gemini', hint: 'AIza...', link: 'https://aistudio.google.com/app/apikey', model: 'Gemini 2.0 Flash' },
                     { id: 'openai', label: 'OpenAI', hint: 'sk-...', link: 'https://platform.openai.com/api-keys', model: 'GPT-4o Mini' },
                     { id: 'anthropic', label: 'Anthropic (Claude)', hint: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys', model: 'Claude 3 Haiku' },
+                    { id: 'seekai', label: 'SeekAI', hint: 'sk-...', link: 'https://platafy.com/seekai', model: 'Gateway Multi-modelo (OpenAI Compatible)', referral: true },
                     { id: 'mistral', label: 'Mistral AI', hint: '32+ chars', link: 'https://console.mistral.ai/api-keys/', model: 'Mistral Small' },
                     { id: 'groq', label: 'Groq Cloud', hint: 'gsk_...', link: 'https://console.groq.com/keys', model: 'Llama 3.1 8B' },
-                  ].map(({ id, label, hint, link, model }) => {
+                  ].map(({ id, label, hint, link, model, referral }: any) => {
                     const saved = aiKeys[id as keyof typeof aiKeys] === '••••••••';
                     const val = aiKeys[id as keyof typeof aiKeys];
                     return (
@@ -2294,7 +2298,7 @@ export default function Home() {
                               <Button size="sm" onClick={() => saveAiKey(id, val)} disabled={loading || !val}>
                                 Salvar
                               </Button>
-                              <a href={link} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline whitespace-nowrap">Obter chave</a>
+                              <a href={link} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline whitespace-nowrap">{referral ? 'Criar conta grátis' : 'Obter chave'}</a>
                             </>
                           ) : (
                             <>
@@ -4288,6 +4292,7 @@ export default function Home() {
                               <option value="gemini">Google Gemini AI</option>
                               <option value="openai">OpenAI (GPT-4o)</option>
                               <option value="anthropic">Anthropic (Claude)</option>
+                              <option value="seekai">SeekAI (Multi-modelo)</option>
                               <option value="mistral">Mistral AI</option>
                               <option value="groq">Groq Cloud (Llama)</option>
                             </select>

@@ -85,7 +85,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   // Fetch integration keys
   let integrationQuery = supabaseClient
     .from('zernio_integrations')
-    .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key')
+    .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
     .eq('tenant_id', tenantId)
 
   if (integrationId) {
@@ -98,7 +98,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   if (!finalIntegration) {
     const { data: firstIntegration } = await supabaseClient
       .from('zernio_integrations')
-      .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key')
+      .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -113,6 +113,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     anthropic: finalIntegration?.ai_anthropic_key || Deno.env.get('ANTHROPIC_API_KEY') || '',
     mistral: finalIntegration?.ai_mistral_key || Deno.env.get('MISTRAL_API_KEY') || '',
     groq: finalIntegration?.ai_groq_key || Deno.env.get('GROQ_API_KEY') || '',
+    seekai: finalIntegration?.ai_seekai_key || Deno.env.get('SEEKAI_API_KEY') || '',
   }
 
   if (!zernioApiKey) {
@@ -331,6 +332,15 @@ Responda diretamente e de forma concisa.`
               body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
             })
             if (!aiRes.ok) throw new Error(`Groq status ${aiRes.status}`)
+            const aiData = await aiRes.json()
+            replyText = aiData?.choices?.[0]?.message?.content || ''
+          } else if (provider === 'seekai') {
+            const aiRes = await fetch('https://seekai.cc/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+              body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+            })
+            if (!aiRes.ok) throw new Error(`SeekAI status ${aiRes.status}`)
             const aiData = await aiRes.json()
             replyText = aiData?.choices?.[0]?.message?.content || ''
           }
