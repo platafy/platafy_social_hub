@@ -268,9 +268,9 @@ export const zernio = {
     if (accountId) url += `&accountId=${accountId}`;
     return zernioApiCall(url, { integrationId });
   },
-  getPostsByAccount: (profileId: string, accountId: string, source = 'external', integrationId?: string) => {
+  getPostsByAccount: (profileId: string, accountId: string, source = 'external', integrationId?: string, skipCache = true) => {
     const url = `/v1/posts?profileId=${profileId}&accountId=${accountId}&source=${source}&sortBy=scheduledAt_desc&limit=50`;
-    return zernioApiCall(url, { integrationId });
+    return zernioApiCall(url, { integrationId, skipCache });
   },
   createPost: (postData: any, integrationId?: string) => zernioApiCall('/v1/posts', { method: 'POST', body: postData, integrationId }),
   deletePost: (postId: string, integrationId?: string) => zernioApiCall(`/v1/posts/${postId}`, { method: 'DELETE', integrationId }),

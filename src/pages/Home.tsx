@@ -450,11 +450,17 @@ export default function Home() {
         let integrationAccounts: any[] = [];
         if (accRes.status === 'fulfilled' && accRes.value) {
           const rawAccs = accRes.value.accounts || [];
-          integrationAccounts = rawAccs.map((a: any) => ({
-            ...a,
-            integrationId: integration.id,
-            integrationName: integration.name
-          }));
+          integrationAccounts = rawAccs.map((a: any) => {
+            const accProfileId = typeof a.profileId === 'object' && a.profileId
+              ? (a.profileId._id || a.profileId.id)
+              : (a.profileId || profileId);
+            return {
+              ...a,
+              profileId: accProfileId,
+              integrationId: integration.id,
+              integrationName: integration.name
+            };
+          });
           allAccounts.push(...integrationAccounts);
 
           // FIX #5: Batch upsert for social accounts (single DB call instead of N+1)
@@ -1090,31 +1096,64 @@ export default function Home() {
 
   // Load posts for the selected automation account
   useEffect(() => {
-    if (!selectedAutomationAccount || !selectedProfileId) {
+    if (!selectedAutomationAccount) {
       setAutomationPosts([]);
       return;
     }
     setLoadingAutomationPosts(true);
     const matchedAccount = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
     const integrationId = matchedAccount?.integrationId;
-    // Fetch both external (historical) and zernio-authored posts for this account
+    
+    // Resolve the real profile ID belonging to this specific account
+    const accProfileId = (typeof matchedAccount?.profileId === 'object' && matchedAccount?.profileId
+      ? (matchedAccount.profileId._id || matchedAccount.profileId.id)
+      : matchedAccount?.profileId)
+      || (config.integrations?.find((i: any) => i.id === integrationId)?.profileId)
+      || (config.integrations?.find((i: any) => i.id === integrationId)?.zernio_profile_id)
+      || selectedProfileId;
+
+    if (!accProfileId) {
+      setAutomationPosts([]);
+      setLoadingAutomationPosts(false);
+      return;
+    }
+
+    // Fetch both external (historical Instagram/Facebook posts) and zernio-authored posts for this account
     Promise.allSettled([
-      zernio.getPostsByAccount(selectedProfileId, selectedAutomationAccount, 'external', integrationId),
-      zernio.getPostsByAccount(selectedProfileId, selectedAutomationAccount, 'zernio', integrationId),
+      zernio.getPostsByAccount(accProfileId, selectedAutomationAccount, 'external', integrationId, true),
+      zernio.getPostsByAccount(accProfileId, selectedAutomationAccount, 'zernio', integrationId, true),
     ]).then(([extRes, zernioRes]) => {
       const extPosts = extRes.status === 'fulfilled' ? (extRes.value?.posts || []) : [];
       const zernioPosts = zernioRes.status === 'fulfilled' ? (zernioRes.value?.posts || []) : [];
       // Merge and deduplicate by id
       const seen = new Set<string>();
-      const merged = [...extPosts, ...zernioPosts].filter(p => {
+      let merged = [...extPosts, ...zernioPosts].filter(p => {
         const id = p._id || p.id;
         if (!id || seen.has(id)) return false;
         seen.add(id);
         return true;
       });
+
+      // Local fallback: if API returned 0 posts, check existing posts state in memory
+      if (merged.length === 0 && posts.length > 0) {
+        const localMatched = posts.filter((p: any) => {
+          return p.accountId === selectedAutomationAccount ||
+            p.platforms?.some((plat: any) => {
+              const pAccId = typeof plat.accountId === 'object' ? (plat.accountId?._id || plat.accountId?.id) : plat.accountId;
+              return pAccId === selectedAutomationAccount;
+            });
+        });
+        if (localMatched.length > 0) {
+          merged = localMatched;
+        }
+      }
+
       setAutomationPosts(merged);
+    }).catch(err => {
+      console.error("Erro ao carregar postagens para automação:", err);
+      setAutomationPosts([]);
     }).finally(() => setLoadingAutomationPosts(false));
-  }, [selectedAutomationAccount, selectedProfileId, accounts]);
+  }, [selectedAutomationAccount, accounts, config.integrations, selectedProfileId, posts]);
 
   // Save active tab to sessionStorage
   useEffect(() => {
@@ -4362,8 +4401,9 @@ export default function Home() {
                               ) : (
                                 automationPosts.map((post, idx) => {
                                   const pId = post._id || post.id || `post-${idx}`;
-                                  const isChecked = automationTargetPostIds.includes(pId);
-                                  const thumbUrl = post.mediaItems?.[0]?.url || post.mediaItems?.[0]?.thumbnailUrl || post.thumbnailUrl || '';
+                                  const platformPostId = post.platforms?.[0]?.platformPostId;
+                                  const isChecked = automationTargetPostIds.includes(pId) || (platformPostId && automationTargetPostIds.includes(platformPostId));
+                                  const thumbUrl = post.mediaItems?.[0]?.url || post.mediaItems?.[0]?.thumbnail || post.mediaItems?.[0]?.thumbnailUrl || post.thumbnailUrl || '';
                                   const postDate = post.scheduledFor || post.scheduledAt || post.publishedAt || post.createdAt;
                                   const postText = post.content || post.text || '';
                                   return (
@@ -4373,9 +4413,13 @@ export default function Home() {
                                         checked={isChecked}
                                         onChange={() => {
                                           if (isChecked) {
-                                            setAutomationTargetPostIds(prev => prev.filter(id => id !== pId));
+                                            setAutomationTargetPostIds(prev => prev.filter(id => id !== pId && id !== platformPostId));
                                           } else {
-                                            setAutomationTargetPostIds(prev => [...prev, pId]);
+                                            setAutomationTargetPostIds(prev => {
+                                              const toAdd = [pId];
+                                              if (platformPostId && !toAdd.includes(platformPostId)) toAdd.push(platformPostId);
+                                              return Array.from(new Set([...prev, ...toAdd]));
+                                            });
                                           }
                                         }}
                                         className="shrink-0 accent-primary"

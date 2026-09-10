@@ -248,7 +248,14 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     // A. Validate target post filtering
     if ((event === 'comment.received' || isAltCommentMessage) && rule.target_posts_type === 'specific') {
       const rulePostIds = rule.target_post_ids || []
-      if (!rulePostIds.includes(postId)) {
+      const commentObj = payload.comment || {}
+      const matchesPost = rulePostIds.includes(postId) ||
+        (commentObj?.platformPostId && rulePostIds.includes(commentObj.platformPostId)) ||
+        (commentObj?.postId && rulePostIds.includes(commentObj.postId)) ||
+        (payload?.postId && rulePostIds.includes(payload.postId)) ||
+        (payload?.platformPostId && rulePostIds.includes(payload.platformPostId))
+
+      if (!matchesPost) {
         await updateLogStatus('ignored', `Ignored: post ID ${postId} is not in targeted specific list`)
         continue
       }
