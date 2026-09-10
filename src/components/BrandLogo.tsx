@@ -5,6 +5,8 @@ interface BrandLogoProps {
   showTagline?: boolean;
   className?: string;
   imageOnly?: boolean;
+  textColor?: string;
+  taglineColor?: string;
 }
 
 export function BrandLogo({
@@ -12,6 +14,8 @@ export function BrandLogo({
   showTagline = true,
   className = "",
   imageOnly = false,
+  textColor,
+  taglineColor,
 }: BrandLogoProps) {
   const { branding } = useBranding();
 
@@ -49,6 +53,10 @@ export function BrandLogo({
 
   const logoSrc = branding.logo_url || branding.favicon_url || "/logo.png";
 
+  // Determina a classe de cor do texto: prioriza textColor, ou classe de cor explícita se houver no className, senão fallback para text-foreground
+  const hasExplicitTextColor = /\btext-(?:white|black|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|primary|foreground)\b/.test(className);
+  const resolvedTextColor = textColor || (hasExplicitTextColor ? "" : "text-foreground");
+
   return (
     <div className={`flex items-center ${gapSizes[size]} ${className}`}>
       <img
@@ -67,12 +75,12 @@ export function BrandLogo({
       />
       {!imageOnly && (
         <div className="flex items-center gap-1.5">
-          <span className={`${textSizes[size]} text-foreground transition-colors`}>
+          <span className={`${textSizes[size]} ${resolvedTextColor} transition-colors`}>
             {branding.app_name || "PLATAFY Social"}
           </span>
           {showTagline && branding.app_tagline && (
             <span
-              className={`${badgeSizes[size]} bg-primary/15 text-primary font-bold rounded uppercase tracking-wider transition-colors`}
+              className={`${badgeSizes[size]} ${taglineColor || "bg-primary/15 text-primary"} font-bold rounded uppercase tracking-wider transition-colors`}
             >
               {branding.app_tagline}
             </span>

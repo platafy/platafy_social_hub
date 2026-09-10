@@ -144,7 +144,7 @@ export default function Login() {
 
   return (
     <div
-      className={`min-h-screen w-full flex relative overflow-hidden bg-[#070b14] text-foreground ${
+      className={`min-h-screen w-full flex relative overflow-hidden bg-[#070b14] text-white dark ${
         isSplitRight ? "lg:flex-row-reverse" : "lg:flex-row"
       } flex-col`}
       style={
@@ -159,7 +159,7 @@ export default function Login() {
     >
       {/* Background Overlay quando em fullscreen */}
       {isFullscreen && bgImageUrl && (
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-md pointer-events-none z-0" />
+        <div className="absolute inset-0 bg-[#070b14]/80 backdrop-blur-md pointer-events-none z-0" />
       )}
 
       {/* Mobile background com overlay */}
@@ -199,7 +199,11 @@ export default function Login() {
           {/* Top Logo se estiver configurado na esquerda */}
           {isLogoOnLeft ? (
             <div className="relative z-10">
-              <BrandLogo size="lg" />
+              <BrandLogo
+                size="lg"
+                textColor="text-white"
+                taglineColor="bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              />
             </div>
           ) : (
             <div className="relative z-10 h-10" />
@@ -252,11 +256,19 @@ export default function Login() {
           {/* Logo Aumentada e Centralizada na coluna da direita */}
           {(isLogoOnRight || isFullscreen) ? (
             <div className="flex items-center justify-center pb-2">
-              <BrandLogo size="xl" />
+              <BrandLogo
+                size="xl"
+                textColor="text-white"
+                taglineColor="bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              />
             </div>
           ) : (
             <div className="lg:hidden flex items-center justify-center pb-2">
-              <BrandLogo size="xl" />
+              <BrandLogo
+                size="xl"
+                textColor="text-white"
+                taglineColor="bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              />
             </div>
           )}
 
