@@ -246,16 +246,22 @@ export default function Login() {
       <div
         className={`w-full ${
           isFullscreen ? "max-w-md mx-auto" : "lg:w-1/2"
-        } min-h-screen flex flex-col justify-between p-6 sm:p-10 xl:p-14 relative z-10`}
+        } min-h-screen flex items-center justify-center p-6 sm:p-10 relative z-10`}
       >
-        {/* Top Logo na coluna da direita */}
-        <div className={`w-full flex items-center justify-center lg:justify-start ${isLogoOnRight ? "flex" : "lg:hidden"}`}>
-          <BrandLogo size="lg" />
-        </div>
+        <div className="w-full max-w-[420px] space-y-7">
+          {/* Logo Aumentada e Centralizada na coluna da direita */}
+          {(isLogoOnRight || isFullscreen) ? (
+            <div className="flex items-center justify-center pb-2">
+              <BrandLogo size="xl" />
+            </div>
+          ) : (
+            <div className="lg:hidden flex items-center justify-center pb-2">
+              <BrandLogo size="xl" />
+            </div>
+          )}
 
-        <div className="w-full max-w-[420px] mx-auto my-auto py-6 space-y-7">
           {/* Cabeçalho do formulário */}
-          <div className="space-y-1.5 text-center lg:text-left">
+          <div className="space-y-1.5 text-center">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Entrar na conta
             </h2>
@@ -398,9 +404,6 @@ export default function Login() {
             </div>
           </form>
         </div>
-
-        {/* Espaçador inferior para equilibrar o justify-between */}
-        <div className="hidden lg:block h-10" />
       </div>
     </div>
   );

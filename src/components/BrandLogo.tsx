@@ -1,7 +1,7 @@
 import { useBranding } from "@/contexts/BrandingContext";
 
 interface BrandLogoProps {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   showTagline?: boolean;
   className?: string;
   imageOnly?: boolean;
@@ -19,24 +19,38 @@ export function BrandLogo({
     sm: "h-5 w-5",
     md: "h-7 w-7",
     lg: "h-11 w-11",
+    xl: "h-14 w-14",
+    "2xl": "h-18 w-18",
   };
 
   const textSizes = {
     sm: "text-lg font-bold",
     md: "text-xl font-extrabold tracking-tight",
     lg: "text-2xl font-black tracking-tight",
+    xl: "text-3xl font-black tracking-tight",
+    "2xl": "text-4xl font-black tracking-tight",
   };
 
   const badgeSizes = {
     sm: "text-[10px] px-1 py-0.2",
     md: "text-xs px-1.5 py-0.5",
     lg: "text-xs px-2 py-0.5",
+    xl: "text-xs px-2.5 py-0.5",
+    "2xl": "text-sm px-3 py-1",
+  };
+
+  const gapSizes = {
+    sm: "gap-1.5",
+    md: "gap-2.5",
+    lg: "gap-3",
+    xl: "gap-3.5",
+    "2xl": "gap-4",
   };
 
   const logoSrc = branding.logo_url || branding.favicon_url || "/logo.png";
 
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center ${gapSizes[size]} ${className}`}>
       <img
         src={logoSrc}
         alt={branding.app_name}
