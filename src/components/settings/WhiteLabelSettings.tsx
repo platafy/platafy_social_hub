@@ -115,7 +115,8 @@ export function WhiteLabelSettings() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const faviconFileInputRef = useRef<HTMLInputElement>(null);
   const loginBgFileInputRef = useRef<HTMLInputElement>(null);
-  const ogImageFileInputRef = useRef<HTMLInputElement>(null);
+  const loginOgImageFileInputRef = useRef<HTMLInputElement>(null);
+  const seoOgImageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar com branding global quando houver mudanças externas
   useEffect(() => {
@@ -546,17 +547,32 @@ export function WhiteLabelSettings() {
 
                 {/* Controles de Ação e Upload */}
                 <div className="md:col-span-2 space-y-3">
+                  {/* Input de Arquivo Oculto para a Aba Login */}
+                  <input
+                    type="file"
+                    ref={loginOgImageFileInputRef}
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFileUpload(file, "og_image");
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => ogImageFileInputRef.current?.click()}
+                      onClick={() => loginOgImageFileInputRef.current?.click()}
                       disabled={uploadingOgImage}
                       className="text-xs gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/30"
                     >
                       <Upload className="h-3.5 w-3.5 text-primary" />
-                      {uploadingOgImage ? "Enviando imagem..." : "Upload Nova Imagem em Destaque"}
+                      {uploadingOgImage ? "Enviando..." : "Upload Imagem Destaque"}
                     </Button>
 
                     <Button
@@ -1111,12 +1127,15 @@ export function WhiteLabelSettings() {
                   {/* Input de Arquivo Oculto */}
                   <input
                     type="file"
-                    ref={ogImageFileInputRef}
+                    ref={seoOgImageFileInputRef}
                     accept="image/png,image/jpeg,image/webp,image/jpg"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file, "og_image");
+                      if (file) {
+                        handleFileUpload(file, "og_image");
+                        e.target.value = "";
+                      }
                     }}
                   />
 
@@ -1126,12 +1145,12 @@ export function WhiteLabelSettings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => ogImageFileInputRef.current?.click()}
+                      onClick={() => seoOgImageFileInputRef.current?.click()}
                       disabled={uploadingOgImage}
                       className="text-xs gap-1.5 bg-primary/5 hover:bg-primary/10 border-primary/30"
                     >
                       <Upload className="h-3.5 w-3.5 text-primary" />
-                      {uploadingOgImage ? "Enviando..." : "Upload Nova Imagem"}
+                      {uploadingOgImage ? "Enviando..." : "Upload Imagem Destaque"}
                     </Button>
 
                     <Button
