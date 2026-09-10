@@ -2001,7 +2001,7 @@ export default function Home() {
                   const countLabel = pAccounts.length > 0 ? ` (${pAccounts.length}/2 contas)` : '';
                   return (
                     <option key={pId || `profile-${index}`} value={pId || index}>
-                      {p.name}{countLabel}
+                      {p.integrationName || p.name}{countLabel}
                     </option>
                   );
                 })}
