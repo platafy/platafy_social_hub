@@ -472,9 +472,7 @@ export default function Home() {
                 integration_id: integration.id,
                 social_account_id: acc._id || acc.id,
                 platform: acc.platform || 'instagram',
-                name: acc.displayName || acc.name || null,
-                username: acc.username || null,
-                avatar_url: acc.avatarUrl || null
+                account_name: acc.displayName || acc.name || acc.username || 'Canal'
               }));
             if (batchChannels.length > 0) {
               await supabase
@@ -4463,8 +4461,11 @@ export default function Home() {
                               ) : (
                                 automationPosts.map((post, idx) => {
                                   const pId = post._id || post.id || `post-${idx}`;
-                                  const platformPostId = post.platforms?.[0]?.platformPostId;
-                                  const isChecked = automationTargetPostIds.includes(pId) || (platformPostId && automationTargetPostIds.includes(platformPostId));
+                                  const allPlatformPostIds: string[] = (post.platforms || [])
+                                    .map((p: any) => p.platformPostId)
+                                    .filter(Boolean);
+                                  const isChecked = automationTargetPostIds.includes(pId) ||
+                                    allPlatformPostIds.some((id: string) => automationTargetPostIds.includes(id));
                                   const thumbUrl = post.mediaItems?.[0]?.thumbnail
                                     || post.mediaItems?.[0]?.url
                                     || post.mediaItems?.[0]?.thumbnailUrl
@@ -4480,13 +4481,9 @@ export default function Home() {
                                         checked={isChecked}
                                         onChange={() => {
                                           if (isChecked) {
-                                            setAutomationTargetPostIds(prev => prev.filter(id => id !== pId && id !== platformPostId));
+                                            setAutomationTargetPostIds(prev => prev.filter(id => id !== pId && !allPlatformPostIds.includes(id)));
                                           } else {
-                                            setAutomationTargetPostIds(prev => {
-                                              const toAdd = [pId];
-                                              if (platformPostId && !toAdd.includes(platformPostId)) toAdd.push(platformPostId);
-                                              return Array.from(new Set([...prev, ...toAdd]));
-                                            });
+                                            setAutomationTargetPostIds(prev => Array.from(new Set([...prev, pId, ...allPlatformPostIds])));
                                           }
                                         }}
                                         className="shrink-0 accent-primary"

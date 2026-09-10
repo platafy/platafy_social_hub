@@ -25,7 +25,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   const accountObj = payload.account || {}
   const socialAccountId = payload.accountId || payload.socialAccountId || accountObj.id || accountObj.accountId || payload.account_id || ''
   let platform = accountObj.platform || payload.platform || payload.network || payload.networkType || ''
-  const profileId = payload.profileId || accountObj.profileId || ''
+  const rawProfileId = payload.profileId || accountObj.profileId || ''
+  const profileId = typeof rawProfileId === 'object' ? (rawProfileId?._id || rawProfileId?.id || '') : (rawProfileId || '')
 
   if (!socialAccountId) {
     throw new Error('Missing social account ID.')
@@ -52,7 +53,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   }
 
   // Fallback 1: Find by profileId from zernio_integrations
-  if (!tenantId && profileId) {
+  if (!integrationId && profileId) {
     const { data: integration } = await supabaseClient
       .from('zernio_integrations')
       .select('id, tenant_id')
@@ -60,13 +61,13 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       .limit(1)
       .maybeSingle()
     if (integration) {
-      tenantId = integration.tenant_id
+      if (!tenantId) tenantId = integration.tenant_id
       integrationId = integration.id
     }
   }
 
   // Fallback 2: Find tenant via automations table
-  if (!tenantId) {
+  if (!tenantId && socialAccountId) {
     const { data: automationRow } = await supabaseClient
       .from('zernio_automations')
       .select('tenant_id')
@@ -83,27 +84,25 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   }
 
   // Fetch integration keys
-  let integrationQuery = supabaseClient
-    .from('zernio_integrations')
-    .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
-    .eq('tenant_id', tenantId)
-
+  let finalIntegration: any = null
   if (integrationId) {
-    integrationQuery = integrationQuery.eq('id', integrationId)
+    const { data: integrationRow } = await supabaseClient
+      .from('zernio_integrations')
+      .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
+      .eq('id', integrationId)
+      .maybeSingle()
+    finalIntegration = integrationRow
   }
 
-  const { data: integrationRow } = await integrationQuery.maybeSingle()
-  let finalIntegration = integrationRow
-
-  if (!finalIntegration) {
-    const { data: firstIntegration } = await supabaseClient
+  if (!finalIntegration && tenantId) {
+    const { data: allIntegrations } = await supabaseClient
       .from('zernio_integrations')
       .select('id, api_key, ai_gemini_key, ai_openai_key, ai_anthropic_key, ai_mistral_key, ai_groq_key, ai_seekai_key')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-    finalIntegration = firstIntegration
+    if (allIntegrations && allIntegrations.length > 0) {
+      finalIntegration = allIntegrations[0]
+    }
   }
 
   const zernioApiKey = finalIntegration?.api_key || ''
@@ -180,8 +179,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   }
 
   // Initialize or update Log entry
-  let logId = existingLogId
-  if (!logId) {
+  let initialLogId = existingLogId
+  if (!initialLogId) {
     const { data: newLog, error: logErr } = await supabaseClient
       .from('zernio_automation_logs')
       .insert({
@@ -201,12 +200,12 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     if (logErr) {
       console.error('Failed to create log entry:', logErr.message)
     } else {
-      logId = newLog?.id
+      initialLogId = newLog?.id
     }
   }
 
-  const updateLogStatus = async (status: string, errorMsg?: string, replySent?: string) => {
-    if (logId) {
+  const updateInitialLog = async (status: string, errorMsg?: string, replySent?: string) => {
+    if (initialLogId) {
       await supabaseClient
         .from('zernio_automation_logs')
         .update({
@@ -214,7 +213,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
           error_message: errorMsg || null,
           reply_sent: replySent || null
         })
-        .eq('id', logId)
+        .eq('id', initialLogId)
     }
   }
 
@@ -227,7 +226,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     .eq('is_enabled', true)
 
   if (!automations || automations.length === 0) {
-    await updateLogStatus('no_automation', 'No active automations found')
+    await updateInitialLog('no_automation', 'No active automations found')
     return { success: true, message: 'No active automations' }
   }
 
@@ -240,23 +239,91 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   const matchedRules = automations.filter(rule => targetType.includes(rule.automation_type))
 
   if (matchedRules.length === 0) {
-    await updateLogStatus('no_automation', 'No matching automation type rules')
+    await updateInitialLog('no_automation', 'No matching automation type rules')
     return { success: true, message: 'No matched rules' }
   }
 
+  const executedResults: any[] = []
+  let isFirstRule = true
+
   for (const rule of matchedRules) {
+    const saveRuleLog = async (status: string, errorMsg?: string, replySent?: string) => {
+      if (isFirstRule && initialLogId) {
+        await supabaseClient
+          .from('zernio_automation_logs')
+          .update({
+            rule_id: rule.id,
+            event_type: rule.automation_type,
+            status,
+            error_message: errorMsg || null,
+            reply_sent: replySent || null
+          })
+          .eq('id', initialLogId)
+      } else {
+        await supabaseClient
+          .from('zernio_automation_logs')
+          .insert({
+            tenant_id: tenantId,
+            social_account_id: socialAccountId,
+            rule_id: rule.id,
+            platform: platform || 'unknown',
+            event_type: rule.automation_type,
+            external_id: commentId || conversationId || 'unknown',
+            sender_username: senderUsername || null,
+            content: textContent || null,
+            status,
+            error_message: errorMsg || null,
+            reply_sent: replySent || null,
+            raw_payload: payload
+          })
+      }
+    }
+
     // A. Validate target post filtering
     if ((event === 'comment.received' || isAltCommentMessage) && rule.target_posts_type === 'specific') {
-      const rulePostIds = rule.target_post_ids || []
+      const rulePostIds = (rule.target_post_ids || []).map((id: any) => String(id).trim())
       const commentObj = payload.comment || {}
-      const matchesPost = rulePostIds.includes(postId) ||
-        (commentObj?.platformPostId && rulePostIds.includes(commentObj.platformPostId)) ||
-        (commentObj?.postId && rulePostIds.includes(commentObj.postId)) ||
-        (payload?.postId && rulePostIds.includes(payload.postId)) ||
-        (payload?.platformPostId && rulePostIds.includes(payload.platformPostId))
+      
+      const candidatePostIds = [
+        postId,
+        commentObj?.postId,
+        commentObj?.platformPostId,
+        payload?.postId,
+        payload?.platformPostId
+      ].filter(Boolean).map(id => String(id).trim())
+
+      let matchesPost = candidatePostIds.some(id => rulePostIds.includes(id))
+
+      // Extra check: if candidatePostIds includes an ID, check zernio_posts to see if any platform matches
+      if (!matchesPost && candidatePostIds.length > 0) {
+        const { data: postRecords } = await supabaseClient
+          .from('zernio_posts')
+          .select('zernio_post_id, platforms')
+          .or(candidatePostIds.map(id => `zernio_post_id.eq.${id}`).join(','))
+          .limit(5)
+
+        if (postRecords && postRecords.length > 0) {
+          for (const prec of postRecords) {
+            if (rulePostIds.includes(prec.zernio_post_id)) {
+              matchesPost = true
+              break
+            }
+            if (Array.isArray(prec.platforms)) {
+              for (const p of prec.platforms) {
+                if (p.platformPostId && rulePostIds.includes(String(p.platformPostId).trim())) {
+                  matchesPost = true
+                  break
+                }
+              }
+            }
+            if (matchesPost) break
+          }
+        }
+      }
 
       if (!matchesPost) {
-        await updateLogStatus('ignored', `Ignored: post ID ${postId} is not in targeted specific list`)
+        await saveRuleLog('ignored', `Ignored: post ID [${candidatePostIds.join(', ')}] is not in targeted specific list`)
+        isFirstRule = false
         continue
       }
     }
@@ -267,7 +334,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       const lowercaseText = textContent.toLowerCase()
       const matched = keywords.some((kw: string) => lowercaseText.includes(kw.toLowerCase()))
       if (!matched) {
-        await updateLogStatus('ignored', `Ignored: keywords [${keywords.join(', ')}] not matched`)
+        await saveRuleLog('ignored', `Ignored: keywords [${keywords.join(', ')}] not matched`)
+        isFirstRule = false
         continue
       }
     }
@@ -291,7 +359,8 @@ Responda diretamente e de forma concisa.`
         if (rule.static_reply) {
           replyText = rule.static_reply
         } else {
-          await updateLogStatus('failed', `Failed: AI provider ${provider} key missing`)
+          await saveRuleLog('failed', `Failed: AI provider ${provider} key missing`)
+          isFirstRule = false
           continue
         }
       } else {
@@ -355,7 +424,8 @@ Responda diretamente e de forma concisa.`
           if (rule.static_reply) {
             replyText = rule.static_reply
           } else {
-            await updateLogStatus('failed', `AI generation error: ${aiErr.message}`)
+            await saveRuleLog('failed', `AI generation error: ${aiErr.message}`)
+            isFirstRule = false
             continue
           }
         }
@@ -363,7 +433,10 @@ Responda diretamente e de forma concisa.`
     }
 
     replyText = replyText.trim()
-    if (!replyText) continue
+    if (!replyText) {
+      isFirstRule = false
+      continue
+    }
 
     // D. Dispatch response via Zernio API
     let endpoint = ''
@@ -400,17 +473,19 @@ Responda diretamente e de forma concisa.`
 
       if (!zernioRes.ok) {
         const errText = await zernioRes.text()
-        await updateLogStatus('failed', `Zernio dispatch error ${zernioRes.status} on POST ${endpoint} with ${JSON.stringify(requestBody)}: ${errText}`)
+        await saveRuleLog('failed', `Zernio dispatch error ${zernioRes.status} on POST ${endpoint}: ${errText}`)
       } else {
-        await updateLogStatus('success', undefined, replyText)
-        return { success: true, replied: true, replyText }
+        await saveRuleLog('success', undefined, replyText)
+        executedResults.push({ ruleId: rule.id, type: rule.automation_type, replyText })
       }
     } catch (zernioErr: any) {
-      await updateLogStatus('failed', `Zernio fetch call error: ${zernioErr.message}`)
+      await saveRuleLog('failed', `Zernio fetch call error: ${zernioErr.message}`)
     }
+
+    isFirstRule = false
   }
 
-  return { success: true }
+  return { success: true, replied: executedResults.length > 0, results: executedResults }
 }
 
 serve(async (req) => {
