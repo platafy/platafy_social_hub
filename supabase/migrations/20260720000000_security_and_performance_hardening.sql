@@ -134,6 +134,8 @@ CREATE POLICY "Superadmin plans delete" ON public.plans
 -- 7. BLINDAGEM DE RLS NA TABELA subscriptions (CLIENTES NÃO PODEM SE AUTO-PROMOVER)
 -- Remove a permissão de UPDATE de usuários autenticados comuns
 DROP POLICY IF EXISTS "Subscriptions tenant update" ON public.subscriptions;
+DROP POLICY IF EXISTS "Superadmin subscriptions update" ON public.subscriptions;
+DROP POLICY IF EXISTS "Superadmin subscriptions insert" ON public.subscriptions;
 REVOKE UPDATE, INSERT, DELETE ON public.subscriptions FROM authenticated;
 
 -- Apenas o Super Admin ou service_role (webhook de pagamento) podem alterar assinaturas
