@@ -6,8 +6,10 @@ Deno.serve(async (req) => {
 
   try {
     const { email, redirect_to } = await req.json();
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email Ã© obrigatÃ³rio' }), {
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+    if (!cleanEmail) {
+      return new Response(JSON.stringify({ error: 'Email é obrigatório' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -17,7 +19,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!
     );
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: redirect_to,
     });
 
@@ -27,7 +29,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, message: 'Email de recuperaÃ§Ã£o enviado' }), {
+    return new Response(JSON.stringify({ ok: true, message: 'Email de recuperação enviado' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

@@ -528,6 +528,25 @@ serve(async (req) => {
         })
       }
 
+      // Authenticate user requesting retry
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       // Fetch the log row
       const { data: logRow, error: fetchErr } = await supabaseClient
         .from('zernio_automation_logs')
@@ -540,6 +559,23 @@ serve(async (req) => {
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
+      }
+
+      // Validate tenant ownership
+      const isSuperAdmin = (user.email?.toLowerCase().trim() === 'suporte@platafy.com')
+      if (!isSuperAdmin) {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('tenant_id')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (profile?.tenant_id !== logRow.tenant_id) {
+          return new Response(JSON.stringify({ error: 'Forbidden: You do not have access to this log' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
       }
 
       const retryResult = await processWebhookEvent(supabaseClient, logRow.raw_payload, logRow.event_type, true, logId)

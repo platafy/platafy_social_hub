@@ -40,20 +40,58 @@ serve(async (req) => {
       })
     }
 
-    // 1. Obter Access Token do Mercado Pago
+    // 1. Obter Access Token e Webhook Secret do Mercado Pago
     let mpAccessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || ''
-    if (!mpAccessToken) {
+    let mpWebhookSecret = Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET') || ''
+    if (!mpAccessToken || !mpWebhookSecret) {
       const { data: settings } = await supabaseAdmin
         .from('platform_settings')
-        .select('mercadopago_access_token')
+        .select('mercadopago_access_token, mercadopago_webhook_secret')
         .limit(1)
         .maybeSingle()
-      mpAccessToken = settings?.mercadopago_access_token || ''
+      if (!mpAccessToken) mpAccessToken = settings?.mercadopago_access_token || ''
+      if (!mpWebhookSecret) mpWebhookSecret = settings?.mercadopago_webhook_secret || ''
     }
 
     if (!mpAccessToken) {
       console.error('[MercadoPago Webhook] Access token não configurado.')
       return new Response(JSON.stringify({ error: 'Token não configurado' }), { status: 200 })
+    }
+
+    // 1.1 Validar assinatura se webhook secret e header x-signature estiverem presentes
+    const xSignature = req.headers.get('x-signature')
+    const xRequestId = req.headers.get('x-request-id')
+    if (mpWebhookSecret && xSignature) {
+      try {
+        const parts: Record<string, string> = {}
+        for (const item of xSignature.split(',')) {
+          const [k, v] = item.trim().split('=')
+          if (k && v) parts[k] = v
+        }
+        const ts = parts['ts']
+        const v1 = parts['v1']
+        if (ts && v1) {
+          const manifest = `id:${paymentId};request-id:${xRequestId || ''};ts:${ts};`
+          const key = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(mpWebhookSecret),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+          )
+          const signature = await crypto.subtle.sign(
+            'HMAC',
+            key,
+            new TextEncoder().encode(manifest)
+          )
+          const hashHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
+          if (hashHex !== v1) {
+            console.warn(`[MercadoPago Webhook] Aviso: Assinatura HMAC divergente para evento ${paymentId}`)
+          }
+        }
+      } catch (sigErr) {
+        console.warn('[MercadoPago Webhook] Erro ao validar assinatura x-signature:', sigErr)
+      }
     }
 
     // 2. Consultar detalhes do pagamento na API oficial do Mercado Pago

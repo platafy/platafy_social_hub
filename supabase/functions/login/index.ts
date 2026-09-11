@@ -6,8 +6,11 @@ Deno.serve(async (req) => {
 
   try {
     const { email, password } = await req.json();
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: 'Email e senha sÃ£o obrigatÃ³rios' }), {
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const cleanPassword = typeof password === 'string' ? password : '';
+
+    if (!cleanEmail || !cleanPassword) {
+      return new Response(JSON.stringify({ error: 'Email e senha são obrigatórios' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -17,7 +20,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY')!
     );
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -32,7 +35,7 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('tenant_id, full_name')
       .eq('id', data.user.id)
-      .single();
+      .maybeSingle();
 
     return new Response(JSON.stringify({ session: data.session, user: data.user, profile }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

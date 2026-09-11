@@ -616,8 +616,16 @@ export default function Home() {
       if (!forceSync) {
         let dbQuery = supabase
           .from('zernio_contacts' as any)
-          .select('*', { count: 'exact' })
-          .eq('profile_id', selectedProfileId)
+          .select('*', { count: 'exact' });
+
+        if (tenantId) {
+          dbQuery = dbQuery.eq('tenant_id', tenantId);
+        }
+        if (selectedProfileId) {
+          dbQuery = dbQuery.eq('profile_id', selectedProfileId);
+        }
+
+        dbQuery = dbQuery
           .order('name', { ascending: true })
           .range((page - 1) * CONTACTS_PER_PAGE, page * CONTACTS_PER_PAGE - 1);
 
@@ -874,11 +882,17 @@ export default function Home() {
   const fetchAutomationLogs = useCallback(async () => {
     setLoadingLogs(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("zernio_automation_logs" as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(1000);
+
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setAutomationLogs(data || []);
       setLogsPage(1);
@@ -887,7 +901,7 @@ export default function Home() {
     } finally {
       setLoadingLogs(false);
     }
-  }, []);
+  }, [tenantId]);
 
   const handleClearAutomationLogs = () => {
     setConfirmModal({
@@ -898,10 +912,17 @@ export default function Home() {
         setConfirmModal(null);
         setLoadingLogs(true);
         try {
-          const { error } = await supabase
+          let deleteQuery = supabase
             .from("zernio_automation_logs" as any)
-            .delete()
-            .neq("id", "00000000-0000-0000-0000-000000000000");
+            .delete();
+
+          if (tenantId) {
+            deleteQuery = deleteQuery.eq("tenant_id", tenantId);
+          } else {
+            deleteQuery = deleteQuery.neq("id", "00000000-0000-0000-0000-000000000000");
+          }
+
+          const { error } = await deleteQuery;
           if (error) throw error;
           toast.success("Logs limpos com sucesso!");
           setAutomationLogs([]);
@@ -948,9 +969,13 @@ export default function Home() {
   // Pass fetchLogs=true only when caller explicitly needs to refresh logs
   const fetchAutomations = async (fetchLogs = true) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("zernio_automations" as any)
         .select("*");
+      if (tenantId) {
+        query = query.eq("tenant_id", tenantId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       setAutomations(data || []);
       if (fetchLogs) fetchAutomationLogs();

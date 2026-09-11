@@ -1,19 +1,33 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const { email, password, full_name, tenant_name } = await req.json();
 
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: 'Email e senha sÃ£o obrigatÃ³rios' }), {
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const cleanPassword = typeof password === 'string' ? password : '';
+    const cleanFullName = typeof full_name === 'string' ? full_name.trim().slice(0, 100) : '';
+    const cleanTenantName = typeof tenant_name === 'string' ? tenant_name.trim().slice(0, 100) : '';
+
+    if (!cleanEmail || !cleanPassword) {
+      return new Response(JSON.stringify({ error: 'Email e senha são obrigatórios' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (password.length < 6) {
-      return new Response(JSON.stringify({ error: 'Senha deve ter no mÃ­nimo 6 caracteres' }), {
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      return new Response(JSON.stringify({ error: 'Formato de email inválido' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (cleanPassword.length < 6) {
+      return new Response(JSON.stringify({ error: 'Senha deve ter no mínimo 6 caracteres' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -24,10 +38,10 @@ Deno.serve(async (req) => {
     );
 
     const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
+      email: cleanEmail,
+      password: cleanPassword,
       email_confirm: true,
-      user_metadata: { full_name: full_name ?? '', tenant_name: tenant_name ?? '' },
+      user_metadata: { full_name: cleanFullName, tenant_name: cleanTenantName },
     });
 
     if (error) {
