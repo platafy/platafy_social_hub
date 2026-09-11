@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- MIGRATION: 20260720000000_security_and_performance_hardening.sql
 -- AUDITORIA PROFUNDA DE SEGURANÇA, ISOLAMENTO MULTI-TENANT E BANCO DE DADOS
--- PLATAFY SOCIAL HUB
+-- PLATAFY SOCIAL HUB (VERSÃO TOTALMENTE AUTOCONTIDA E RESILIENTE)
 -- ==============================================================================
 
 -- 1. HARDENING DA FUNÇÃO DE SUPER ADMIN (Case-insensitive e sanitizada)
@@ -15,11 +15,133 @@ AS $$
   SELECT (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'suporte@platafy.com');
 $$;
 
--- 2. AJUSTES DE PERMISSÕES NA TABELA TENANTS
+-- 2. GARANTIR ESTRUTURAS E COLUNAS DE TODAS AS TABELAS DO SISTEMA
+-- Garante que zernio_integrations possui todas as colunas necessárias
+ALTER TABLE public.zernio_integrations 
+  ADD COLUMN IF NOT EXISTS name TEXT DEFAULT 'Conta Principal',
+  ADD COLUMN IF NOT EXISTS account_name TEXT,
+  ADD COLUMN IF NOT EXISTS zernio_profile_id TEXT,
+  ADD COLUMN IF NOT EXISTS ai_gemini_key TEXT,
+  ADD COLUMN IF NOT EXISTS ai_openai_key TEXT,
+  ADD COLUMN IF NOT EXISTS ai_anthropic_key TEXT,
+  ADD COLUMN IF NOT EXISTS ai_mistral_key TEXT,
+  ADD COLUMN IF NOT EXISTS ai_groq_key TEXT,
+  ADD COLUMN IF NOT EXISTS ai_seekai_key TEXT;
+
+-- Garante que zernio_posts possui zernio_integration_id
+ALTER TABLE public.zernio_posts 
+  ADD COLUMN IF NOT EXISTS zernio_integration_id UUID REFERENCES public.zernio_integrations(id) ON DELETE SET NULL;
+
+-- Garante que a tabela zernio_integration_channels existe
+CREATE TABLE IF NOT EXISTS public.zernio_integration_channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  integration_id UUID NOT NULL REFERENCES public.zernio_integrations(id) ON DELETE CASCADE,
+  social_account_id TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  name TEXT,
+  username TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, social_account_id)
+);
+
+-- Garante que a tabela zernio_automations existe
+CREATE TABLE IF NOT EXISTS public.zernio_automations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  social_account_id TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  is_enabled BOOLEAN NOT NULL DEFAULT true,
+  trigger_type TEXT NOT NULL DEFAULT 'all',
+  keywords TEXT[] DEFAULT '{}',
+  automation_type TEXT NOT NULL DEFAULT 'comment_reply',
+  ai_provider TEXT NOT NULL DEFAULT 'static',
+  ai_prompt TEXT,
+  static_reply TEXT,
+  target_posts_type TEXT NOT NULL DEFAULT 'all',
+  target_post_ids TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, social_account_id, automation_type)
+);
+
+-- Garante que a tabela zernio_automation_dedup existe
+CREATE TABLE IF NOT EXISTS public.zernio_automation_dedup (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  event_id TEXT NOT NULL,
+  comment_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (tenant_id, event_id)
+);
+
+-- Garante que a tabela zernio_automation_logs existe e possui rule_id
+CREATE TABLE IF NOT EXISTS public.zernio_automation_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  social_account_id TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  sender_username TEXT,
+  content TEXT,
+  status TEXT NOT NULL DEFAULT 'no_automation',
+  error_message TEXT,
+  reply_sent TEXT,
+  raw_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.zernio_automation_logs
+  ADD COLUMN IF NOT EXISTS rule_id UUID REFERENCES public.zernio_automations(id) ON DELETE SET NULL;
+
+-- Garante que a tabela zernio_contacts existe
+CREATE TABLE IF NOT EXISTS public.zernio_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL,
+  zernio_contact_id TEXT NOT NULL,
+  profile_id TEXT,
+  integration_id TEXT,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  avatar_url TEXT,
+  tags TEXT[] DEFAULT '{}',
+  platforms TEXT[] DEFAULT '{}',
+  last_interaction_at TIMESTAMPTZ,
+  raw_data JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, zernio_contact_id)
+);
+
+-- Garante que subscriptions possui colunas de gestão manual
+ALTER TABLE public.subscriptions 
+  ADD COLUMN IF NOT EXISTS billing_type TEXT NOT NULL DEFAULT 'mercadopago',
+  ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'credit_card',
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ;
+
+-- Garante que payment_history existe
+CREATE TABLE IF NOT EXISTS public.payment_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  plan_id UUID REFERENCES public.plans(id) ON DELETE SET NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'BRL',
+  payment_method TEXT,
+  status TEXT NOT NULL,
+  mercadopago_payment_id TEXT,
+  receipt_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 3. AJUSTES DE PERMISSÕES NA TABELA TENANTS
 GRANT SELECT, UPDATE ON public.tenants TO authenticated;
 GRANT ALL ON public.tenants TO service_role;
 
--- 3. REVOGAÇÃO COMPLETA DE ACESSOS ANÔNIMOS EM TABELAS SENSÍVEIS
+-- 4. REVOGAÇÃO COMPLETA DE ACESSOS ANÔNIMOS EM TABELAS SENSÍVEIS
 REVOKE ALL ON public.zernio_contacts FROM anon;
 REVOKE ALL ON public.zernio_automation_logs FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON public.subscriptions FROM anon;
@@ -27,7 +149,7 @@ REVOKE INSERT, UPDATE, DELETE ON public.plans FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON public.payment_history FROM anon;
 REVOKE ALL ON public.platform_settings FROM anon;
 
--- 4. BLINDAGEM DE RLS NA TABELA zernio_contacts (DADOS PESSOAIS / CRM)
+-- 5. BLINDAGEM DE RLS NA TABELA zernio_contacts (DADOS PESSOAIS / CRM)
 DROP POLICY IF EXISTS "tenant_access" ON public.zernio_contacts;
 DROP POLICY IF EXISTS "anon_access" ON public.zernio_contacts;
 DROP POLICY IF EXISTS "Contacts tenant select" ON public.zernio_contacts;
@@ -75,7 +197,7 @@ CREATE POLICY "Contacts superadmin select" ON public.zernio_contacts
   FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- 5. BLINDAGEM DE RLS NA TABELA zernio_automation_logs
+-- 6. BLINDAGEM DE RLS NA TABELA zernio_automation_logs
 DROP POLICY IF EXISTS "Logs tenant select anon" ON public.zernio_automation_logs;
 DROP POLICY IF EXISTS "Logs tenant insert anon" ON public.zernio_automation_logs;
 DROP POLICY IF EXISTS "Logs tenant update anon" ON public.zernio_automation_logs;
@@ -89,10 +211,6 @@ DROP POLICY IF EXISTS "Logs tenant delete authenticated" ON public.zernio_automa
 DROP POLICY IF EXISTS "Logs tenant select" ON public.zernio_automation_logs;
 DROP POLICY IF EXISTS "Logs tenant delete" ON public.zernio_automation_logs;
 DROP POLICY IF EXISTS "Logs superadmin select" ON public.zernio_automation_logs;
-
--- Adicionar coluna rule_id faltante se não existir
-ALTER TABLE public.zernio_automation_logs
-  ADD COLUMN IF NOT EXISTS rule_id UUID REFERENCES public.zernio_automations(id) ON DELETE SET NULL;
 
 ALTER TABLE public.zernio_automation_logs ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, DELETE ON public.zernio_automation_logs TO authenticated;
@@ -110,7 +228,7 @@ CREATE POLICY "Logs superadmin select" ON public.zernio_automation_logs
   FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- 6. BLINDAGEM DE RLS NA TABELA plans (PREVENÇÃO DE MANIPULAÇÃO DE PREÇOS)
+-- 7. BLINDAGEM DE RLS NA TABELA plans (PREVENÇÃO DE MANIPULAÇÃO DE PREÇOS)
 DROP POLICY IF EXISTS "Superadmin plans update" ON public.plans;
 DROP POLICY IF EXISTS "Superadmin plans insert" ON public.plans;
 DROP POLICY IF EXISTS "Superadmin plans delete" ON public.plans;
@@ -131,14 +249,12 @@ CREATE POLICY "Superadmin plans delete" ON public.plans
   FOR DELETE TO authenticated
   USING (public.is_super_admin());
 
--- 7. BLINDAGEM DE RLS NA TABELA subscriptions (CLIENTES NÃO PODEM SE AUTO-PROMOVER)
--- Remove a permissão de UPDATE de usuários autenticados comuns
+-- 8. BLINDAGEM DE RLS NA TABELA subscriptions (CLIENTES NÃO PODEM SE AUTO-PROMOVER)
 DROP POLICY IF EXISTS "Subscriptions tenant update" ON public.subscriptions;
 DROP POLICY IF EXISTS "Superadmin subscriptions update" ON public.subscriptions;
 DROP POLICY IF EXISTS "Superadmin subscriptions insert" ON public.subscriptions;
 REVOKE UPDATE, INSERT, DELETE ON public.subscriptions FROM authenticated;
 
--- Apenas o Super Admin ou service_role (webhook de pagamento) podem alterar assinaturas
 CREATE POLICY "Superadmin subscriptions update" ON public.subscriptions
   FOR UPDATE TO authenticated
   USING (public.is_super_admin())
@@ -148,7 +264,7 @@ CREATE POLICY "Superadmin subscriptions insert" ON public.subscriptions
   FOR INSERT TO authenticated
   WITH CHECK (public.is_super_admin());
 
--- 8. VISIBILIDADE DO SUPER ADMIN NAS INTEGRAÇÕES E CANAIS DE CLIENTES
+-- 9. VISIBILIDADE DO SUPER ADMIN NAS INTEGRAÇÕES E CANAIS DE CLIENTES
 DROP POLICY IF EXISTS "Superadmin integrations select" ON public.zernio_integrations;
 CREATE POLICY "Superadmin integrations select" ON public.zernio_integrations
   FOR SELECT TO authenticated
@@ -159,8 +275,7 @@ CREATE POLICY "Superadmin channels select" ON public.zernio_integration_channels
   FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- 9. BLINDAGEM COMPLETA DO STORAGE (storage.objects)
--- Revogar permissões perigosas de anon nos buckets de mídia
+-- 10. BLINDAGEM COMPLETA DO STORAGE (storage.objects)
 DROP POLICY IF EXISTS "Allow Insert on zernio-media" ON storage.objects;
 DROP POLICY IF EXISTS "Allow Update on zernio-media" ON storage.objects;
 DROP POLICY IF EXISTS "Allow Delete on zernio-media" ON storage.objects;
@@ -209,7 +324,7 @@ CREATE POLICY "Authenticated Delete on media" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'media');
 
--- 10. INTEGRIDADE REFERENCIAL DE DEDUP
+-- 11. INTEGRIDADE REFERENCIAL DE DEDUP
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -223,7 +338,7 @@ BEGIN
   END IF;
 END $$;
 
--- 11. ÍNDICES DE ALTA PERFORMANCE (ELIMINANDO FULL TABLE SCANS)
+-- 12. ÍNDICES DE ALTA PERFORMANCE (ELIMINANDO FULL TABLE SCANS)
 CREATE INDEX IF NOT EXISTS idx_zernio_integrations_tenant ON public.zernio_integrations(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_zernio_posts_tenant ON public.zernio_posts(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_zernio_posts_integration ON public.zernio_posts(zernio_integration_id);
