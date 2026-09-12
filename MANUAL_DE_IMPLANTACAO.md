@@ -384,7 +384,7 @@ Os valores e limites reais configurados no banco de dados e no código (`Subscri
 
 | Plano | Preço Mensal | Perfis Ativos Permitidos | Total Contas Sociais | Agendamentos | Automação IA | White Label |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Starter** | **R$ 47,00** | **1 Perfil Ativo** | Até 2 contas | 50 posts/mês | Não | Não |
+| **Starter** | **R$ 37,00** | **1 Perfil Ativo** | Até 2 contas | 50 posts/mês | Não | Não |
 | **Pro** (Popular) | **R$ 97,00** | **5 Perfis Ativos** | Até 10 contas | Ilimitado | Sim (Todas as LLMs) | Não |
 | **Agência** | **R$ 197,00** | **Ilimitado (-1)** | Ilimitado (-1) | Ilimitado | Sim (Todas as LLMs) | Sim (Completo) |
 

@@ -61,7 +61,7 @@ export const DEFAULT_PLANS: Plan[] = [
     name: "Starter",
     slug: "starter",
     description: "Perfeito para autônomos e pequenos criadores de conteúdo",
-    price: 47.00,
+    price: 37.00,
     currency: "BRL",
     interval: "monthly",
     features: [

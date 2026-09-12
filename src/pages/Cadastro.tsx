@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,20 @@ export default function Cadastro() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [trialDays, setTrialDays] = useState(7);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("get_public_trial_days");
+        if (!error && typeof data === "number") {
+          setTrialDays(data);
+        }
+      } catch (err) {
+        console.warn("Não foi possível carregar dias de teste público:", err);
+      }
+    })();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,9 +71,15 @@ export default function Cadastro() {
           <CardDescription className="text-muted-foreground text-xs sm:text-sm">
             Crie seu workspace e comece a gerenciar suas redes
           </CardDescription>
-          <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mx-auto mt-2">
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" /> 7 dias de teste grátis incluídos
-          </div>
+          {trialDays > 0 ? (
+            <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mx-auto mt-2">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" /> {trialDays} {trialDays === 1 ? "dia" : "dias"} de teste grátis no plano Starter
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mx-auto mt-2">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Teste grátis no plano Starter
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-3.5">

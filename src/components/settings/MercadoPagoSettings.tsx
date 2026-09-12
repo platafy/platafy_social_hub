@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { 
   CreditCard, Key, CheckCircle2, Copy, RefreshCw,
-  ShieldCheck, Eye, EyeOff
+  ShieldCheck, Eye, EyeOff, Clock
 } from "lucide-react";
 
 export function MercadoPagoSettings() {
@@ -190,21 +190,27 @@ export function MercadoPagoSettings() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="trialDays" className="text-sm font-semibold">
-              Dias de Teste Gratuito (Trial)
-            </Label>
+          <div className="space-y-2 p-3.5 rounded-xl bg-muted/40 border border-border/60">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="trialDays" className="text-sm font-semibold flex items-center gap-1.5 text-foreground">
+                <Clock className="w-4 h-4 text-amber-500" />
+                Dias de Teste Gratuito (Trial)
+              </Label>
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                Plano Starter (R$ 37,00)
+              </span>
+            </div>
             <Input
               id="trialDays"
               type="number"
               min={0}
-              max={30}
+              max={90}
               value={trialDays}
               onChange={(e) => setTrialDays(Number(e.target.value))}
-              className="h-10"
+              className="h-10 bg-background"
             />
-            <p className="text-[11px] text-muted-foreground">
-              Dias concedidos automaticamente a cada novo cadastro (padrão: 7 dias).
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Define quantos dias de acesso gratuito são liberados para novos usuários ao criarem uma conta na plataforma. Todo novo cadastro recebe automaticamente o <strong>Plano Starter de R$ 37,00</strong> durante esse período.
             </p>
           </div>
         </div>

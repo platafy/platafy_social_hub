@@ -131,6 +131,12 @@ export function SuperAdminClients() {
   const [clientNotesInput, setClientNotesInput] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
 
+  // Configuração global de Período de Teste Gratuito (Trial)
+  const [currentTrialDays, setCurrentTrialDays] = useState(7);
+  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
+  const [savingTrialDays, setSavingTrialDays] = useState(false);
+  const [editTrialDays, setEditTrialDays] = useState(7);
+
   // 1. Carregar todos os dados
   const loadData = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -144,6 +150,20 @@ export function SuperAdminClients() {
 
       if (plansData) {
         setPlans(plansData as PlanItem[]);
+      }
+
+      // Buscar dias de teste gratuito em platform_settings
+      try {
+        const { data: settingsData } = await (supabase.from("platform_settings" as any) as any)
+          .select("trial_days")
+          .limit(1)
+          .maybeSingle();
+
+        if (settingsData && typeof settingsData.trial_days === "number") {
+          setCurrentTrialDays(settingsData.trial_days);
+        }
+      } catch (errSettings) {
+        console.warn("Erro ao buscar platform_settings:", errSettings);
       }
 
       // Buscar perfis com tenants
@@ -717,7 +737,21 @@ export function SuperAdminClients() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditTrialDays(currentTrialDays);
+              setIsTrialModalOpen(true);
+            }}
+            className="border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium shadow-xs"
+            title="Configurar Dias do Período de Teste Gratuito (Plano Starter)"
+          >
+            <Clock className="w-4 h-4 mr-1.5 text-amber-500" />
+            Teste Grátis: {currentTrialDays}d (Starter R$ 37)
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -733,8 +767,8 @@ export function SuperAdminClients() {
             size="sm"
             onClick={() => {
               if (plans.length > 0 && !newClientForm.planId) {
-                const pro = plans.find(p => p.slug === "pro") || plans[0];
-                setNewClientForm(prev => ({ ...prev, planId: pro.id }));
+                const starter = plans.find(p => p.slug === "starter") || plans[0];
+                setNewClientForm(prev => ({ ...prev, planId: starter.id }));
               }
               setIsNewClientOpen(true);
             }}
@@ -1895,6 +1929,119 @@ export function SuperAdminClients() {
           }
         }}
       />
+
+      {/* MODAL: Configurar Período de Teste Gratuito (Trial) */}
+      {isTrialModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border/80">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-foreground">Período de Teste Gratuito</h2>
+                  <p className="text-xs text-muted-foreground">Configuração global para novos cadastros</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTrialModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
+                <p className="font-bold flex items-center gap-1.5 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  Plano Vinculado: Starter (R$ 37,00)
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Todo novo usuário que se cadastrar na plataforma receberá automaticamente o <strong>Plano Starter de R$ 37,00</strong> pelo número de dias configurado abaixo.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="modalTrialDays" className="text-xs font-semibold text-foreground">
+                  Quantidade de Dias de Teste Gratuito
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="modalTrialDays"
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={editTrialDays}
+                    onChange={e => setEditTrialDays(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="h-10 bg-background text-foreground pr-12 font-bold text-base"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                    dias
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Defina quantos dias o cliente terá de cortesia. Digite 0 para desativar o teste automático.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border/80">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTrialModalOpen(false)}
+                disabled={savingTrialDays}
+                className="border-border text-foreground hover:bg-muted"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={async () => {
+                  setSavingTrialDays(true);
+                  try {
+                    const { data: existing } = await (supabase.from("platform_settings" as any) as any)
+                      .select("id")
+                      .limit(1)
+                      .maybeSingle();
+
+                    const days = Math.max(0, Number(editTrialDays) || 0);
+
+                    if (existing?.id) {
+                      const { error } = await (supabase.from("platform_settings" as any) as any)
+                        .update({ trial_days: days, updated_at: new Date().toISOString() })
+                        .eq("id", existing.id);
+                      if (error) throw error;
+                    } else {
+                      const { error } = await (supabase.from("platform_settings" as any) as any)
+                        .insert({ trial_days: days, updated_at: new Date().toISOString() });
+                      if (error) throw error;
+                    }
+
+                    setCurrentTrialDays(days);
+                    setIsTrialModalOpen(false);
+                    toast.success(`Período de teste atualizado para ${days} dias (Plano Starter R$ 37)!`);
+                  } catch (err: any) {
+                    console.error("Erro ao salvar dias de teste:", err);
+                    toast.error(err.message || "Erro ao salvar dias de teste.");
+                  } finally {
+                    setSavingTrialDays(false);
+                  }
+                }}
+                disabled={savingTrialDays}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              >
+                {savingTrialDays ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
