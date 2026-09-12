@@ -747,80 +747,70 @@ export function SuperAdminClients() {
       </div>
 
       {/* KPI Cards (Light & Dark Mode) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">Total de Clientes</span>
-              <div className="p-1.5 rounded-lg bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300">
-                <Users className="w-4 h-4" />
-              </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+        <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate">Total de Clientes</span>
+            <div className="p-1 rounded-md bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 shrink-0">
+              <Users className="w-3.5 h-3.5" />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground mt-1">{stats.total}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs text-muted-foreground">Cadastrados no sistema</p>
-          </CardContent>
+          </div>
+          <div className="text-xl sm:text-2xl font-bold text-foreground my-1 leading-none">
+            {stats.total}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Cadastrados no sistema</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Ativos</span>
-              <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
+        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-emerald-700 dark:text-emerald-400 truncate">Ativos</span>
+            <div className="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
-            <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{stats.active}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs text-muted-foreground">Com licença em dia</p>
-          </CardContent>
+          </div>
+          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 my-1 leading-none">
+            {stats.active}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Com licença em dia</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Em Teste (Trial)</span>
-              <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
-                <Clock className="w-4 h-4" />
-              </div>
+        <Card className="bg-card border-border shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-amber-700 dark:text-amber-400 truncate">Em Teste (Trial)</span>
+            <div className="p-1 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 shrink-0">
+              <Clock className="w-3.5 h-3.5" />
             </div>
-            <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{stats.trialing}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs text-muted-foreground">Período de avaliação</p>
-          </CardContent>
+          </div>
+          <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 my-1 leading-none">
+            {stats.trialing}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Período de avaliação</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Licença Manual</span>
-              <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
-                <Key className="w-4 h-4" />
-              </div>
+        <Card className="bg-card border-border shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-blue-700 dark:text-blue-400 truncate">Licença Manual</span>
+            <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shrink-0">
+              <Key className="w-3.5 h-3.5" />
             </div>
-            <CardTitle className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{stats.manual}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs text-muted-foreground">Pagamento direto/manual</p>
-          </CardContent>
+          </div>
+          <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 my-1 leading-none">
+            {stats.manual}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Pagamento direto/manual</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-rose-700 dark:text-rose-400">Suspensos / Vencidos</span>
-              <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
-                <AlertCircle className="w-4 h-4" />
-              </div>
+        <Card className="bg-card border-border shadow-xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[11px] sm:text-xs font-medium text-rose-700 dark:text-rose-400 truncate">Suspensos / Vencidos</span>
+            <div className="p-1 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
+              <AlertCircle className="w-3.5 h-3.5" />
             </div>
-            <CardTitle className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">{stats.suspendedOrExpired}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="text-xs text-muted-foreground">Requer atenção</p>
-          </CardContent>
+          </div>
+          <div className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400 my-1 leading-none">
+            {stats.suspendedOrExpired}
+          </div>
+          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Requer atenção</p>
         </Card>
       </div>
 
