@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   Users, UserPlus, Search, RefreshCw, ShieldCheck,
@@ -699,9 +699,9 @@ export function SuperAdminClients() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in text-foreground">
+    <div className="space-y-4 animate-fade-in text-foreground">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-4">
         <div>
           <div className="flex items-center gap-2.5 mb-1.5">
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -746,71 +746,71 @@ export function SuperAdminClients() {
         </div>
       </div>
 
-      {/* KPI Cards (Light & Dark Mode) */}
+      {/* KPI Cards (Ultra-compact, Slim & Tight) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-        <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+        <Card className="bg-card border-border shadow-xs hover:border-primary/40 transition-colors rounded-xl px-3 py-2 flex flex-col justify-center gap-0.5 h-[76px]">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate">Total de Clientes</span>
+            <span className="text-[11px] font-medium text-muted-foreground truncate">Total de Clientes</span>
             <div className="p-1 rounded-md bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 shrink-0">
               <Users className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-foreground my-1 leading-none">
+          <div className="text-xl font-bold text-foreground leading-none">
             {stats.total}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Cadastrados no sistema</p>
+          <p className="text-[10px] text-muted-foreground truncate leading-none">Cadastrados no sistema</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+        <Card className="bg-card border-border shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors rounded-xl px-3 py-2 flex flex-col justify-center gap-0.5 h-[76px]">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] sm:text-xs font-medium text-emerald-700 dark:text-emerald-400 truncate">Ativos</span>
+            <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 truncate">Ativos</span>
             <div className="p-1 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 my-1 leading-none">
+          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 leading-none">
             {stats.active}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Com licença em dia</p>
+          <p className="text-[10px] text-muted-foreground truncate leading-none">Com licença em dia</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+        <Card className="bg-card border-border shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-colors rounded-xl px-3 py-2 flex flex-col justify-center gap-0.5 h-[76px]">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] sm:text-xs font-medium text-amber-700 dark:text-amber-400 truncate">Em Teste (Trial)</span>
+            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 truncate">Em Teste (Trial)</span>
             <div className="p-1 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 shrink-0">
               <Clock className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 my-1 leading-none">
+          <div className="text-xl font-bold text-amber-600 dark:text-amber-400 leading-none">
             {stats.trialing}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Período de avaliação</p>
+          <p className="text-[10px] text-muted-foreground truncate leading-none">Período de avaliação</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+        <Card className="bg-card border-border shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-colors rounded-xl px-3 py-2 flex flex-col justify-center gap-0.5 h-[76px]">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] sm:text-xs font-medium text-blue-700 dark:text-blue-400 truncate">Licença Manual</span>
+            <span className="text-[11px] font-medium text-blue-700 dark:text-blue-400 truncate">Licença Manual</span>
             <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shrink-0">
               <Key className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 my-1 leading-none">
+          <div className="text-xl font-bold text-blue-600 dark:text-blue-400 leading-none">
             {stats.manual}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Pagamento direto/manual</p>
+          <p className="text-[10px] text-muted-foreground truncate leading-none">Pagamento direto/manual</p>
         </Card>
 
-        <Card className="bg-card border-border shadow-xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors rounded-xl p-3 sm:p-3 flex flex-col justify-between">
+        <Card className="bg-card border-border shadow-xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors rounded-xl px-3 py-2 flex flex-col justify-center gap-0.5 h-[76px]">
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] sm:text-xs font-medium text-rose-700 dark:text-rose-400 truncate">Suspensos / Vencidos</span>
+            <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 truncate">Suspensos / Vencidos</span>
             <div className="p-1 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
               <AlertCircle className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400 my-1 leading-none">
+          <div className="text-xl font-bold text-rose-600 dark:text-rose-400 leading-none">
             {stats.suspendedOrExpired}
           </div>
-          <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">Requer atenção</p>
+          <p className="text-[10px] text-muted-foreground truncate leading-none">Requer atenção</p>
         </Card>
       </div>
 
