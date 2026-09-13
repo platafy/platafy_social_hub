@@ -204,7 +204,9 @@ export default function Home() {
   const logsPerPage = 10;
   const [automationStaticReply, setAutomationStaticReply] = useState<string>("");
   const [automationCommentReplyEnabled, setAutomationCommentReplyEnabled] = useState<boolean>(true);
+  const [automationCommentReplyProvider, setAutomationCommentReplyProvider] = useState<"static" | "gemini" | "openai" | "anthropic" | "mistral" | "groq" | "seekai">("static");
   const [automationCommentReplyText, setAutomationCommentReplyText] = useState<string>("");
+  const [automationCommentReplyPrompt, setAutomationCommentReplyPrompt] = useState<string>("");
   const [automationTargetPostsType, setAutomationTargetPostsType] = useState<"all" | "specific">("all");
   const [automationTargetPostIds, setAutomationTargetPostIds] = useState<string[]>([]);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
@@ -1025,7 +1027,9 @@ export default function Home() {
         ai_prompt: automationAiPrompt,
         static_reply: automationStaticReply,
         comment_reply_enabled: automationType === "comment_to_dm" ? automationCommentReplyEnabled : false,
+        comment_reply_provider: automationType === "comment_to_dm" ? automationCommentReplyProvider : "static",
         comment_reply_text: automationType === "comment_to_dm" && automationCommentReplyEnabled ? automationCommentReplyText : null,
+        comment_reply_prompt: automationType === "comment_to_dm" && automationCommentReplyEnabled ? automationCommentReplyPrompt : null,
         target_posts_type: automationTargetPostsType,
         target_post_ids: automationTargetPostIds
       };
@@ -1104,7 +1108,9 @@ export default function Home() {
       setAutomationAiPrompt(rule.ai_prompt || "");
       setAutomationStaticReply(rule.static_reply || "");
       setAutomationCommentReplyEnabled(rule.comment_reply_enabled ?? true);
+      setAutomationCommentReplyProvider(rule.comment_reply_provider || "static");
       setAutomationCommentReplyText(rule.comment_reply_text || "");
+      setAutomationCommentReplyPrompt(rule.comment_reply_prompt || "");
       setAutomationTargetPostsType(rule.target_posts_type || "all");
       setAutomationTargetPostIds(rule.target_post_ids || []);
     } else {
@@ -1116,7 +1122,9 @@ export default function Home() {
       setAutomationAiPrompt("");
       setAutomationStaticReply("");
       setAutomationCommentReplyEnabled(true);
+      setAutomationCommentReplyProvider("static");
       setAutomationCommentReplyText("");
+      setAutomationCommentReplyPrompt("");
       setAutomationTargetPostsType("all");
       setAutomationTargetPostIds([]);
     }
@@ -4286,7 +4294,9 @@ export default function Home() {
                                     setAutomationAiPrompt(rule.ai_prompt || "");
                                     setAutomationStaticReply(rule.static_reply || "");
                                     setAutomationCommentReplyEnabled(rule.comment_reply_enabled ?? true);
+                                    setAutomationCommentReplyProvider(rule.comment_reply_provider || "static");
                                     setAutomationCommentReplyText(rule.comment_reply_text || "");
+                                    setAutomationCommentReplyPrompt(rule.comment_reply_prompt || "");
                                     setAutomationTargetPostsType(rule.target_posts_type || "all");
                                     setAutomationTargetPostIds(rule.target_post_ids || []);
                                   }}
@@ -4350,6 +4360,10 @@ export default function Home() {
                               setAutomationAiProvider("static");
                               setAutomationAiPrompt("");
                               setAutomationStaticReply("");
+                              setAutomationCommentReplyEnabled(true);
+                              setAutomationCommentReplyProvider("static");
+                              setAutomationCommentReplyText("");
+                              setAutomationCommentReplyPrompt("");
                               setAutomationTargetPostsType("all");
                               setAutomationTargetPostIds([]);
                             }}
@@ -4452,17 +4466,103 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* DUAL RESPONSE CONFIG: For comment_to_dm, show DM section + Public Comment section */}
+                      {/* DUAL RESPONSE CONFIG: For comment_to_dm, show Comment section FIRST + DM section SECOND */}
                       {automationType === "comment_to_dm" ? (
                         <div className="space-y-5 pb-4 border-b border-border/40">
-                          {/* 1. Private DM */}
+                          {/* 1. Public Comment Reply (No Post) */}
+                          <div className="bg-secondary/15 border border-primary/30 rounded-xl p-4 space-y-3.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                  <Bot className="h-4 w-4" />
+                                </div>
+                                <div>
+                                  <Label className="font-bold text-sm block text-foreground">1. Resposta Pública no Comentário (No Post)</Label>
+                                  <span className="text-[11px] text-muted-foreground">Aumenta a prova social e o alcance orgânico da postagem pelo algoritmo.</span>
+                                </div>
+                              </div>
+                              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold select-none bg-card px-2.5 py-1 rounded border border-border/40 hover:border-primary/50 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={automationCommentReplyEnabled}
+                                  onChange={(e) => setAutomationCommentReplyEnabled(e.target.checked)}
+                                  className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                                />
+                                Ativar Resposta no Post
+                              </label>
+                            </div>
+
+                            {automationCommentReplyEnabled && (
+                              <div className="space-y-3 pt-1 border-t border-border/30">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-1.5">
+                                    <Label htmlFor="commentReplyProvider" className="font-semibold text-xs">Provedor de Resposta no Comentário</Label>
+                                    <select
+                                      id="commentReplyProvider"
+                                      value={automationCommentReplyProvider}
+                                      onChange={(e) => setAutomationCommentReplyProvider(e.target.value as any)}
+                                      className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                                    >
+                                      <option value="static">Texto Estático (Personalizado)</option>
+                                      <option value="gemini">Google Gemini AI</option>
+                                      <option value="openai">OpenAI (GPT-4o)</option>
+                                      <option value="anthropic">Anthropic (Claude)</option>
+                                      <option value="seekai">SeekAI (Multi-modelo)</option>
+                                      <option value="mistral">Mistral AI</option>
+                                      <option value="groq">Groq Cloud (Llama)</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {automationCommentReplyProvider === "static" ? (
+                                  <div className="space-y-1.5">
+                                    <Label htmlFor="commentReplyText" className="font-semibold text-xs">Mensagem Estática no Comentário</Label>
+                                    <textarea
+                                      id="commentReplyText"
+                                      rows={2}
+                                      placeholder="ex: Acabei de te enviar todos os detalhes no direct! Dá uma olhadinha lá 📩🚀"
+                                      value={automationCommentReplyText}
+                                      onChange={(e) => setAutomationCommentReplyText(e.target.value)}
+                                      className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <span className="text-[10px] text-muted-foreground block">
+                                      Esta resposta será publicada diretamente embaixo do comentário do usuário no post avisando que a DM foi enviada.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <div className="bg-secondary/40 border border-primary/10 rounded-md p-2.5 text-[11px] text-muted-foreground flex gap-2 items-start">
+                                      <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                      <span>As chaves de API de IA são configuradas na aba <strong>Configurações → Provedores de IA</strong>.</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label htmlFor="commentReplyPrompt" className="font-semibold text-xs">Instrução / Prompt para Comentário</Label>
+                                      <textarea
+                                        id="commentReplyPrompt"
+                                        rows={3}
+                                        placeholder="ex: Responda ao comentário no post de forma amigável e descontraída, avisando que o link ou oferta exclusiva acabou de ser enviado no direct dele!"
+                                        value={automationCommentReplyPrompt}
+                                        onChange={(e) => setAutomationCommentReplyPrompt(e.target.value)}
+                                        className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                      />
+                                      <span className="text-[10px] text-muted-foreground block">
+                                        Guie o comportamento da IA ao criar a resposta pública que será postada no comentário.
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 2. Private DM */}
                           <div className="bg-secondary/15 border border-primary/30 rounded-xl p-4 space-y-3.5">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 rounded-md bg-primary/10 text-primary">
                                 <MessageSquare className="h-4 w-4" />
                               </div>
                               <div>
-                                <Label className="font-bold text-sm block text-foreground">1. Mensagem Privada no Direct (DM)</Label>
+                                <Label className="font-bold text-sm block text-foreground">2. Mensagem Privada no Direct (DM)</Label>
                                 <span className="text-[11px] text-muted-foreground">Conteúdo exclusivo, link ou oferta enviado de forma privada para o seguidor.</span>
                               </div>
                             </div>
@@ -4516,47 +4616,6 @@ export default function Home() {
                                     className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
                                   />
                                 </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* 2. Public Comment Reply */}
-                          <div className="bg-secondary/15 border border-border/40 rounded-xl p-4 space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-md bg-secondary text-primary">
-                                  <Bot className="h-4 w-4" />
-                                </div>
-                                <div>
-                                  <Label className="font-bold text-sm block text-foreground">2. Resposta Pública no Comentário (No Post)</Label>
-                                  <span className="text-[11px] text-muted-foreground">Aumenta a prova social e o alcance orgânico da postagem pelo algoritmo.</span>
-                                </div>
-                              </div>
-                              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold select-none bg-card px-2.5 py-1 rounded border border-border/40 hover:border-primary/50 transition-colors">
-                                <input
-                                  type="checkbox"
-                                  checked={automationCommentReplyEnabled}
-                                  onChange={(e) => setAutomationCommentReplyEnabled(e.target.checked)}
-                                  className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                                />
-                                Ativar Resposta no Post
-                              </label>
-                            </div>
-
-                            {automationCommentReplyEnabled && (
-                              <div className="space-y-1.5 pt-1">
-                                <Label htmlFor="commentReplyText" className="font-semibold text-xs">Texto da Resposta no Comentário</Label>
-                                <textarea
-                                  id="commentReplyText"
-                                  rows={2}
-                                  placeholder="ex: Acabei de te enviar todos os detalhes no direct! Dá uma olhadinha lá 📩🚀"
-                                  value={automationCommentReplyText}
-                                  onChange={(e) => setAutomationCommentReplyText(e.target.value)}
-                                  className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                                />
-                                <span className="text-[10px] text-muted-foreground block">
-                                  Esta resposta será publicada diretamente embaixo do comentário do usuário no post avisando que a DM foi enviada.
-                                </span>
                               </div>
                             )}
                           </div>

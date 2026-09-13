@@ -534,103 +534,121 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       }
     }
 
-    // C. Generate reply content (Static or AI)
-    let replyText = '';
-    const provider = rule.ai_provider || 'static';
+    // C. Helper function to generate reply text (Static or AI)
+    const generateReplyText = async (
+      provider: string,
+      promptInstruction: string,
+      staticFallback: string,
+      interactionContextDesc: string
+    ): Promise<string> => {
+      const normProvider = provider || 'static';
+      if (normProvider === 'static') {
+        return (staticFallback || '').trim();
+      }
 
-    if (provider === 'static') {
-      replyText = rule.static_reply || '';
-    } else {
-      const apiKey = aiProviderKeys[provider] || '';
+      const apiKey = aiProviderKeys[normProvider] || '';
       const promptContext = `Você é um assistente virtual respondendo a uma interação em redes sociais.
-Tipo de interação: ${isCommentEvent || isAltCommentMessage ? 'Comentário' : 'Mensagem direta'}
+Tipo de interação: ${interactionContextDesc}
 Autor: @${senderUsername}
 Mensagem original: "${textContent}"
-Instrução do prompt: ${rule.ai_prompt || 'Responda educadamente e ajude o usuário.'}
+Instrução do prompt: ${promptInstruction || 'Responda educadamente e ajude o usuário.'}
 Responda diretamente e de forma concisa.`;
 
       if (!apiKey) {
-        if (rule.static_reply) {
-          replyText = rule.static_reply;
-        } else {
-          await saveRuleLog('failed', `Falha: Chave de API do provedor de IA (${provider}) não está configurada.`);
-          isFirstRule = false;
-          continue;
-        }
-      } else {
-        try {
-          if (provider === 'gemini') {
-            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: promptContext }] }] })
-            });
-            if (!aiRes.ok) throw new Error(`Gemini status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          } else if (provider === 'openai') {
-            const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-              body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
-            });
-            if (!aiRes.ok) throw new Error(`OpenAI status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.choices?.[0]?.message?.content || '';
-          } else if (provider === 'anthropic') {
-            const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-              body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
-            });
-            if (!aiRes.ok) throw new Error(`Anthropic status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.content?.[0]?.text || '';
-          } else if (provider === 'mistral') {
-            const aiRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-              body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
-            });
-            if (!aiRes.ok) throw new Error(`Mistral status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.choices?.[0]?.message?.content || '';
-          } else if (provider === 'groq') {
-            const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-              body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
-            });
-            if (!aiRes.ok) throw new Error(`Groq status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.choices?.[0]?.message?.content || '';
-          } else if (provider === 'seekai') {
-            const aiRes = await fetch('https://seekai.cc/v1/chat/completions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-              body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
-            });
-            if (!aiRes.ok) throw new Error(`SeekAI status ${aiRes.status}`);
-            const aiData = await aiRes.json();
-            replyText = aiData?.choices?.[0]?.message?.content || '';
-          }
-        } catch (aiErr: any) {
-          if (rule.static_reply) {
-            replyText = rule.static_reply;
-          } else {
-            await saveRuleLog('failed', `Erro na geração de IA (${provider}): ${aiErr.message}`);
-            isFirstRule = false;
-            continue;
-          }
-        }
+        return (staticFallback || '').trim();
       }
-    }
 
-    replyText = replyText.trim();
+      try {
+        if (normProvider === 'gemini') {
+          const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptContext }] }] })
+          });
+          if (!aiRes.ok) throw new Error(`Gemini status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        } else if (normProvider === 'openai') {
+          const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+          });
+          if (!aiRes.ok) throw new Error(`OpenAI status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.choices?.[0]?.message?.content || '').trim();
+        } else if (normProvider === 'anthropic') {
+          const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({ model: 'claude-3-haiku-20240307', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+          });
+          if (!aiRes.ok) throw new Error(`Anthropic status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.content?.[0]?.text || '').trim();
+        } else if (normProvider === 'mistral') {
+          const aiRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'mistral-small-latest', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+          });
+          if (!aiRes.ok) throw new Error(`Mistral status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.choices?.[0]?.message?.content || '').trim();
+        } else if (normProvider === 'groq') {
+          const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+          });
+          if (!aiRes.ok) throw new Error(`Groq status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.choices?.[0]?.message?.content || '').trim();
+        } else if (normProvider === 'seekai') {
+          const aiRes = await fetch('https://seekai.cc/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: promptContext }], max_tokens: 180 })
+          });
+          if (!aiRes.ok) throw new Error(`SeekAI status ${aiRes.status}`);
+          const aiData = await aiRes.json();
+          return (aiData?.choices?.[0]?.message?.content || '').trim();
+        }
+      } catch (err: any) {
+        console.warn(`[AI Generation Error] (${normProvider}):`, err.message);
+        return (staticFallback || '').trim();
+      }
+      return (staticFallback || '').trim();
+    };
+
+    // Generate primary response (DM or Comment Reply)
+    const isCommentToDm = rule.automation_type === 'comment_to_dm' && isCommentEvent;
+    const primaryContextDesc = isCommentToDm
+      ? 'Mensagem direta (Direct privado para o usuário que comentou no post)'
+      : (isCommentEvent || isAltCommentMessage ? 'Comentário' : 'Mensagem direta');
+
+    let replyText = await generateReplyText(
+      rule.ai_provider,
+      rule.ai_prompt,
+      rule.static_reply,
+      primaryContextDesc
+    );
+
     if (!replyText) {
-      await saveRuleLog('failed', 'Falha: A resposta estática ou prompt de IA está vazia.');
+      await saveRuleLog('failed', 'Falha: A resposta estática ou prompt de IA para a resposta principal está vazia.');
       isFirstRule = false;
       continue;
+    }
+
+    // Generate public comment reply for comment_to_dm (if enabled)
+    let publicCommentReplyText = '';
+    if (isCommentToDm && rule.comment_reply_enabled !== false) {
+      publicCommentReplyText = await generateReplyText(
+        rule.comment_reply_provider || 'static',
+        rule.comment_reply_prompt || '',
+        rule.comment_reply_text || '',
+        'Resposta pública no comentário da postagem avisando que a DM foi enviada'
+      );
     }
 
     // D. Dispatch response via Zernio API
@@ -641,7 +659,7 @@ Responda diretamente e de forma concisa.`;
     const targetCommentId = isCommentEvent ? commentId : (msgObj.id || msgObj._id || '');
 
     if (isCommentEvent || (isMessageEvent && isYoutubeOrTiktok)) {
-      if (rule.automation_type === 'comment_to_dm' && isCommentEvent) {
+      if (isCommentToDm) {
         // 1. Private reply to comment (Instagram DM)
         endpoint = postId
           ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/private-reply`
@@ -654,9 +672,8 @@ Responda diretamente e de forma concisa.`;
           commentId: targetCommentId
         };
 
-        // 2. Dual action: Also reply publicly on the comment if enabled
-        if (rule.comment_reply_enabled !== false && rule.comment_reply_text && rule.comment_reply_text.trim()) {
-          const publicCommentText = rule.comment_reply_text.trim();
+        // 2. Dual action: Also reply publicly on the comment if configured
+        if (publicCommentReplyText) {
           const commentReplyEndpoint = postId
             ? `https://zernio.com/api/v1/inbox/comments/${postId}`
             : `https://zernio.com/api/v1/inbox/comments/${targetCommentId}/reply`;
@@ -670,8 +687,8 @@ Responda diretamente e de forma concisa.`;
               },
               body: JSON.stringify({
                 accountId: socialAccountId || rule.social_account_id,
-                text: publicCommentText,
-                message: publicCommentText,
+                text: publicCommentReplyText,
+                message: publicCommentReplyText,
                 commentId: targetCommentId,
                 replyToId: targetCommentId
               })
@@ -718,8 +735,8 @@ Responda diretamente e de forma concisa.`;
         const errText = await zernioRes.text();
         await saveRuleLog('failed', `Erro Zernio ${zernioRes.status} em POST ${endpoint}: ${errText}`);
       } else {
-        const logDisplay = (rule.automation_type === 'comment_to_dm' && rule.comment_reply_text)
-          ? `[DM Enviada]: ${replyText} | [Comentário Respondido]: ${rule.comment_reply_text}`
+        const logDisplay = (isCommentToDm && publicCommentReplyText)
+          ? `[Comentário Respondido]: ${publicCommentReplyText} | [DM Enviada]: ${replyText}`
           : replyText;
         await saveRuleLog('success', undefined, logDisplay);
         executedResults.push({ ruleId: rule.id, type: rule.automation_type, replyText });
