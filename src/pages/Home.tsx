@@ -203,6 +203,8 @@ export default function Home() {
   const [logsPage, setLogsPage] = useState(1);
   const logsPerPage = 10;
   const [automationStaticReply, setAutomationStaticReply] = useState<string>("");
+  const [automationCommentReplyEnabled, setAutomationCommentReplyEnabled] = useState<boolean>(true);
+  const [automationCommentReplyText, setAutomationCommentReplyText] = useState<string>("");
   const [automationTargetPostsType, setAutomationTargetPostsType] = useState<"all" | "specific">("all");
   const [automationTargetPostIds, setAutomationTargetPostIds] = useState<string[]>([]);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
@@ -506,7 +508,7 @@ export default function Home() {
 
                 const needsUpdate = !existing ||
                   !existing.isActive ||
-                  !['comment.received', 'message.received'].every((ev: string) => existing.events?.includes(ev));
+                  !['comment.received', 'comment.created', 'message.received', 'message.created'].some((ev: string) => existing.events?.includes(ev));
 
                 if (needsUpdate) {
                   const generateMongoId = () => {
@@ -518,7 +520,7 @@ export default function Home() {
                     _id: existing?._id || existing?.id || generateMongoId(),
                     name: "Zernio Hub Webhook",
                     url: webhookUrl,
-                    events: ["post.published", "post.failed", "post.partial", "post.platform.published", "post.platform.failed", "comment.received", "message.received"],
+                    events: ["post.published", "post.failed", "post.partial", "post.platform.published", "post.platform.failed", "comment.received", "comment.created", "message.received", "message.created"],
                     isActive: true
                   };
                   await zernio.updateWebhook({ webhooks: [...nonDuplicateWebhooks, targetWebhook] }, integration.id);
@@ -1022,6 +1024,8 @@ export default function Home() {
         ai_provider: automationAiProvider,
         ai_prompt: automationAiPrompt,
         static_reply: automationStaticReply,
+        comment_reply_enabled: automationType === "comment_to_dm" ? automationCommentReplyEnabled : false,
+        comment_reply_text: automationType === "comment_to_dm" && automationCommentReplyEnabled ? automationCommentReplyText : null,
         target_posts_type: automationTargetPostsType,
         target_post_ids: automationTargetPostIds
       };
@@ -1099,6 +1103,8 @@ export default function Home() {
       setAutomationAiProvider(rule.ai_provider || "static");
       setAutomationAiPrompt(rule.ai_prompt || "");
       setAutomationStaticReply(rule.static_reply || "");
+      setAutomationCommentReplyEnabled(rule.comment_reply_enabled ?? true);
+      setAutomationCommentReplyText(rule.comment_reply_text || "");
       setAutomationTargetPostsType(rule.target_posts_type || "all");
       setAutomationTargetPostIds(rule.target_post_ids || []);
     } else {
@@ -1109,6 +1115,8 @@ export default function Home() {
       setAutomationAiProvider("static");
       setAutomationAiPrompt("");
       setAutomationStaticReply("");
+      setAutomationCommentReplyEnabled(true);
+      setAutomationCommentReplyText("");
       setAutomationTargetPostsType("all");
       setAutomationTargetPostIds([]);
     }
@@ -1395,7 +1403,9 @@ export default function Home() {
           secret: "zernio_secret_key_987654321",
           events: [
             "comment.received",
+            "comment.created",
             "message.received",
+            "message.created",
             "post.published",
             "post.failed",
             "post.partial"
@@ -4180,6 +4190,15 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-6">
 
+                {/* Testing Notice */}
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 text-xs text-amber-200/90 flex items-start gap-2.5">
+                  <span className="text-base leading-none">💡</span>
+                  <div>
+                    <span className="font-semibold text-amber-400 block mb-0.5">Dica essencial para testes no Instagram:</span>
+                    <span>Para testar automações de comentários e DMs, faça o comentário utilizando uma <strong>outra conta/perfil pessoal</strong> no Instagram. Por padrão de segurança da API oficial da Meta (Instagram Graph API), contas comerciais não podem responder ou enviar DMs automáticas para comentários feitos por elas mesmas.</span>
+                  </div>
+                </div>
+
                 {/* Account / Channel selector */}
                 <div className="space-y-2">
                   <Label className="font-semibold text-sm">Selecione o Canal Social</Label>
@@ -4266,6 +4285,8 @@ export default function Home() {
                                     setAutomationAiProvider(rule.ai_provider);
                                     setAutomationAiPrompt(rule.ai_prompt || "");
                                     setAutomationStaticReply(rule.static_reply || "");
+                                    setAutomationCommentReplyEnabled(rule.comment_reply_enabled ?? true);
+                                    setAutomationCommentReplyText(rule.comment_reply_text || "");
                                     setAutomationTargetPostsType(rule.target_posts_type || "all");
                                     setAutomationTargetPostIds(rule.target_post_ids || []);
                                   }}
@@ -4378,9 +4399,9 @@ export default function Home() {
                           );
                         })()}
                         <p className="text-[10px] text-muted-foreground">
-                          {automationType === "comment_reply" && "Quando um usuário comentar, a IA ou resposta estática responderá no mesmo comentário."}
-                          {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada, a automação responderá na conversa direta."}
-                          {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada diretamente ao usuário."}
+                          {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
+                          {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada no Direct, a automação responderá na conversa direta."}
+                          {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada com seu link/oferta e opcionalmente responderá ao comentário no post."}
                         </p>
                       </div>
 
@@ -4431,64 +4452,179 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* AI Provider Config */}
-                      <div className="space-y-4 pb-4 border-b border-border/40">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="autoProvider" className="font-semibold text-sm">Provedor de Resposta (IA)</Label>
-                            <select
-                              id="autoProvider"
-                              value={automationAiProvider}
-                              onChange={(e) => setAutomationAiProvider(e.target.value as any)}
-                              className="w-full text-sm bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
-                            >
-                              <option value="static">Texto Estático (Personalizado)</option>
-                              <option value="gemini">Google Gemini AI</option>
-                              <option value="openai">OpenAI (GPT-4o)</option>
-                              <option value="anthropic">Anthropic (Claude)</option>
-                              <option value="seekai">SeekAI (Multi-modelo)</option>
-                              <option value="mistral">Mistral AI</option>
-                              <option value="groq">Groq Cloud (Llama)</option>
-                            </select>
+                      {/* DUAL RESPONSE CONFIG: For comment_to_dm, show DM section + Public Comment section */}
+                      {automationType === "comment_to_dm" ? (
+                        <div className="space-y-5 pb-4 border-b border-border/40">
+                          {/* 1. Private DM */}
+                          <div className="bg-secondary/15 border border-primary/30 rounded-xl p-4 space-y-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                <MessageSquare className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <Label className="font-bold text-sm block text-foreground">1. Mensagem Privada no Direct (DM)</Label>
+                                <span className="text-[11px] text-muted-foreground">Conteúdo exclusivo, link ou oferta enviado de forma privada para o seguidor.</span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="autoProvider" className="font-semibold text-xs">Provedor de Resposta na DM</Label>
+                                <select
+                                  id="autoProvider"
+                                  value={automationAiProvider}
+                                  onChange={(e) => setAutomationAiProvider(e.target.value as any)}
+                                  className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                                >
+                                  <option value="static">Texto Estático (Personalizado)</option>
+                                  <option value="gemini">Google Gemini AI</option>
+                                  <option value="openai">OpenAI (GPT-4o)</option>
+                                  <option value="anthropic">Anthropic (Claude)</option>
+                                  <option value="seekai">SeekAI (Multi-modelo)</option>
+                                  <option value="mistral">Mistral AI</option>
+                                  <option value="groq">Groq Cloud (Llama)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {automationAiProvider === "static" ? (
+                              <div className="space-y-1.5">
+                                <Label htmlFor="staticReply" className="font-semibold text-xs">Texto da Mensagem Privada (DM)</Label>
+                                <textarea
+                                  id="staticReply"
+                                  rows={3}
+                                  placeholder="ex: Olá! Segue o link com acesso exclusivo que você pediu: https://suapagina.com"
+                                  value={automationStaticReply}
+                                  onChange={(e) => setAutomationStaticReply(e.target.value)}
+                                  className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="bg-secondary/40 border border-primary/10 rounded-md p-2.5 text-[11px] text-muted-foreground flex gap-2 items-start">
+                                  <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                  <span>As chaves de IA são configuradas em <strong>Configurações → Provedores de IA</strong>.</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label htmlFor="aiPrompt" className="font-semibold text-xs">Instrução / Prompt para a DM</Label>
+                                  <textarea
+                                    id="aiPrompt"
+                                    rows={3}
+                                    placeholder="ex: Envie uma saudação curta e amigável e entregue o link do produto solicitado."
+                                    value={automationAiPrompt}
+                                    onChange={(e) => setAutomationAiPrompt(e.target.value)}
+                                    className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 2. Public Comment Reply */}
+                          <div className="bg-secondary/15 border border-border/40 rounded-xl p-4 space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-md bg-secondary text-primary">
+                                  <Bot className="h-4 w-4" />
+                                </div>
+                                <div>
+                                  <Label className="font-bold text-sm block text-foreground">2. Resposta Pública no Comentário (No Post)</Label>
+                                  <span className="text-[11px] text-muted-foreground">Aumenta a prova social e o alcance orgânico da postagem pelo algoritmo.</span>
+                                </div>
+                              </div>
+                              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold select-none bg-card px-2.5 py-1 rounded border border-border/40 hover:border-primary/50 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={automationCommentReplyEnabled}
+                                  onChange={(e) => setAutomationCommentReplyEnabled(e.target.checked)}
+                                  className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                                />
+                                Ativar Resposta no Post
+                              </label>
+                            </div>
+
+                            {automationCommentReplyEnabled && (
+                              <div className="space-y-1.5 pt-1">
+                                <Label htmlFor="commentReplyText" className="font-semibold text-xs">Texto da Resposta no Comentário</Label>
+                                <textarea
+                                  id="commentReplyText"
+                                  rows={2}
+                                  placeholder="ex: Acabei de te enviar todos os detalhes no direct! Dá uma olhadinha lá 📩🚀"
+                                  value={automationCommentReplyText}
+                                  onChange={(e) => setAutomationCommentReplyText(e.target.value)}
+                                  className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <span className="text-[10px] text-muted-foreground block">
+                                  Esta resposta será publicada diretamente embaixo do comentário do usuário no post avisando que a DM foi enviada.
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        {automationAiProvider === "static" ? (
-                          <div className="space-y-1.5">
-                            <Label htmlFor="staticReply" className="font-semibold text-sm">Mensagem Estática</Label>
-                            <textarea
-                              id="staticReply"
-                              rows={3}
-                              placeholder="Escreva a resposta padrão que será enviada..."
-                              value={automationStaticReply}
-                              onChange={(e) => setAutomationStaticReply(e.target.value)}
-                              className="w-full text-sm bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="bg-secondary/40 border border-primary/10 rounded-md p-3 text-xs text-muted-foreground flex gap-2 items-start">
-                              <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                              <span>
-                                As chaves de API de IA são configuradas uma única vez na aba{" "}
-                                <button onClick={() => setActiveTab("settings")} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
-                              </span>
-                            </div>
+                      ) : (
+                        /* Standard Single Response for Responder Comentário or Responder DM */
+                        <div className="space-y-4 pb-4 border-b border-border/40">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <Label htmlFor="aiPrompt" className="font-semibold text-sm">Prompt / Instrução para a IA</Label>
+                              <Label htmlFor="autoProvider" className="font-semibold text-sm">
+                                {automationType === "comment_reply" ? "Provedor de Resposta no Comentário" : "Provedor de Resposta na DM"}
+                              </Label>
+                              <select
+                                id="autoProvider"
+                                value={automationAiProvider}
+                                onChange={(e) => setAutomationAiProvider(e.target.value as any)}
+                                className="w-full text-sm bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                              >
+                                <option value="static">Texto Estático (Personalizado)</option>
+                                <option value="gemini">Google Gemini AI</option>
+                                <option value="openai">OpenAI (GPT-4o)</option>
+                                <option value="anthropic">Anthropic (Claude)</option>
+                                <option value="seekai">SeekAI (Multi-modelo)</option>
+                                <option value="mistral">Mistral AI</option>
+                                <option value="groq">Groq Cloud (Llama)</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {automationAiProvider === "static" ? (
+                            <div className="space-y-1.5">
+                              <Label htmlFor="staticReply" className="font-semibold text-sm">
+                                {automationType === "comment_reply" ? "Mensagem Estática no Comentário" : "Mensagem Estática na DM"}
+                              </Label>
                               <textarea
-                                id="aiPrompt"
-                                rows={4}
-                                placeholder="ex: Aja como suporte da marca X. Seja amigável, responda de forma muito curta e forneça o link www.exemplo.com."
-                                value={automationAiPrompt}
-                                onChange={(e) => setAutomationAiPrompt(e.target.value)}
+                                id="staticReply"
+                                rows={3}
+                                placeholder={automationType === "comment_reply" ? "Escreva a resposta padrão que será publicada no comentário..." : "Escreva a resposta padrão que será enviada na DM..."}
+                                value={automationStaticReply}
+                                onChange={(e) => setAutomationStaticReply(e.target.value)}
                                 className="w-full text-sm bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
                               />
-                              <span className="text-[10px] text-muted-foreground block">Guie o comportamento da IA ao criar a resposta.</span>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="bg-secondary/40 border border-primary/10 rounded-md p-3 text-xs text-muted-foreground flex gap-2 items-start">
+                                <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                <span>
+                                  As chaves de API de IA são configuradas uma única vez na aba{" "}
+                                  <button onClick={() => setActiveTab("settings")} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
+                                </span>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="aiPrompt" className="font-semibold text-sm">Prompt / Instrução para a IA</Label>
+                                <textarea
+                                  id="aiPrompt"
+                                  rows={4}
+                                  placeholder="ex: Aja como suporte da marca X. Seja amigável, responda de forma muito curta e forneça o link www.exemplo.com."
+                                  value={automationAiPrompt}
+                                  onChange={(e) => setAutomationAiPrompt(e.target.value)}
+                                  className="w-full text-sm bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <span className="text-[10px] text-muted-foreground block">Guie o comportamento da IA ao criar a resposta.</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Target Posts selection */}
                       {automationType !== "dm_reply" && (
