@@ -477,7 +477,8 @@ export default function Home() {
                 integration_id: integration.id,
                 social_account_id: acc._id || acc.id,
                 platform: acc.platform || 'instagram',
-                account_name: acc.displayName || acc.name || acc.username || 'Canal'
+                account_name: acc.displayName || acc.name || acc.username || 'Canal',
+                username: acc.username || acc.name || acc.displayName || 'Canal'
               }));
             if (batchChannels.length > 0) {
               await supabase
@@ -485,7 +486,7 @@ export default function Home() {
                 .upsert(batchChannels, { onConflict: 'tenant_id,social_account_id' });
             }
 
-             // FIX #2: Only call PUT on webhook when not already registered correctly
+             // FIX #2: Auto register or update webhook when needed
             try {
               const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/zernio-webhook`;
               const webhookRegisteredKey = `zernio_webhook_registered::${integration.id}`;
@@ -505,27 +506,41 @@ export default function Home() {
                     throw settErr;
                   }
                 }
-                const nonDuplicateWebhooks = webhooksList.filter((w: any) => w.url !== webhookUrl);
-                const existing = webhooksList.find((w: any) => w.url === webhookUrl);
+                const existing = webhooksList.find((w: any) => w.url === webhookUrl || w.name === "Zernio Automations Webhook");
 
                 const needsUpdate = !existing ||
                   !existing.isActive ||
                   !['comment.received', 'comment.created', 'message.received', 'message.created'].some((ev: string) => existing.events?.includes(ev));
 
                 if (needsUpdate) {
-                  const generateMongoId = () => {
-                    const timestamp = Math.floor(Date.now() / 1000).toString(16).padStart(8, '0');
-                    const random = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-                    return timestamp + random;
-                  };
-                  const targetWebhook = {
-                    _id: existing?._id || existing?.id || generateMongoId(),
-                    name: "Zernio Hub Webhook",
-                    url: webhookUrl,
-                    events: ["post.published", "post.failed", "post.partial", "post.platform.published", "post.platform.failed", "comment.received", "comment.created", "message.received", "message.created"],
-                    isActive: true
-                  };
-                  await zernio.updateWebhook({ webhooks: [...nonDuplicateWebhooks, targetWebhook] }, integration.id);
+                  const events = [
+                    "comment.received",
+                    "comment.created",
+                    "message.received",
+                    "message.created",
+                    "post.published",
+                    "post.failed",
+                    "post.partial"
+                  ];
+
+                  if (existing?._id || existing?.id) {
+                    await zernio.updateWebhook({
+                      _id: existing._id || existing.id,
+                      name: "Zernio Automations Webhook",
+                      url: webhookUrl,
+                      secret: "zernio_secret_key_987654321",
+                      events,
+                      isActive: true
+                    }, integration.id);
+                  } else {
+                    await zernio.createWebhook({
+                      name: "Zernio Automations Webhook",
+                      url: webhookUrl,
+                      secret: "zernio_secret_key_987654321",
+                      events,
+                      isActive: true
+                    }, integration.id);
+                  }
                 }
                 // Mark as registered in sessionStorage so we skip the GET+PUT on subsequent loads
                 sessionStorage.setItem(webhookRegisteredKey, '1');

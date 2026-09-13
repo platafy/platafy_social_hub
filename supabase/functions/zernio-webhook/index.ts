@@ -91,7 +91,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   if (socialAccountId) {
     const { data: mappedChannel } = await supabaseClient
       .from('zernio_integration_channels')
-      .select('tenant_id, integration_id, platform, username, social_account_id')
+      .select('tenant_id, integration_id, platform, username, account_name, social_account_id')
       .eq('social_account_id', socialAccountId)
       .limit(1)
       .maybeSingle();
@@ -100,8 +100,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       tenantId = mappedChannel.tenant_id;
       integrationId = mappedChannel.integration_id;
       if (!platform) platform = (mappedChannel.platform || '').toLowerCase();
-      if (!accountUsername && mappedChannel.username) {
-        accountUsername = mappedChannel.username.toLowerCase().trim();
+      if (!accountUsername && (mappedChannel.username || mappedChannel.account_name)) {
+        accountUsername = (mappedChannel.username || mappedChannel.account_name).toLowerCase().trim();
       }
     }
   }
@@ -111,7 +111,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     const { data: channelByUsername } = await supabaseClient
       .from('zernio_integration_channels')
       .select('tenant_id, integration_id, platform, social_account_id')
-      .ilike('username', `%${accountUsername}%`)
+      .or(`username.ilike.%${accountUsername}%,account_name.ilike.%${accountUsername}%`)
       .limit(1)
       .maybeSingle();
 
