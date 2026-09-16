@@ -30,6 +30,8 @@ import { MercadoPagoSettings } from "@/components/settings/MercadoPagoSettings";
 import { SuperAdminClients } from "@/components/admin/SuperAdminClients";
 import { SuperAdminPlans } from "@/components/admin/SuperAdminPlans";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ConnectSocialModal } from "@/components/channels/ConnectSocialModal";
+import { SelectFacebookPageModal } from "@/components/channels/SelectFacebookPageModal";
 
 function getEmbedVideoInfo(url?: string | null) {
   if (!url) return null;
@@ -140,6 +142,9 @@ export default function Home() {
   const [newProfileIntegrationId, setNewProfileIntegrationId] = useState("");
   const [creatingProfile, setCreatingProfile] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [isConnectSocialModalOpen, setIsConnectSocialModalOpen] = useState(false);
+  const [isFacebookSelectModalOpen, setIsFacebookSelectModalOpen] = useState(false);
+  const [facebookTempToken, setFacebookTempToken] = useState<string>("");
   const [posts, setPosts] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
@@ -1081,7 +1086,7 @@ export default function Home() {
     }
   };
 
-  const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void } | null>(null);
 
   const deleteAutomationRule = async (ruleId: string) => {
     setConfirmModal({
@@ -1474,6 +1479,47 @@ export default function Home() {
           setLoading(false);
         }
       }
+    });
+  };
+
+  const handleDisconnectAccount = (acc: any) => {
+    const accId = acc._id || acc.id;
+    const accName = acc.displayName || acc.name || acc.username || "este canal";
+    const integrationId = acc.integrationId || config.integrations?.[0]?.id;
+
+    setConfirmModal({
+      open: true,
+      title: "Desconectar Canal Social",
+      message: `Tem certeza que deseja desconectar "${accName}" (${acc.platform || "rede social"})? Publicações agendadas e automações para este canal serão interrompidas.`,
+      confirmLabel: "Desconectar",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setLoading(true);
+        try {
+          await zernio.deleteAccount(accId, integrationId);
+
+          if (tenantId) {
+            await supabase
+              .from("zernio_integration_channels" as any)
+              .delete()
+              .eq("tenant_id", tenantId)
+              .eq("social_account_id", accId);
+          }
+
+          toast.success(`Canal "${accName}" desconectado com sucesso!`);
+          clearZernioCache();
+          if (config.integrations && config.integrations.length > 0) {
+            await fetchMultiAccountData(config.integrations);
+          } else {
+            await fetchConfig(false);
+          }
+        } catch (err: any) {
+          console.error("Erro ao desconectar canal:", err);
+          toast.error("Erro ao desconectar: " + (err.message || "Tente novamente."));
+        } finally {
+          setLoading(false);
+        }
+      },
     });
   };
 
@@ -3243,77 +3289,222 @@ export default function Home() {
         )}
 
         {/* Channels Tab */}
-        {activeTab === "channels" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <CardTitle className="text-xl flex items-center gap-2">
-                      <Share2 className="w-5 h-5 text-primary" />
-                      Canais Sociais Conectados
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      Visualizando contas do perfil selecionado. Cada Perfil Ativo permite conectar até <strong>2 contas gratuitas</strong> pelo Zernio.
-                    </CardDescription>
+        {activeTab === "channels" && (() => {
+          const currentProfileAccounts = accounts.filter(
+            (a: any) => !selectedProfileId || a.profileId === selectedProfileId
+          );
+
+          return (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <Share2 className="w-5 h-5 text-primary" />
+                        Canais Sociais Conectados
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Gerencie as redes sociais conectadas diretamente via OAuth oficial. Cada perfil inclui <strong>2 contas gratuitas</strong> sem custos adicionais.
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        Franquia: {profiles.length} / {maxProfiles === -1 ? '∞' : maxProfiles} Perfis Ativos
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsNewProfileModalOpen(true)}
+                        className="text-xs font-bold rounded-xl cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Novo Perfil
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsConnectSocialModalOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Conectar Rede
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      Franquia: {profiles.length} / {maxProfiles === -1 ? '∞' : maxProfiles} Perfis Ativos
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={() => setIsNewProfileModalOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />
-                      Novo Perfil
-                    </Button>
+
+                  {/* Profile selector & Quota bar */}
+                  <div className="mt-4 pt-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-3 rounded-2xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                        Perfil Ativo:
+                      </Label>
+                      {profiles.length > 0 ? (
+                        <select
+                          value={selectedProfileId}
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            const selectedProf = profiles.find((p) => (p._id || p.id) === val);
+                            setSelectedProfileId(val);
+                            if (selectedProf?.integrationId) {
+                              try {
+                                await zernio.saveConfig("", val, selectedProf.integrationId);
+                                toast.success("Perfil selecionado!");
+                                await fetchConfig(false);
+                              } catch (err: any) {
+                                console.error("Failed to save profile selection:", err);
+                              }
+                            }
+                          }}
+                          className="text-xs font-semibold bg-background border border-border/80 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+                        >
+                          {profiles.map((p) => {
+                            const pId = p._id || p.id;
+                            const pAccs = accounts.filter((a) => a.profileId === pId);
+                            return (
+                              <option key={pId} value={pId}>
+                                {p.name} ({pAccs.length} {pAccs.length === 1 ? 'canal' : 'canais'}) {p.integrationName ? `• ${p.integrationName}` : ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Nenhum perfil criado</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`text-xs font-bold px-3 py-1 rounded-xl border flex items-center gap-1.5 ${
+                          currentProfileAccounts.length >= 2
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                        }`}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-current animate-pulse"></span>
+                        {currentProfileAccounts.length} / 2 contas gratuitas neste perfil
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {accounts.length === 0 ? (
-                  <div className="p-8 text-center rounded-2xl border-2 border-dashed border-border/60 bg-secondary/10">
-                    <Share2 className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
-                    <h4 className="font-semibold text-sm">Nenhum canal conectado</h4>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                      Conecte suas contas sociais na plataforma Zernio para começar a publicar e monitorar mensagens.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {accounts.map((acc, index) => (
-                      <div key={acc._id || acc.id || `account-${index}`} className="card-hover p-4.5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs flex items-center gap-3.5 shadow-2xs">
-                        <div className="p-2.5 border border-border/60 rounded-xl bg-secondary/35 shrink-0">
-                          {getPlatformIcon(acc.platform)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold truncate text-foreground">{acc.displayName || acc.username}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <p className="text-xs text-muted-foreground truncate">@{acc.username}</p>
-                            {acc.integrationName && (
-                              <span className="text-[10px] text-primary font-semibold bg-primary/10 border border-primary/15 rounded px-1.5 py-0.2 shrink-0">
-                                {acc.integrationName}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="shrink-0">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Ativo
-                          </span>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {currentProfileAccounts.length === 0 ? (
+                    <div className="p-8 md:p-12 text-center rounded-2xl border-2 border-dashed border-border/60 bg-secondary/10 space-y-4">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center shadow-xs">
+                        <Share2 className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-base text-foreground">Nenhum canal conectado neste perfil</h4>
+                        <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                          Conecte diretamente suas contas sociais para agendar publicações, visualizar métricas e responder comentários e mensagens em tempo real.
+                        </p>
+                      </div>
+
+                      <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Button
+                          onClick={() => setIsConnectSocialModalOpen(true)}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md cursor-pointer px-5 py-2.5 rounded-xl"
+                        >
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Conectar Conta Social
+                        </Button>
+                      </div>
+
+                      {/* Quick platform badges */}
+                      <div className="pt-4 border-t border-border/40 max-w-lg mx-auto">
+                        <p className="text-[11px] font-medium text-muted-foreground mb-2.5">
+                          Plataformas disponíveis para conexão direta no PLATAFY:
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          {[
+                            { name: "Instagram", icon: <SiInstagram className="w-3.5 h-3.5 text-pink-500" /> },
+                            { name: "Facebook", icon: <SiFacebook className="w-3.5 h-3.5 text-blue-600" /> },
+                            { name: "YouTube", icon: <SiYoutube className="w-3.5 h-3.5 text-red-600" /> },
+                            { name: "TikTok", icon: <SiTiktok className="w-3.5 h-3.5" /> },
+                            { name: "LinkedIn", icon: <FaLinkedin className="w-3.5 h-3.5 text-blue-700" /> },
+                            { name: "X / Twitter", icon: <FaXTwitter className="w-3.5 h-3.5" /> },
+                            { name: "WhatsApp", icon: <SiWhatsapp className="w-3.5 h-3.5 text-emerald-500" /> },
+                            { name: "Threads", icon: <SiThreads className="w-3.5 h-3.5" /> },
+                          ].map((item) => (
+                            <button
+                              key={item.name}
+                              type="button"
+                              onClick={() => setIsConnectSocialModalOpen(true)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-background border border-border/70 hover:border-primary/50 text-xs font-medium text-foreground hover:bg-muted/50 transition-all cursor-pointer shadow-2xs"
+                            >
+                              {item.icon}
+                              <span>{item.name}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {currentProfileAccounts.map((acc, index) => (
+                        <div
+                          key={acc._id || acc.id || `account-${index}`}
+                          className="card-hover p-4.5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xs flex items-center justify-between gap-3.5 shadow-2xs"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="p-2.5 border border-border/60 rounded-xl bg-secondary/35 shrink-0">
+                              {getPlatformIcon(acc.platform)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold truncate text-foreground">
+                                {acc.displayName || acc.username || acc.name || "Canal Conectado"}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <p className="text-xs text-muted-foreground truncate">
+                                  @{acc.username || acc.name || acc.platform}
+                                </p>
+                                {acc.integrationName && (
+                                  <span className="text-[10px] text-primary font-semibold bg-primary/10 border border-primary/15 rounded px-1.5 py-0.2 shrink-0">
+                                    {acc.integrationName}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                              Ativo
+                            </span>
+                            <button
+                              type="button"
+                              title="Desconectar este canal"
+                              onClick={() => handleDisconnectAccount(acc)}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+
+                <CardFooter className="pt-3 pb-4 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t border-border/40">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                    Conexão direta e segura via OAuth oficial da Meta, Google, LinkedIn e redes parceiras.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsConnectSocialModalOpen(true)}
+                    className="text-primary hover:underline font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar outro canal
+                  </button>
+                </CardFooter>
+              </Card>
+            </div>
+          );
+        })()}
 
         {/* Inbox Tab */}
         {activeTab === "inbox" && (
@@ -4995,31 +5186,64 @@ export default function Home() {
         {/* Guia de Uso Tab */}
         {activeTab === "guide" && (
           <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <HelpCircle className="h-8 w-8 text-primary" /> Guia de Uso & Configuração
-              </h2>
-              <p className="text-muted-foreground">
-                Aprenda a integrar e extrair o máximo poder do Zernio Hub para automatizar e gerenciar suas redes sociais.
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                  <HelpCircle className="h-8 w-8 text-primary" /> Guia de Uso & Configuração
+                </h2>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Arquitetura B: Conexão Direta Ativa
+                </span>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Aprenda a conectar suas redes sociais diretamente pelo PLATAFY, usufruir da franquia gratuita individual e automatizar publicações e mensagens com IA.
               </p>
             </div>
+
+            {/* Overview Banner - Arquitetura B */}
+            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent shadow-xs">
+              <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Como funciona a Conexão Direta (Arquitetura B)?</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
+                    Cada cliente utiliza sua própria conta gratuita da Zernio (com direito a <strong>até 2 canais gratuitos por perfil</strong>). 
+                    Você <strong>nunca precisa sair do PLATAFY</strong> para conectar redes: todo o consentimento oficial acontece em popups diretos com a Meta, Google ou LinkedIn, retornando instantaneamente para seu painel.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveTab("channels")}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
+                  >
+                    <Share2 className="w-3.5 h-3.5 mr-1.5" />
+                    Ir para Canais
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Quick Start Card */}
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-amber-500" /> Fluxo de Configuração Rápida
+                    <Sparkles className="h-5 w-5 text-amber-500" /> Passo a Passo de Configuração
                   </CardTitle>
-                  <CardDescription>Siga estes passos para configurar sua conta e começar.</CardDescription>
+                  <CardDescription>Siga estas etapas simples para começar a gerenciar suas redes sociais.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="relative border-l-2 border-primary/20 pl-6 space-y-6 ml-2">
+                  <div className="relative border-l-2 border-primary/20 pl-6 space-y-7 ml-2">
+                    {/* Step 1 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">1</span>
-                      <h4 className="font-semibold text-sm">Crie sua Conta no Zernio</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Acesse <a href="https://zernio.com/signup" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">zernio.com/signup</a> e crie a sua conta para começar.
+                      <h4 className="font-semibold text-sm">Crie sua Conta Gratuita na Zernio</h4>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Acesse <a href="https://zernio.com/signup" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">zernio.com/signup</a> e crie sua conta individual. A Zernio disponibiliza um plano gratuito para desenvolvedores e pequenas empresas que permite conectar <strong>até 2 canais sociais por perfil</strong> sem custo de mensalidade de API.
                       </p>
                       {/* Vídeo Tutorial Dinâmico (White Label) */}
                       {(() => {
@@ -5027,7 +5251,7 @@ export default function Home() {
                         return (
                           <div
                             onClick={() => setVideoModalOpen(true)}
-                            className="mt-3 max-w-md rounded-lg overflow-hidden border border-border bg-secondary/20 relative group cursor-pointer aspect-video flex items-center justify-center shadow-xs"
+                            className="mt-3 max-w-md rounded-xl overflow-hidden border border-border bg-secondary/20 relative group cursor-pointer aspect-video flex items-center justify-center shadow-xs"
                           >
                             {embedInfo?.thumbnailUrl ? (
                               <img
@@ -5059,95 +5283,163 @@ export default function Home() {
                       })()}
                     </div>
 
+                    {/* Step 2 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">2</span>
-                      <h4 className="font-semibold text-sm">Configure as Chaves no Painel</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Acesse a aba <strong>Configurações &gt; Conectar Nova Conta Zernio</strong> no menu lateral, cole sua chave de API e dê um Nome Identificador para a conta. Você pode adicionar <strong>múltiplas contas/API Keys</strong> para gerenciar canais de diferentes clientes ou workspaces.
+                      <h4 className="font-semibold text-sm">Obtenha sua API Key e Salve no PLATAFY</h4>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        No painel da Zernio, acesse <a href="https://zernio.com/dashboard/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">zernio.com/dashboard/api-keys</a>, clique em <strong>Create API Key</strong> e copie o token gerado.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                        Em seguida, abra o menu lateral do PLATAFY, vá em <strong>Ajustes (Configurações)</strong>, cole sua chave no campo <strong>Zernio API Key</strong> e clique em <strong>Salvar Configuração</strong>. O PLATAFY detectará sua conta e criará o perfil inicial automaticamente.
                       </p>
                     </div>
 
+                    {/* Step 3 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">3</span>
-                      <h4 className="font-semibold text-sm">Conecte seus Canais Sociais</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Cada canal adicionado será automaticamente mapeado à respectiva conta Zernio. Nas abas de postagem, mensagens e automações, o sistema utilizará de forma totalmente transparente e segura a chave de API correspondente a cada canal.
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm">Conecte suas Redes Sociais no PLATAFY (Sem Sair do Sistema)</h4>
+                        <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-md">Novo no MVP</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Você <strong>não precisa</strong> navegar pelo painel da Zernio para conectar suas redes sociais:
                       </p>
+                      <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
+                        <li>Acesse a aba <strong>Canais</strong> no menu lateral.</li>
+                        <li>Clique em <strong>"Conectar Rede"</strong> e selecione a plataforma desejada (Instagram, Facebook, YouTube, TikTok, LinkedIn, Twitter/X, WhatsApp, Threads, Pinterest ou Bluesky).</li>
+                        <li>Uma janela popup oficial da rede social será exibida na sua tela. Basta conceder as permissões.</li>
+                        <li>A janela fecha sozinha e o canal aparecerá ativo no PLATAFY em poucos segundos!</li>
+                        <li>Para <strong>Páginas do Facebook</strong>, um modal nativo do PLATAFY será aberto para você escolher qual das suas páginas vincular com 1 clique.</li>
+                      </ul>
                     </div>
 
+                    {/* Step 4 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">4</span>
-                      <h4 className="font-semibold text-sm">Ative Webhooks & Automações</h4>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Para habilitar as respostas automáticas usando Inteligência Artificial, configure suas chaves do OpenAI, Gemini ou Claude nas <strong>Configurações</strong> e crie regras personalizadas na aba <strong>Automação IA</strong>.
+                      <h4 className="font-semibold text-sm">Franquia Gratuita & Gerenciamento de Perfis</h4>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Cada Perfil no PLATAFY possui uma franquia de <strong>até 2 canais gratuitos</strong>.
+                      </p>
+                      <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
+                        <li>No topo da aba <strong>Canais</strong> você acompanha em tempo real o contador: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px]">X / 2 contas gratuitas neste perfil</code>.</li>
+                        <li>Se você gerencia múltiplos clientes ou deseja conectar mais canais sem custo, clique em <strong>"Novo Perfil"</strong> para criar perfis adicionais isolados.</li>
+                        <li>Para trocar ou remover uma rede social, basta clicar no ícone de <strong>lixeira (Desconectar)</strong> no card do canal.</li>
+                      </ul>
+                    </div>
+
+                    {/* Step 5 */}
+                    <div className="relative">
+                      <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">5</span>
+                      <h4 className="font-semibold text-sm">Ative Automações com Inteligência Artificial</h4>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Na aba <strong>Ajustes</strong>, configure suas chaves de API dos provedores de IA (Google Gemini, OpenAI ChatGPT, Anthropic Claude, Mistral ou Groq). Depois, acesse <strong>Automação IA</strong> para criar regras inteligentes que respondem comentários e mensagens diretas (DMs) de forma personalizada e automática.
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* API Capabilities Card */}
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <DatabaseZap className="h-5 w-5 text-primary" /> Recursos Suportados
-                  </CardTitle>
-                  <CardDescription>O que você pode fazer com o Zernio API.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-xs">
-                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h5 className="font-semibold">Publicação Multicanal</h5>
-                      <p className="text-muted-foreground mt-0.5">Agende ou publique posts simultaneamente em várias redes sociais.</p>
+              {/* API Capabilities & Benefits Card */}
+              <div className="space-y-6">
+                <Card className="h-auto">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <DatabaseZap className="h-5 w-5 text-primary" /> Recursos Suportados
+                    </CardTitle>
+                    <CardDescription>Tudo o que você gerencia pelo PLATAFY Social Hub.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3.5 text-xs">
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold">Publicação Multicanal</h5>
+                        <p className="text-muted-foreground mt-0.5">Agende ou publique simultaneamente com mídia, carrosséis e primeiro comentário.</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h5 className="font-semibold">Caixa de Entrada Unificada</h5>
-                      <p className="text-muted-foreground mt-0.5">Receba e responda DMs do Instagram, Facebook e WhatsApp em tempo real.</p>
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold">Caixa de Entrada Unificada</h5>
+                        <p className="text-muted-foreground mt-0.5">Receba e responda conversas de Instagram, Facebook e WhatsApp em um único lugar.</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h5 className="font-semibold">Moderação de Comentários</h5>
-                      <p className="text-muted-foreground mt-0.5">Gerencie e responda a comentários de posts orgânicos e anúncios (Meta Ads).</p>
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold">Moderação de Comentários & Ads</h5>
+                        <p className="text-muted-foreground mt-0.5">Gerencie comentários orgânicos e de anúncios do Meta Ads com resposta pública ou via DM.</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h5 className="font-semibold">Automação IA Híbrida</h5>
-                      <p className="text-muted-foreground mt-0.5">Combine respostas estáticas ou dinâmicas processadas por LLMs.</p>
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold">Automação IA Híbrida</h5>
+                        <p className="text-muted-foreground mt-0.5">Respostas estáticas ou geradas sob medida por LLMs com filtros de palavras-chave.</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+
+                    <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold">10 Redes Sociais no Popup</h5>
+                        <p className="text-muted-foreground mt-0.5">Instagram, Facebook, YouTube, TikTok, LinkedIn, Twitter/X, WhatsApp, Threads, Pinterest e Bluesky.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Vantagens Arquitetura B Card */}
+                <Card className="border-emerald-500/20 bg-emerald-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                      <ShieldCheck className="h-4 w-4" /> Vantagens da Arquitetura B
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span><strong>Custo Zero de API:</strong> Aproveita a franquia gratuita de 2 contas/perfil da Zernio.</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span><strong>Zero Redirecionamentos:</strong> Conexão 100% nativa sem cair no painel Zernio.</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span><strong>Isolamento por Cliente:</strong> Tokens e cotas separados de forma segura.</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span><strong>Pronto para Escalar:</strong> Compatível com futura migração para Conta Master.</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Developer Guide / Webhook configuration info */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-indigo-500" /> Detalhes Técnicos de Integração
+                  <Bot className="h-5 w-5 text-indigo-500" /> Detalhes Técnicos & Webhooks
                 </CardTitle>
-                <CardDescription>Informações avançadas sobre Webhooks e fluxos da API.</CardDescription>
+                <CardDescription>Informações sobre eventos em tempo real, webhooks automáticos e limites de requisição.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Gatilho de Webhooks</h4>
+                  <h4 className="font-semibold text-sm">Gatilho de Webhooks Automáticos</h4>
                   <p className="text-xs text-muted-foreground">
-                    Os webhooks enviam payloads estruturados em JSON para sua URL configurada sempre que ocorre um evento. Certifique-se de validar os eventos correspondentes:
+                    O PLATAFY Social Hub registra e mantém sincronizado automaticamente o webhook na sua conta Zernio para capturar eventos em tempo real:
                   </p>
                   <div className="bg-muted p-3 rounded-lg border font-mono text-[11px] overflow-x-auto space-y-1">
-                    <div><span className="text-primary font-bold">comment.received</span>: Disparado ao receber novos comentários em posts/anúncios.</div>
-                    <div><span className="text-primary font-bold">message.received</span>: Disparado ao receber novas DMs/mensagens.</div>
+                    <div><span className="text-primary font-bold">comment.received / comment.created</span>: Disparado ao receber novos comentários em posts orgânicos ou anúncios (Meta Ads).</div>
+                    <div><span className="text-primary font-bold">message.received / message.created</span>: Disparado ao receber novas DMs do Instagram, Facebook e WhatsApp.</div>
                     <div><span className="text-primary font-bold">post.published</span>: Confirmação de publicação com sucesso nas redes.</div>
+                    <div><span className="text-primary font-bold">account.disconnected</span>: Notificação de desconexão ou expiração de token.</div>
                   </div>
                 </div>
 
@@ -5165,26 +5457,26 @@ export default function Home() {
                 </div>
 
                 <div className="pt-4 border-t border-border/40 mt-4 space-y-2">
-                  <h4 className="font-semibold text-sm">Limites de Uso (Rate Limits)</h4>
+                  <h4 className="font-semibold text-sm">Limites de Uso (Rate Limits) da API</h4>
                   <p className="text-xs text-muted-foreground">
                     Os limites de requisições da API da Zernio variam conforme o número total de contas sociais integradas ao perfil:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-2.5 rounded bg-secondary/20 border border-border/20">
-                      <span className="font-semibold block text-foreground">0–2 contas (Free tier)</span>
-                      <span className="text-muted-foreground">60 requisições/minuto</span>
+                    <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/20">
+                      <span className="font-semibold block text-foreground">0–2 contas (Franquia Gratuita)</span>
+                      <span className="text-muted-foreground">60 requisições/minuto (suficiente para postagens e automações diárias)</span>
                     </div>
-                    <div className="p-2.5 rounded bg-secondary/20 border border-border/20">
+                    <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/20">
                       <span className="font-semibold block text-foreground">3–2.000 contas</span>
                       <span className="text-muted-foreground">600 requisições/minuto</span>
                     </div>
-                    <div className="p-2.5 rounded bg-secondary/20 border border-border/20">
+                    <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/20">
                       <span className="font-semibold block text-foreground">2.001+ contas</span>
                       <span className="text-muted-foreground">1.200 requisições/minuto</span>
                     </div>
-                    <div className="p-2.5 rounded bg-secondary/20 border border-border/20">
-                      <span className="font-semibold block text-foreground">AppSumo legado</span>
-                      <span className="text-muted-foreground">600 requisições/minuto (fixo)</span>
+                    <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/20">
+                      <span className="font-semibold block text-foreground">Sincronização em Tempo Real</span>
+                      <span className="text-muted-foreground">Cache otimizado no PLATAFY para economizar chamadas de API</span>
                     </div>
                   </div>
                 </div>
@@ -5485,12 +5777,62 @@ export default function Home() {
           open={confirmModal.open}
           title={confirmModal.title}
           message={confirmModal.message}
-          confirmLabel="Excluir"
+          confirmLabel={confirmModal.confirmLabel || "Excluir"}
           variant="danger"
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
         />
       )}
+
+      {/* Connect Social Modal */}
+      <ConnectSocialModal
+        isOpen={isConnectSocialModalOpen}
+        onClose={() => setIsConnectSocialModalOpen(false)}
+        profileId={selectedProfileId || (profiles[0]?._id || profiles[0]?.id || "")}
+        integrationId={
+          profiles.find((p: any) => (p._id || p.id) === selectedProfileId)?.integrationId ||
+          config.integrations?.[0]?.id
+        }
+        currentAccountsCount={
+          accounts.filter((a: any) => !selectedProfileId || a.profileId === selectedProfileId).length
+        }
+        maxAccountsPerProfile={2}
+        onAccountConnected={async () => {
+          clearZernioCache();
+          if (config.integrations && config.integrations.length > 0) {
+            await fetchMultiAccountData(config.integrations);
+          } else {
+            await fetchConfig(false);
+          }
+        }}
+        onOpenFacebookSelect={(tempToken) => {
+          setFacebookTempToken(tempToken);
+          setIsFacebookSelectModalOpen(true);
+        }}
+      />
+
+      {/* Headless Facebook Page Selector Modal */}
+      <SelectFacebookPageModal
+        isOpen={isFacebookSelectModalOpen}
+        onClose={() => {
+          setIsFacebookSelectModalOpen(false);
+          setFacebookTempToken("");
+        }}
+        profileId={selectedProfileId || (profiles[0]?._id || profiles[0]?.id || "")}
+        tempToken={facebookTempToken}
+        integrationId={
+          profiles.find((p: any) => (p._id || p.id) === selectedProfileId)?.integrationId ||
+          config.integrations?.[0]?.id
+        }
+        onSuccess={async () => {
+          clearZernioCache();
+          if (config.integrations && config.integrations.length > 0) {
+            await fetchMultiAccountData(config.integrations);
+          } else {
+            await fetchConfig(false);
+          }
+        }}
+      />
 
       {videoModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-250">

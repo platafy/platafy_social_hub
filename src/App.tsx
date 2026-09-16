@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import AuthError from "./pages/AuthError";
+import OAuthCallback from "./pages/OAuthCallback";
 import Planos from "./pages/Planos";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -32,7 +33,7 @@ function SupabaseConfigAlert() {
 function Layout({ children }: { children: React.ReactNode }) {
   const { session, signOut, user } = useAuth();
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/cadastro" || location.pathname === "/recuperar-senha" || location.pathname === "/auth-error";
+  const isLoginPage = location.pathname === "/login" || location.pathname === "/cadastro" || location.pathname === "/recuperar-senha" || location.pathname === "/auth-error" || location.pathname === "/oauth-callback";
 
   if (isLoginPage) {
     const isDedicatedLogin = location.pathname === "/login";
@@ -179,6 +180,7 @@ export default function App() {
                     </GuestOnlyRoute>
                   }
                 />
+                <Route path="/oauth-callback" element={<OAuthCallback />} />
                 <Route path="/auth-error" element={<AuthError />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

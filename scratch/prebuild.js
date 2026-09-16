@@ -14,7 +14,7 @@ function prebuild() {
 
     const envContent = fs.readFileSync(envPath, 'utf8');
     const projectMatch = envContent.match(/VITE_SUPABASE_PROJECT_ID\s*=\s*["']?([^"'\r\n]+)["']?/);
-    
+
     if (!projectMatch || !projectMatch[1]) {
       console.warn('[Prebuild] VITE_SUPABASE_PROJECT_ID não definido no arquivo .env.');
       return;
@@ -25,7 +25,7 @@ function prebuild() {
 
     if (fs.existsSync(cronSqlPath)) {
       let sqlContent = fs.readFileSync(cronSqlPath, 'utf8');
-      
+
       // Substitui https://SEU_PROJET_ID.supabase.co e variações com o ID correto
       const updatedSql = sqlContent.replace(
         /https:\/\/[A-Za-z0-9_-]+\.supabase\.co\/functions\/v1\/zernio-sync/g,

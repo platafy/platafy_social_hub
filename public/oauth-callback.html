@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conectando Rede Social...</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #0d1117;
+      color: #f0f6fc;
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(22, 27, 34, 0.9);
+      border: 1px solid rgba(240, 246, 252, 0.1);
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(252, 161, 2, 0.2);
+      border-top-color: #fca102;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 18px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    p { font-size: 13px; color: #8b949e; line-height: 1.4; }
+    .success { color: #3fb950; }
+    .error { color: #f85149; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner" id="spinner"></div>
+    <h2 id="title">Conectando sua conta...</h2>
+    <p id="message">Aguarde um momento enquanto finalizamos a sincronização.</p>
+  </div>
+
+  <script>
+    (function() {
+      // 1. Extrair parâmetros tanto da query string quanto de hash
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashIndex = window.location.hash.indexOf('?');
+      const hashParams = hashIndex !== -1 ? new URLSearchParams(window.location.hash.substring(hashIndex)) : new URLSearchParams();
+
+      const getParam = (name) => searchParams.get(name) || hashParams.get(name) || '';
+
+      const connected = getParam('connected');
+      const accountId = getParam('accountId');
+      const profileId = getParam('profileId');
+      const username = getParam('username');
+      const error = getParam('error');
+      const errorMessage = getParam('error_message');
+      const tempToken = getParam('tempToken');
+      const step = getParam('step');
+      const pendingDataToken = getParam('pendingDataToken');
+
+      const payload = {
+        type: 'ZERNIO_OAUTH_CALLBACK',
+        connected,
+        accountId,
+        profileId,
+        username,
+        error,
+        errorMessage,
+        tempToken,
+        step,
+        pendingDataToken
+      };
+
+      const titleEl = document.getElementById('title');
+      const messageEl = document.getElementById('message');
+      const spinnerEl = document.getElementById('spinner');
+
+      if (error) {
+        titleEl.textContent = 'Erro ao autorizar';
+        titleEl.className = 'error';
+        messageEl.textContent = errorMessage || ('Código de erro: ' + error);
+        spinnerEl.style.display = 'none';
+      } else {
+        titleEl.textContent = 'Conta conectada!';
+        titleEl.className = 'success';
+        messageEl.textContent = 'Finalizando e fechando esta janela...';
+      }
+
+      // 2. Comunicar com a janela principal se for popup
+      if (window.opener && !window.opener.closed) {
+        try {
+          window.opener.postMessage(payload, '*');
+        } catch (e) {
+          console.error('Falha ao enviar postMessage:', e);
+        }
+        setTimeout(function() {
+          window.close();
+        }, 350);
+      } else {
+        // Se for mobile ou redirecionamento de aba inteira
+        try {
+          sessionStorage.setItem('zernio_last_oauth_callback', JSON.stringify(payload));
+        } catch(e) {}
+
+        setTimeout(function() {
+          // Voltar para a aba de canais no PLATAFY
+          const targetUrl = window.location.origin + window.location.pathname + '#/channels?connected=' + encodeURIComponent(connected || '') + '&accountId=' + encodeURIComponent(accountId || '');
+          window.location.href = targetUrl;
+        }, 500);
+      }
+    })();
+  </script>
+</body>
+</html>

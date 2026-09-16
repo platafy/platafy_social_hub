@@ -255,8 +255,52 @@ export const zernio = {
 
   // Accounts
   getAccounts: (profileId: string, integrationId?: string) => zernioApiCall(`/v1/accounts?profileId=${profileId}`, { integrationId }),
-  connectPlatform: (platform: string, profileId: string, integrationId?: string) =>
-    zernioApiCall(`/v1/connect/${platform}?profileId=${profileId}`, { integrationId }),
+  connectPlatform: (
+    platform: string,
+    profileId: string,
+    redirectUrl?: string,
+    integrationId?: string,
+    options?: {
+      headless?: boolean;
+      loginMethod?: 'instagram_login' | 'facebook_login';
+      signup?: 'hosted';
+      brandName?: string;
+      primaryColor?: string;
+    }
+  ) => {
+    let url = `/v1/connect/${platform}?profileId=${encodeURIComponent(profileId)}`;
+    if (redirectUrl) {
+      url += `&redirect_url=${encodeURIComponent(redirectUrl)}`;
+    }
+    if (options?.headless) {
+      url += `&headless=true`;
+    }
+    if (options?.loginMethod) {
+      url += `&loginMethod=${encodeURIComponent(options.loginMethod)}`;
+    }
+    if (options?.signup) {
+      url += `&signup=${encodeURIComponent(options.signup)}`;
+    }
+    if (options?.brandName) {
+      url += `&brandName=${encodeURIComponent(options.brandName)}`;
+    }
+    if (options?.primaryColor) {
+      url += `&primaryColor=${encodeURIComponent(options.primaryColor)}`;
+    }
+    return zernioApiCall(url, { integrationId, skipCache: true });
+  },
+  deleteAccount: (accountId: string, integrationId?: string) => {
+    clearZernioCache();
+    return zernioApiCall(`/v1/accounts/${accountId}`, { method: 'DELETE', integrationId });
+  },
+  getFacebookPages: (profileId: string, tempToken: string, integrationId?: string) =>
+    zernioApiCall(`/v1/connect/facebook/select-page?profileId=${encodeURIComponent(profileId)}&tempToken=${encodeURIComponent(tempToken)}`, { integrationId, skipCache: true }),
+  selectFacebookPage: (body: { profileId: string; pageId: string; tempToken: string; userProfile?: any }, integrationId?: string) => {
+    clearZernioCache();
+    return zernioApiCall('/v1/connect/facebook/select-page', { method: 'POST', body, integrationId });
+  },
+  getPendingConnectData: (token: string, integrationId?: string) =>
+    zernioApiCall(`/v1/connect/pending-data?token=${encodeURIComponent(token)}`, { integrationId, skipCache: true }),
 
   // Posts
   getPosts: (profileId: string, status?: string, source?: string, platform?: string, sortBy?: string, accountId?: string, integrationId?: string) => {
