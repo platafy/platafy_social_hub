@@ -3414,7 +3414,7 @@ export default function Home() {
                       {/* Quick platform badges */}
                       <div className="pt-4 border-t border-border/40 max-w-lg mx-auto">
                         <p className="text-[11px] font-medium text-muted-foreground mb-2.5">
-                          Plataformas disponíveis para conexão direta no PLATAFY:
+                          Plataformas disponíveis para conexão direta no PLATAFY SOCIAL HUB:
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-2">
                           {[
@@ -5193,25 +5193,25 @@ export default function Home() {
                   <HelpCircle className="h-8 w-8 text-primary" /> Guia de Uso & Configuração
                 </h2>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Arquitetura B: Conexão Direta Ativa
+                  <ShieldCheck className="w-3.5 h-3.5" /> Conexão Direta Ativa
                 </span>
               </div>
               <p className="text-muted-foreground text-sm">
-                Aprenda a conectar suas redes sociais diretamente pelo PLATAFY, usufruir da franquia gratuita individual e automatizar publicações e mensagens com IA.
+                Aprenda a conectar suas redes sociais diretamente pelo PLATAFY SOCIAL HUB, usufruir da franquia gratuita individual e automatizar publicações e mensagens com IA.
               </p>
             </div>
 
-            {/* Overview Banner - Arquitetura B */}
+            {/* Overview Banner */}
             <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-primary/10 to-transparent shadow-xs">
               <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-primary font-bold text-sm">
                     <Sparkles className="w-4 h-4" />
-                    <span>Como funciona a Conexão Direta (Arquitetura B)?</span>
+                    <span>Como funciona a Conexão de Redes Sociais?</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
                     Cada cliente utiliza sua própria conta gratuita da Zernio (com direito a <strong>até 2 canais gratuitos por perfil</strong>). 
-                    Você <strong>nunca precisa sair do PLATAFY</strong> para conectar redes: todo o consentimento oficial acontece em popups diretos com a Meta, Google ou LinkedIn, retornando instantaneamente para seu painel.
+                    O consentimento oficial de login acontece em popups seguros diretos com a Meta, Google ou LinkedIn, conectando seus canais instantaneamente ao seu painel.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -5286,31 +5286,28 @@ export default function Home() {
                     {/* Step 2 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">2</span>
-                      <h4 className="font-semibold text-sm">Obtenha sua API Key e Salve no PLATAFY</h4>
+                      <h4 className="font-semibold text-sm">Obtenha sua API Key e Salve no PLATAFY SOCIAL HUB</h4>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                         No painel da Zernio, acesse <a href="https://zernio.com/dashboard/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">zernio.com/dashboard/api-keys</a>, clique em <strong>Create API Key</strong> e copie o token gerado.
                       </p>
                       <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                        Em seguida, abra o menu lateral do PLATAFY, vá em <strong>Ajustes (Configurações)</strong>, cole sua chave no campo <strong>Zernio API Key</strong> e clique em <strong>Salvar Configuração</strong>. O PLATAFY detectará sua conta e criará o perfil inicial automaticamente.
+                        Em seguida, abra o menu lateral do PLATAFY SOCIAL HUB, vá em <strong>Ajustes (Configurações)</strong>, cole sua chave no campo <strong>Zernio API Key</strong> e clique em <strong>Salvar Configuração</strong>. O PLATAFY SOCIAL HUB detectará sua conta e criará o perfil inicial automaticamente.
                       </p>
                     </div>
 
                     {/* Step 3 */}
                     <div className="relative">
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">3</span>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-sm">Conecte suas Redes Sociais no PLATAFY (Sem Sair do Sistema)</h4>
-                        <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-md">Novo no MVP</span>
-                      </div>
+                      <h4 className="font-semibold text-sm">Conecte suas Redes Sociais no PLATAFY SOCIAL HUB</h4>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        Você <strong>não precisa</strong> navegar pelo painel da Zernio para conectar suas redes sociais:
+                        Para adicionar novos canais sociais ao seu perfil:
                       </p>
                       <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
                         <li>Acesse a aba <strong>Canais</strong> no menu lateral.</li>
                         <li>Clique em <strong>"Conectar Rede"</strong> e selecione a plataforma desejada (Instagram, Facebook, YouTube, TikTok, LinkedIn, Twitter/X, WhatsApp, Threads, Pinterest ou Bluesky).</li>
                         <li>Uma janela popup oficial da rede social será exibida na sua tela. Basta conceder as permissões.</li>
-                        <li>A janela fecha sozinha e o canal aparecerá ativo no PLATAFY em poucos segundos!</li>
-                        <li>Para <strong>Páginas do Facebook</strong>, um modal nativo do PLATAFY será aberto para você escolher qual das suas páginas vincular com 1 clique.</li>
+                        <li>A janela fecha sozinha e o canal aparecerá ativo no PLATAFY SOCIAL HUB em poucos segundos!</li>
+                        <li>Para <strong>Páginas do Facebook</strong>, um modal nativo do PLATAFY SOCIAL HUB será aberto para você escolher qual das suas páginas vincular com 1 clique.</li>
                       </ul>
                     </div>
 
@@ -5319,7 +5316,7 @@ export default function Home() {
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">4</span>
                       <h4 className="font-semibold text-sm">Franquia Gratuita & Gerenciamento de Perfis</h4>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        Cada Perfil no PLATAFY possui uma franquia de <strong>até 2 canais gratuitos</strong>.
+                        Cada Perfil no PLATAFY SOCIAL HUB possui uma franquia de <strong>até 2 canais gratuitos</strong>.
                       </p>
                       <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
                         <li>No topo da aba <strong>Canais</strong> você acompanha em tempo real o contador: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px]">X / 2 contas gratuitas neste perfil</code>.</li>
@@ -5333,7 +5330,7 @@ export default function Home() {
                       <span className="absolute -left-[31px] top-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">5</span>
                       <h4 className="font-semibold text-sm">Ative Automações com Inteligência Artificial</h4>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        Na aba <strong>Ajustes</strong>, configure suas chaves de API dos provedores de IA (Google Gemini, OpenAI ChatGPT, Anthropic Claude, Mistral ou Groq). Depois, acesse <strong>Automação IA</strong> para criar regras inteligentes que respondem comentários e mensagens diretas (DMs) de forma personalizada e automática.
+                        Na aba <strong>Ajustes</strong>, configure suas chaves de API dos provedores de IA (SeekAI, Google Gemini, OpenAI ChatGPT, Anthropic Claude, Mistral ou Groq). Depois, acesse <strong>Automação IA</strong> para criar regras inteligentes que respondem comentários e mensagens diretas (DMs) de forma personalizada e automática.
                       </p>
                     </div>
                   </div>
@@ -5347,7 +5344,7 @@ export default function Home() {
                     <CardTitle className="text-lg flex items-center gap-2">
                       <DatabaseZap className="h-5 w-5 text-primary" /> Recursos Suportados
                     </CardTitle>
-                    <CardDescription>Tudo o que você gerencia pelo PLATAFY Social Hub.</CardDescription>
+                    <CardDescription>Tudo o que você gerencia pelo PLATAFY SOCIAL HUB.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3.5 text-xs">
                     <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
@@ -5392,11 +5389,11 @@ export default function Home() {
                   </CardContent>
                 </Card>
 
-                {/* Vantagens Arquitetura B Card */}
+                {/* Vantagens Conexão Direta Card */}
                 <Card className="border-emerald-500/20 bg-emerald-500/5">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                      <ShieldCheck className="h-4 w-4" /> Vantagens da Arquitetura B
+                      <ShieldCheck className="h-4 w-4" /> Vantagens da Conexão Direta
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-xs text-muted-foreground">
@@ -5406,7 +5403,7 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                      <span><strong>Zero Redirecionamentos:</strong> Conexão 100% nativa sem cair no painel Zernio.</span>
+                      <span><strong>Conexão Simplificada:</strong> Autorização direta via popup oficial da rede social.</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
@@ -5414,7 +5411,7 @@ export default function Home() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                      <span><strong>Pronto para Escalar:</strong> Compatível com futura migração para Conta Master.</span>
+                      <span><strong>Pronto para Escalar:</strong> Suporte completo para múltiplos perfis e canais.</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -5433,7 +5430,7 @@ export default function Home() {
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm">Gatilho de Webhooks Automáticos</h4>
                   <p className="text-xs text-muted-foreground">
-                    O PLATAFY Social Hub registra e mantém sincronizado automaticamente o webhook na sua conta Zernio para capturar eventos em tempo real:
+                    O PLATAFY SOCIAL HUB registra e mantém sincronizado automaticamente o webhook na sua conta Zernio para capturar eventos em tempo real:
                   </p>
                   <div className="bg-muted p-3 rounded-lg border font-mono text-[11px] overflow-x-auto space-y-1">
                     <div><span className="text-primary font-bold">comment.received / comment.created</span>: Disparado ao receber novos comentários em posts orgânicos ou anúncios (Meta Ads).</div>
@@ -5476,7 +5473,7 @@ export default function Home() {
                     </div>
                     <div className="p-2.5 rounded-xl bg-secondary/20 border border-border/20">
                       <span className="font-semibold block text-foreground">Sincronização em Tempo Real</span>
-                      <span className="text-muted-foreground">Cache otimizado no PLATAFY para economizar chamadas de API</span>
+                      <span className="text-muted-foreground">Cache otimizado no PLATAFY SOCIAL HUB para economizar chamadas de API</span>
                     </div>
                   </div>
                 </div>
