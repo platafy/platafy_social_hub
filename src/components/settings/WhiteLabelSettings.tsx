@@ -11,9 +11,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
-  Sparkles, Upload, RotateCcw, Check, Palette, Eye, Image as ImageIcon,
+  Sparkles, Upload, RotateCcw, Check, Palette, Eye, EyeOff, AlertCircle, Image as ImageIcon,
   Sun, Moon, LogIn, Type, LayoutGrid, Save, Loader2, RefreshCw,
-  Share2, MessageCircle, ExternalLink, CheckCheck, ShieldCheck
+  Share2, MessageCircle, ExternalLink, CheckCheck, ShieldCheck, Mail
 } from "lucide-react";
 
 const PRESET_LIGHT_COLORS = [
@@ -114,7 +114,7 @@ function SecureUrlField({
 
 export function WhiteLabelSettings() {
   const { branding, updateBranding, resetToDefault, applyBrandColors } = useBranding();
-  const { tenantId, isSuperAdmin } = useAuth();
+  const { tenantId, isSuperAdmin, user } = useAuth();
 
   if (!isSuperAdmin) return null;
 
@@ -172,6 +172,15 @@ export function WhiteLabelSettings() {
     branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial."
   );
 
+  // Resend E-mails Transacionais
+  const [resendApiKey, setResendApiKey] = useState(branding.resend_api_key || "");
+  const [resendFromEmail, setResendFromEmail] = useState(
+    branding.resend_from_email || "PLATAFY Social Hub <onboarding@resend.dev>"
+  );
+  const [testingResend, setTestingResend] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [showResendApiKey, setShowResendApiKey] = useState(false);
+
   // Estados de upload e salvamento
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -215,6 +224,8 @@ export function WhiteLabelSettings() {
     setOgImageUrl(branding.og_image_url || "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg");
     setOgTitle(branding.og_title || `${branding.app_name || "PLATAFY"} - Gestão Inteligente`);
     setOgDescription(branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
+    setResendApiKey(branding.resend_api_key || "");
+    setResendFromEmail(branding.resend_from_email || "PLATAFY Social Hub <onboarding@resend.dev>");
   }, [branding]);
 
   // Upload no Supabase Storage
@@ -301,6 +312,8 @@ export function WhiteLabelSettings() {
       og_image_url: ogImageUrl.trim(),
       og_title: ogTitle.trim(),
       og_description: ogDescription.trim(),
+      resend_api_key: resendApiKey.trim(),
+      resend_from_email: resendFromEmail.trim(),
     });
     setSaving(false);
   }
@@ -326,8 +339,44 @@ export function WhiteLabelSettings() {
     setOgImageUrl(DEFAULT_BRANDING.og_image_url || "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg");
     setOgTitle(DEFAULT_BRANDING.og_title || `${DEFAULT_BRANDING.app_name || "PLATAFY"} - Gestão Inteligente`);
     setOgDescription(DEFAULT_BRANDING.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
+    setResendApiKey("");
+    setResendFromEmail("PLATAFY Social Hub <onboarding@resend.dev>");
     applyBrandColors(DEFAULT_BRANDING.primary_color_light, DEFAULT_BRANDING.primary_color_dark);
     setSaving(false);
+  }
+
+  async function handleTestResend() {
+    const targetEmail = (testEmailAddress.trim() || user?.email || "").toLowerCase();
+    if (!targetEmail) {
+      toast.error("Informe um endereço de e-mail para receber o teste.");
+      return;
+    }
+    if (!resendApiKey.trim()) {
+      toast.error("Informe a Chave de API do Resend antes de disparar o teste.");
+      return;
+    }
+
+    setTestingResend(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("recuperacao-senha", {
+        body: {
+          action: "test-resend",
+          email: targetEmail,
+          resend_api_key: resendApiKey.trim(),
+          resend_from_email: resendFromEmail.trim(),
+        },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Falha ao enviar e-mail de teste pelo Resend");
+      }
+
+      toast.success(`E-mail de teste enviado com sucesso para ${targetEmail}! Verifique sua caixa de entrada.`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao conectar com a API do Resend.");
+    } finally {
+      setTestingResend(false);
+    }
   }
 
   const currentPreviewColor = previewTheme === "dark" ? primaryColorDark : primaryColorLight;
@@ -390,6 +439,10 @@ export function WhiteLabelSettings() {
           <TabsTrigger value="seo" className="flex items-center gap-2">
             <Share2 className="h-4 w-4" />
             SEO & Redes
+          </TabsTrigger>
+          <TabsTrigger value="resend" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            E-mails & Resend
           </TabsTrigger>
         </TabsList>
 
@@ -1336,6 +1389,209 @@ export function WhiteLabelSettings() {
                     <span>
                       Compatível também com <strong>Facebook Messenger</strong>, <strong>Instagram Direct</strong>, <strong>Telegram</strong> e <strong>Twitter/X</strong>.
                     </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ========================================================= */}
+        {/* ABA: E-MAILS & RESEND (Recuperação de Senha & Transacional)*/}
+        {/* ========================================================= */}
+        <TabsContent value="resend" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Coluna Esquerda: Credenciais Resend */}
+            <div className="space-y-6">
+              <Card className="border border-border/70 bg-card shadow-sm">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Mail className="h-5 w-5 text-amber-500" />
+                      Configuração Resend API
+                    </CardTitle>
+                    <span className="text-[11px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
+                      100 e-mails/dia grátis
+                    </span>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Conecte sua conta do <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline text-amber-500 font-semibold hover:text-amber-400">Resend.com</a> para enviar e-mails de recuperação de senha com alta taxa de entrega e 0 risco de spam.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {/* Chave de API */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="resendApiKey" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Chave de API do Resend (API Key)
+                      </Label>
+                      <a
+                        href="https://resend.com/api-keys"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-amber-500 hover:underline inline-flex items-center gap-1"
+                      >
+                        Gerar Chave no Resend <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="resendApiKey"
+                        type={showResendApiKey ? "text" : "password"}
+                        value={resendApiKey}
+                        onChange={(e) => setResendApiKey(e.target.value)}
+                        placeholder="re_12345678_xxxxxxxxxxxxxxxx"
+                        className="h-10 pr-10 font-mono text-xs bg-background"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResendApiKey(!showResendApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                      >
+                        {showResendApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Começa geralmente com <code className="font-mono text-amber-400">re_</code>. Você pode gerar gratuitamente no painel do Resend.
+                    </p>
+                  </div>
+
+                  {/* E-mail Remetente */}
+                  <div className="space-y-2">
+                    <Label htmlFor="resendFromEmail" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Remetente Oficial (From Email)
+                    </Label>
+                    <Input
+                      id="resendFromEmail"
+                      value={resendFromEmail}
+                      onChange={(e) => setResendFromEmail(e.target.value)}
+                      placeholder="PLATAFY Social Hub <suporte@seudominio.com>"
+                      className="h-10 text-xs bg-background"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      No modo de testes sem domínio próprio use: <code className="font-mono text-amber-400">PLATAFY Social Hub &lt;onboarding@resend.dev&gt;</code>. Para produção, adicione seu domínio próprio no Resend (até 3 domínios inclusos no plano grátis).
+                    </p>
+                  </div>
+
+                  {/* Status Informativo */}
+                  <div className={`p-3 rounded-xl border text-xs flex items-center gap-2.5 ${
+                    resendApiKey.trim()
+                      ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400"
+                      : "bg-amber-500/10 border-amber-500/25 text-amber-600 dark:text-amber-400"
+                  }`}>
+                    {resendApiKey.trim() ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span>Chave informada. Salve as alterações para ativar no sistema.</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>Chave pendente. O sistema usará o serviço nativo do Supabase até que a chave seja configurada.</span>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card de Teste Interativo */}
+              <Card className="border border-border/70 bg-card shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Testar Disparo via Resend
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Envie um e-mail de teste em tempo real para validar se sua chave de API e remetente estão funcionando.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="testEmailAddress" className="text-xs">Destinatário do Teste</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="testEmailAddress"
+                        type="email"
+                        value={testEmailAddress}
+                        onChange={(e) => setTestEmailAddress(e.target.value)}
+                        placeholder={user?.email || "seu-email@dominio.com"}
+                        className="h-10 text-xs bg-background"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleTestResend}
+                        disabled={testingResend || !resendApiKey.trim()}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shrink-0 text-xs px-4"
+                      >
+                        {testingResend ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-3.5 w-3.5 mr-1.5" />
+                            Disparar Teste
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Coluna Direita: Guia & Instruções Supabase SMTP */}
+            <div className="space-y-6">
+              {/* Benefícios Resend */}
+              <Card className="border border-border/70 bg-card shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                    Vantagens do Resend.com
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2.5 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <span><strong>100 e-mails por dia gratuitos:</strong> Mais que suficiente para recuperação de senha e e-mails operacionais.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <span><strong>Até 3 domínios verificados:</strong> Permite enviar de remetentes corporativos (@platafy.com).</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                    <span><strong>Template HTML Oficial:</strong> Layout moderno escuro com logo PLATAFY SOCIAL HUB, botão CTA em degradê e avisos de segurança.</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Guia SMTP Supabase Dashboard */}
+              <Card className="border border-border/70 bg-card shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <LayoutGrid className="h-4 w-4 text-primary" />
+                    Configurar também no Supabase (Custom SMTP)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Se desejar que todos os e-mails nativos do Supabase também passem pelo Resend:
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2.5 text-xs text-muted-foreground font-mono">
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                    <p className="text-amber-400 font-bold font-sans">1. Acesse o Supabase Dashboard:</p>
+                    <p className="text-[11px] font-sans">Project Settings &rarr; Authentication &rarr; SMTP Settings &rarr; Ative &ldquo;Enable Custom SMTP&rdquo;</p>
+                    <div className="pt-2 text-[11px] space-y-1">
+                      <div><span className="text-slate-400">Sender Email:</span> <span className="text-white">seu-email@dominio.com</span></div>
+                      <div><span className="text-slate-400">Sender Name:</span> <span className="text-white">PLATAFY Social Hub</span></div>
+                      <div><span className="text-slate-400">Host:</span> <span className="text-amber-400">smtp.resend.com</span></div>
+                      <div><span className="text-slate-400">Port:</span> <span className="text-amber-400">465 (SSL) ou 587 (TLS)</span></div>
+                      <div><span className="text-slate-400">User:</span> <span className="text-white">resend</span></div>
+                      <div><span className="text-slate-400">Password:</span> <span className="text-amber-400">&lt;Sua API Key do Resend&gt;</span></div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

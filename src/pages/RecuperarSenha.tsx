@@ -36,7 +36,7 @@ export default function RecuperarSenha() {
     const { data, error } = await supabase.functions.invoke("recuperacao-senha", {
       body: {
         email: parsed.data.email,
-        redirect_to: window.location.origin + "/#/login",
+        redirect_to: window.location.origin + "/#/redefinir-senha",
       },
     });
 
@@ -49,8 +49,8 @@ export default function RecuperarSenha() {
     }
 
     setStatus("success");
-    setMessage("Se o e-mail existir em nossa base, você receberá um link de recuperação.");
-    toast.success("E-mail enviado");
+    setMessage("Se o e-mail estiver cadastrado, enviamos as instruções para redefinir sua senha (verifique também a pasta de spam).");
+    toast.success("E-mail de recuperação enviado!");
   }
 
   const loading = status === "loading";

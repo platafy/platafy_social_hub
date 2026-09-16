@@ -25,6 +25,9 @@ export interface BrandingSettings {
   og_image_url?: string;
   og_title?: string;
   og_description?: string;
+  // Resend E-mails Transacionais
+  resend_api_key?: string;
+  resend_from_email?: string;
 }
 
 export const DEFAULT_BRANDING: BrandingSettings = {
@@ -89,6 +92,8 @@ export function sanitizeBranding(raw: any): BrandingSettings {
     og_image_url: raw.og_image_url !== undefined ? raw.og_image_url : DEFAULT_BRANDING.og_image_url,
     og_title: raw.og_title !== undefined ? raw.og_title : DEFAULT_BRANDING.og_title,
     og_description: raw.og_description !== undefined ? raw.og_description : DEFAULT_BRANDING.og_description,
+    resend_api_key: raw.resend_api_key !== undefined ? raw.resend_api_key : DEFAULT_BRANDING.resend_api_key,
+    resend_from_email: raw.resend_from_email !== undefined ? raw.resend_from_email : DEFAULT_BRANDING.resend_from_email,
   };
 }
 
