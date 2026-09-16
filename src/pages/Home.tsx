@@ -3335,7 +3335,7 @@ export default function Home() {
                       <Button
                         size="sm"
                         onClick={() => setIsConnectSocialModalOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
+                        className="btn-connect-highlight bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
                         Conectar Rede
@@ -3414,7 +3414,7 @@ export default function Home() {
                       <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Button
                           onClick={() => setIsConnectSocialModalOpen(true)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md cursor-pointer px-5 py-2.5 rounded-xl"
+                          className="btn-connect-highlight bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md cursor-pointer px-5 py-2.5 rounded-xl"
                         >
                           <Plus className="w-4 h-4 mr-1.5" />
                           Conectar Conta Social
@@ -3496,7 +3496,7 @@ export default function Home() {
                 <CardFooter className="pt-3 pb-4 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t border-border/40">
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                    Conexão direta e segura via OAuth oficial da Meta, Google, LinkedIn e redes parceiras.
+                    Conexão direta e segura via OAuth oficial da Meta, Google, e redes parceiras.
                   </span>
                   <button
                     type="button"
