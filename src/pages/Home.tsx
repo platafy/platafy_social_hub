@@ -3428,14 +3428,9 @@ export default function Home() {
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-2">
                           {[
-                            { name: "Instagram", icon: <SiInstagram className="w-3.5 h-3.5 text-pink-500" /> },
                             { name: "Facebook", icon: <SiFacebook className="w-3.5 h-3.5 text-blue-600" /> },
+                            { name: "Instagram", icon: <SiInstagram className="w-3.5 h-3.5 text-pink-500" /> },
                             { name: "YouTube", icon: <SiYoutube className="w-3.5 h-3.5 text-red-600" /> },
-                            { name: "TikTok", icon: <SiTiktok className="w-3.5 h-3.5" /> },
-                            { name: "LinkedIn", icon: <FaLinkedin className="w-3.5 h-3.5 text-blue-700" /> },
-                            { name: "X / Twitter", icon: <FaXTwitter className="w-3.5 h-3.5" /> },
-                            { name: "WhatsApp", icon: <SiWhatsapp className="w-3.5 h-3.5 text-emerald-500" /> },
-                            { name: "Threads", icon: <SiThreads className="w-3.5 h-3.5" /> },
                           ].map((item) => (
                             <button
                               key={item.name}
@@ -5314,7 +5309,7 @@ export default function Home() {
                       </p>
                       <ul className="mt-2 space-y-1.5 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
                         <li>Acesse a aba <strong>Canais</strong> no menu lateral.</li>
-                        <li>Clique em <strong>"Conectar Rede"</strong> e selecione a plataforma desejada (Instagram, Facebook, YouTube, TikTok, LinkedIn, Twitter/X, WhatsApp, Threads, Pinterest ou Bluesky).</li>
+                        <li>Clique em <strong>"Conectar Rede"</strong> e selecione a plataforma desejada (Facebook, Instagram ou YouTube).</li>
                         <li>Uma janela popup oficial da rede social será exibida na sua tela. Basta conceder as permissões.</li>
                         <li>A janela fecha sozinha e o canal aparecerá ativo no PLATAFY SOCIAL HUB em poucos segundos!</li>
                         <li>Para <strong>Páginas do Facebook</strong>, um modal nativo do PLATAFY SOCIAL HUB será aberto para você escolher qual das suas páginas vincular com 1 clique.</li>
@@ -5392,8 +5387,8 @@ export default function Home() {
                     <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/30">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                       <div>
-                        <h5 className="font-semibold">10 Redes Sociais no Popup</h5>
-                        <p className="text-muted-foreground mt-0.5">Instagram, Facebook, YouTube, TikTok, LinkedIn, Twitter/X, WhatsApp, Threads, Pinterest e Bluesky.</p>
+                        <h5 className="font-semibold">Redes Sociais Oficiais Integradas</h5>
+                        <p className="text-muted-foreground mt-0.5">Facebook, Instagram e YouTube com suporte completo a agendamento, métricas e automações de IA.</p>
                       </div>
                     </div>
                   </CardContent>

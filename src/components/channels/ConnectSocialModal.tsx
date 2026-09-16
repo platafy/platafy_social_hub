@@ -25,31 +25,36 @@ export interface SocialPlatformConfig {
   options?: any;
 }
 
-// Redes sociais ativas disponíveis para conexão pelo cliente
+// Redes sociais ativas disponíveis para conexão pelo cliente (Facebook, Instagram e YouTube)
 const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
-  {
-    id: "instagram",
-    name: "Instagram",
-    description: "Contas Profissionais / Criador",
-    icon: <SiInstagram className="w-5 h-5 text-pink-500" />,
-    colorClass: "hover:border-pink-500/50 hover:bg-pink-500/5",
-    options: { loginMethod: "instagram_login" },
-  },
   {
     id: "facebook",
     name: "Facebook",
     description: "Páginas que você administra",
-    icon: <SiFacebook className="w-5 h-5 text-blue-600" />,
-    colorClass: "hover:border-blue-600/50 hover:bg-blue-600/5",
+    icon: <SiFacebook className="w-8 h-8 text-blue-600" />,
+    colorClass: "hover:border-blue-600/50 hover:bg-blue-600/5 hover:shadow-blue-500/10",
     options: { headless: true },
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    description: "Contas Profissionais / Criador",
+    icon: <SiInstagram className="w-8 h-8 text-pink-500" />,
+    colorClass: "hover:border-pink-500/50 hover:bg-pink-500/5 hover:shadow-pink-500/10",
+    options: { loginMethod: "instagram_login" },
   },
   {
     id: "youtube",
     name: "YouTube",
     description: "Canal do Google / Shorts",
-    icon: <SiYoutube className="w-5 h-5 text-red-600" />,
-    colorClass: "hover:border-red-600/50 hover:bg-red-600/5",
+    icon: <SiYoutube className="w-8 h-8 text-red-600" />,
+    colorClass: "hover:border-red-600/50 hover:bg-red-600/5 hover:shadow-red-500/10",
   },
+];
+
+// Redes temporariamente desativadas (TikTok, Threads, Pinterest, LinkedIn, X/Twitter, WhatsApp, Bluesky).
+// Para reativar qualquer uma delas no futuro, basta mover o objeto para o array SUPPORTED_PLATFORMS acima.
+export const _INACTIVE_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "tiktok",
     name: "TikTok",
@@ -71,11 +76,6 @@ const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
     icon: <SiPinterest className="w-5 h-5 text-red-500" />,
     colorClass: "hover:border-red-500/50 hover:bg-red-500/5",
   },
-];
-
-// Redes temporariamente desativadas (X/Twitter, LinkedIn, WhatsApp, Bluesky).
-// Para reativar qualquer uma delas no futuro, basta mover o objeto para o array SUPPORTED_PLATFORMS acima.
-export const _INACTIVE_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "linkedin",
     name: "LinkedIn",
@@ -154,11 +154,8 @@ export function ConnectSocialModal({
       }
 
       // Sucesso na conexão
-      if (connected || accountId) {
-        const platformName = connected
-          ? connected.charAt(0).toUpperCase() + connected.slice(1)
-          : "Rede Social";
-        toast.success(`${platformName} conectado com sucesso!`);
+      if (connected) {
+        toast.success("Rede social conectada com sucesso!");
         onAccountConnected();
         onClose();
       }
@@ -167,27 +164,18 @@ export function ConnectSocialModal({
   );
 
   useEffect(() => {
-    if (!isOpen) return;
-
     window.addEventListener("message", handleOAuthMessage);
-    return () => {
-      window.removeEventListener("message", handleOAuthMessage);
-    };
-  }, [isOpen, handleOAuthMessage]);
+    return () => window.removeEventListener("message", handleOAuthMessage);
+  }, [handleOAuthMessage]);
 
   if (!isOpen) return null;
 
   const isLimitReached = currentAccountsCount >= maxAccountsPerProfile;
 
   const handleConnect = async (platform: SocialPlatformConfig) => {
-    if (!profileId) {
-      toast.error("Nenhum Perfil Ativo selecionado.");
-      return;
-    }
-
     if (isLimitReached) {
       toast.error(
-        `Limite de ${maxAccountsPerProfile} contas atingido para este Perfil Ativo. Crie um novo Perfil ou remova um canal existente.`
+        `Limite de ${maxAccountsPerProfile} contas atingido neste perfil. Adicione um Novo Perfil Ativo em Canais para conectar mais contas gratuitamente.`
       );
       return;
     }
@@ -195,9 +183,7 @@ export function ConnectSocialModal({
     setConnectingPlatform(platform.id);
 
     try {
-      // Usar a página estática oauth-callback.html como destino preferencial
       const redirectUrl = `${window.location.origin}/oauth-callback.html`;
-
       const res = await zernio.connectPlatform(
         platform.id,
         profileId,
@@ -239,7 +225,7 @@ export function ConnectSocialModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="bg-card border border-border rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+      <div className="bg-card border border-border rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -282,8 +268,8 @@ export function ConnectSocialModal({
           </div>
         )}
 
-        {/* Lista de Redes Sociais */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1 py-1">
+        {/* Lista de Redes Sociais - 3 cards na mesma linha */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 py-1">
           {SUPPORTED_PLATFORMS.map((platform) => {
             const isThisConnecting = connectingPlatform === platform.id;
             return (
@@ -292,38 +278,39 @@ export function ConnectSocialModal({
                 type="button"
                 disabled={isLimitReached || connectingPlatform !== null}
                 onClick={() => handleConnect(platform)}
-                className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
+                className={`group relative p-4 sm:p-5 rounded-2xl border text-center flex flex-col items-center justify-between gap-3.5 transition-all cursor-pointer ${
                   platform.colorClass
                 } ${
                   isLimitReached
                     ? "opacity-50 cursor-not-allowed border-border/40"
-                    : "border-border/70 bg-card/60"
+                    : "border-border/70 bg-card/70 hover:shadow-xl hover:-translate-y-1 hover:border-primary/50"
                 }`}
               >
-                <div className="p-2 rounded-xl bg-secondary/40 border border-border/50 shrink-0">
+                <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border/60 group-hover:scale-110 transition-transform shrink-0 shadow-xs">
                   {platform.icon}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {platform.name}
-                    </p>
-                    {platform.badge && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-semibold">
-                        {platform.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                <div className="space-y-1 min-w-0 w-full text-center">
+                  <p className="text-sm font-bold text-foreground truncate">
+                    {platform.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
                     {platform.description}
                   </p>
                 </div>
-                <div className="shrink-0">
-                  {isThisConnecting ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  ) : (
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
-                  )}
+                <div className="w-full pt-1">
+                  <span className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-secondary/60 group-hover:bg-primary group-hover:text-primary-foreground text-xs font-semibold text-foreground transition-all shadow-2xs">
+                    {isThisConnecting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Conectando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Conectar</span>
+                        <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                      </>
+                    )}
+                  </span>
                 </div>
               </button>
             );
@@ -333,7 +320,7 @@ export function ConnectSocialModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border pt-3 shrink-0">
           <p className="text-[10px] text-muted-foreground">
-            Abre janela de autorização segura
+            Abre janela de autorização oficial e segura
           </p>
           <Button
             type="button"
