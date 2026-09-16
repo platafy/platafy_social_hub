@@ -25,6 +25,7 @@ export interface SocialPlatformConfig {
   options?: any;
 }
 
+// Redes sociais ativas disponíveis para conexão pelo cliente
 const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "instagram",
@@ -57,6 +58,25 @@ const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
     colorClass: "hover:border-foreground/40 hover:bg-foreground/5",
   },
   {
+    id: "threads",
+    name: "Threads",
+    description: "Publicações na rede Meta",
+    icon: <SiThreads className="w-5 h-5 text-foreground" />,
+    colorClass: "hover:border-foreground/40 hover:bg-foreground/5",
+  },
+  {
+    id: "pinterest",
+    name: "Pinterest",
+    description: "Pins e painéis",
+    icon: <SiPinterest className="w-5 h-5 text-red-500" />,
+    colorClass: "hover:border-red-500/50 hover:bg-red-500/5",
+  },
+];
+
+// Redes temporariamente desativadas (X/Twitter, LinkedIn, WhatsApp, Bluesky).
+// Para reativar qualquer uma delas no futuro, basta mover o objeto para o array SUPPORTED_PLATFORMS acima.
+export const _INACTIVE_PLATFORMS: SocialPlatformConfig[] = [
+  {
     id: "linkedin",
     name: "LinkedIn",
     description: "Perfil Pessoal ou Company Page",
@@ -71,26 +91,12 @@ const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
     colorClass: "hover:border-foreground/40 hover:bg-foreground/5",
   },
   {
-    id: "threads",
-    name: "Threads",
-    description: "Publicações na rede Meta",
-    icon: <SiThreads className="w-5 h-5 text-foreground" />,
-    colorClass: "hover:border-foreground/40 hover:bg-foreground/5",
-  },
-  {
     id: "whatsapp",
     name: "WhatsApp",
     description: "Cloud API / Atendimento oficial",
     icon: <SiWhatsapp className="w-5 h-5 text-emerald-500" />,
     colorClass: "hover:border-emerald-500/50 hover:bg-emerald-500/5",
     options: { signup: "hosted" },
-  },
-  {
-    id: "pinterest",
-    name: "Pinterest",
-    description: "Pins e painéis",
-    icon: <SiPinterest className="w-5 h-5 text-red-500" />,
-    colorClass: "hover:border-red-500/50 hover:bg-red-500/5",
   },
   {
     id: "bluesky",
