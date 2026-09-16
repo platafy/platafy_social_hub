@@ -1872,18 +1872,6 @@ export default function Home() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("composer")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "composer"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Plus className="h-3.5 w-3.5" /> Novo Post
-        </button>
-        <button
-          type="button"
           onClick={() => setActiveTab("channels")}
           disabled={!config.connected}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
@@ -1896,6 +1884,18 @@ export default function Home() {
           {accounts.length > 0 && (
             <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{accounts.length}</span>
           )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("composer")}
+          disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "composer"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
+        >
+          <Plus className="h-3.5 w-3.5" /> Novo Post
         </button>
         <button
           type="button"
@@ -2021,14 +2021,6 @@ export default function Home() {
             <BarChart3 className="h-4 w-4 text-primary" /> Painel Geral
           </Button>
           <Button
-            variant={activeTab === "composer" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "composer" ? "font-semibold shadow-2xs" : ""}`}
-            onClick={() => setActiveTab("composer")}
-            disabled={!config.connected}
-          >
-            <Plus className="h-4 w-4 text-primary" /> Novo Post
-          </Button>
-          <Button
             variant={activeTab === "channels" ? "secondary" : "ghost"}
             className={`justify-between w-full font-medium transition-all ${activeTab === "channels" ? "font-semibold shadow-2xs" : ""}`}
             onClick={() => setActiveTab("channels")}
@@ -2048,6 +2040,14 @@ export default function Home() {
         {/* Navigation Group: Comunicação */}
         <div className="space-y-1">
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Comunicação</p>
+          <Button
+            variant={activeTab === "composer" ? "secondary" : "ghost"}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "composer" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("composer")}
+            disabled={!config.connected}
+          >
+            <Plus className="h-4 w-4 text-primary" /> Novo Post
+          </Button>
           <Button
             variant={activeTab === "inbox" ? "secondary" : "ghost"}
             className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "inbox" ? "font-semibold shadow-2xs" : ""}`}
