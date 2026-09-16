@@ -12,7 +12,7 @@ import {
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
   DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
-  Heart, MessageCircle, Bookmark, ShieldCheck, Lock
+  Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -108,7 +108,7 @@ const getConversationLastMessage = (conv: any): string => {
   return "Nenhuma mensagem";
 };
 
-type TabType = "dashboard" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel" | "saas_plans";
+type TabType = "dashboard" | "profiles" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel" | "saas_plans";
 
 export default function Home() {
   const { tenantId, isSuperAdmin } = useAuth();
@@ -1872,6 +1872,21 @@ export default function Home() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab("profiles")}
+          disabled={!config.connected}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
+            activeTab === "profiles"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+          }`}
+        >
+          <User className="h-3.5 w-3.5" /> Perfil
+          {profiles.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{profiles.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("channels")}
           disabled={!config.connected}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
@@ -2019,6 +2034,21 @@ export default function Home() {
             onClick={() => setActiveTab("dashboard")}
           >
             <BarChart3 className="h-4 w-4 text-primary" /> Painel Geral
+          </Button>
+          <Button
+            variant={activeTab === "profiles" ? "secondary" : "ghost"}
+            className={`justify-between w-full font-medium transition-all ${activeTab === "profiles" ? "font-semibold shadow-2xs" : ""}`}
+            onClick={() => setActiveTab("profiles")}
+            disabled={!config.connected}
+          >
+            <span className="flex items-center gap-3">
+              <User className="h-4 w-4 text-primary" /> Perfil
+            </span>
+            {profiles.length > 0 && (
+              <span className="px-2 py-0.5 text-[11px] rounded-full bg-secondary/80 text-foreground font-semibold">
+                {profiles.length}
+              </span>
+            )}
           </Button>
           <Button
             variant={activeTab === "channels" ? "secondary" : "ghost"}
@@ -2267,6 +2297,266 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="md:col-span-3 flex flex-col w-full min-w-0">
+
+        {/* Profiles Tab (Gestão de Perfis & Conexões) */}
+        {activeTab === "profiles" && (() => {
+          const currentProfileAccounts = accounts.filter(
+            (a: any) => !selectedProfileId || a.profileId === selectedProfileId
+          );
+
+          return (
+            <div className="space-y-6">
+              {/* Header com Informações de Franquia e Troca Rápida de Perfil */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <User className="w-5 h-5 text-primary" />
+                        Gestão de Perfis & Contas
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Visualize e gerencie os perfis deste workspace. Cada perfil possui sua própria franquia de contas sociais gratuitas.
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        Franquia: {profiles.length} / {maxProfiles === -1 ? '∞' : maxProfiles} Perfis Ativos
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsNewProfileModalOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Novo Perfil
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Seletor de Perfil Ativo */}
+                  <div className="mt-4 pt-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-3 rounded-2xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                        Perfil Ativo no Sistema:
+                      </Label>
+                      {profiles.length > 0 ? (
+                        <select
+                          value={selectedProfileId}
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            const selectedProf = profiles.find((p) => (p._id || p.id) === val);
+                            setSelectedProfileId(val);
+                            if (selectedProf?.integrationId) {
+                              try {
+                                await zernio.saveConfig("", val, selectedProf.integrationId);
+                                toast.success("Perfil selecionado!");
+                                await fetchConfig(false);
+                              } catch (err: any) {
+                                console.error("Failed to save profile selection:", err);
+                              }
+                            }
+                          }}
+                          className="text-xs font-semibold bg-background border border-border/80 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+                        >
+                          {profiles.map((p) => {
+                            const pId = p._id || p.id;
+                            const pAccs = accounts.filter((a) => a.profileId === pId);
+                            return (
+                              <option key={pId} value={pId}>
+                                {p.name} ({pAccs.length} {pAccs.length === 1 ? 'canal' : 'canais'}) {p.integrationName ? `• ${p.integrationName}` : ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Nenhum perfil criado</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`text-xs font-bold px-3 py-1 rounded-xl border flex items-center gap-1.5 ${
+                          currentProfileAccounts.length >= 2
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                        }`}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-current animate-pulse"></span>
+                        {currentProfileAccounts.length} / 2 contas gratuitas neste perfil
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Lista de Contas / Credenciais Conectadas */}
+              {config.integrations && config.integrations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DatabaseZap className="h-5 w-5 text-primary" /> Contas & Perfis Conectados
+                    </CardTitle>
+                    <CardDescription>
+                      Gerencie suas credenciais e perfis conectados a este workspace.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="divide-y divide-border/40">
+                      {config.integrations.map((integration) => (
+                        <div key={integration.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold flex items-center gap-2">
+                              {integration.name}
+                              <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-medium">Ativo</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                              ID do Perfil: {integration.profileId || "Não definido"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingIntegrationId(integration.id);
+                                setEditingAccountName(integration.name);
+                                setEditingProfileId(integration.profileId || "");
+                                setIsEditingAccount(true);
+                              }}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteConfig(integration.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Edit Account Inline Form */}
+              {isEditingAccount && editingIntegrationId && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-bold">Editar Identificação da Conta</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="editNameProf" className="text-xs">Nome da Conta / Identificador</Label>
+                        <Input
+                          id="editNameProf"
+                          value={editingAccountName}
+                          onChange={(e) => setEditingAccountName(e.target.value)}
+                          placeholder="ex: Conta Principal, Cliente X"
+                          className="bg-card"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="editProfileProf" className="text-xs">Profile ID (Opcional)</Label>
+                        <Input
+                          id="editProfileProf"
+                          value={editingProfileId}
+                          onChange={(e) => setEditingProfileId(e.target.value)}
+                          placeholder="ex: profile-xxxxxxxx"
+                          className="bg-card"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setIsEditingAccount(false); setEditingIntegrationId(null); }}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={handleUpdateAccount} disabled={loading}>
+                      Salvar Alterações
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )}
+
+              {/* Conectar Nova Conta Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5" /> Conectar Nova Conta
+                  </CardTitle>
+                  <CardDescription>
+                    Adicione uma nova credencial e chave de API para vincular um novo perfil isolado.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="newAccountNameProf">Nome Identificador</Label>
+                    <Input
+                      type="text"
+                      id="newAccountNameProf"
+                      placeholder="ex: Conta Agência, Cliente Secundário"
+                      value={newAccountName}
+                      onChange={(e) => setNewAccountName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="apiKeyProf">Zernio API Key</Label>
+                    <Input
+                      type="password"
+                      id="apiKeyProf"
+                      placeholder="Cole sua Zernio API Key aqui"
+                      value={apiKeyInput}
+                      onChange={(e) => setApiKeyInput(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Obtenha sua chave de API em{" "}
+                      <a href="https://zernio.com/dashboard/api-keys" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+                        zernio.com/dashboard/api-keys
+                      </a>.
+                    </p>
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="profileIdProf">Zernio Profile ID (Opcional)</Label>
+                    <Input
+                      type="text"
+                      id="profileIdProf"
+                      placeholder="ex: profile-xxxxxxxx"
+                      value={profileIdInput}
+                      onChange={(e) => setProfileIdInput(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      O ID do perfil padrão de redes sociais configurado nesta conta do Zernio.
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    {config.connected ? (
+                      <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
+                        <Check className="h-4 w-4" /> {config.integrations?.length} Conta(s) Conectada(s)
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-amber-500 font-medium">
+                        <AlertCircle className="h-4 w-4" /> Desconectado
+                      </span>
+                    )}
+                  </div>
+                  <Button onClick={saveConfig} disabled={loading}>
+                    {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                    Conectar Conta
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          );
+        })()}
 
         {/* Settings Tab (Configurações do Workspace do Cliente) */}
         {activeTab === "settings" && (
