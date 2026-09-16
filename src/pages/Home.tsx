@@ -3335,10 +3335,13 @@ export default function Home() {
                       <Button
                         size="sm"
                         onClick={() => setIsConnectSocialModalOpen(true)}
-                        className="btn-connect-highlight bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
+                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5"
                       >
-                        <Plus className="w-3.5 h-3.5 mr-1" />
-                        Conectar Rede
+                        <span className="btn-shimmer-sweep" />
+                        <span className="relative z-10 flex items-center gap-1.5">
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Conectar Rede</span>
+                        </span>
                       </Button>
                     </div>
                   </div>
@@ -3414,10 +3417,13 @@ export default function Home() {
                       <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Button
                           onClick={() => setIsConnectSocialModalOpen(true)}
-                          className="btn-connect-highlight bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md cursor-pointer px-5 py-2.5 rounded-xl"
+                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer px-5 py-2.5 rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95"
                         >
-                          <Plus className="w-4 h-4 mr-1.5" />
-                          Conectar Conta Social
+                          <span className="btn-shimmer-sweep" />
+                          <span className="relative z-10 flex items-center gap-1.5">
+                            <Plus className="w-4 h-4 mr-0.5" />
+                            <span>Conectar Conta Social</span>
+                          </span>
                         </Button>
                       </div>
 
