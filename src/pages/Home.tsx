@@ -32,6 +32,7 @@ import { SuperAdminPlans } from "@/components/admin/SuperAdminPlans";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ConnectSocialModal } from "@/components/channels/ConnectSocialModal";
 import { SelectFacebookPageModal } from "@/components/channels/SelectFacebookPageModal";
+import { SeekAiPromoModal, SEEKAI_PROMO_STORAGE_KEY } from "@/components/settings/SeekAiPromoModal";
 
 function getEmbedVideoInfo(url?: string | null) {
   if (!url) return null;
@@ -145,6 +146,15 @@ export default function Home() {
   const [isConnectSocialModalOpen, setIsConnectSocialModalOpen] = useState(false);
   const [isFacebookSelectModalOpen, setIsFacebookSelectModalOpen] = useState(false);
   const [facebookTempToken, setFacebookTempToken] = useState<string>("");
+  const [isSeekAiModalOpen, setIsSeekAiModalOpen] = useState(false);
+
+  const handleOpenSettings = useCallback(() => {
+    setActiveTab("settings");
+    const isDismissed = localStorage.getItem(SEEKAI_PROMO_STORAGE_KEY) === "true";
+    if (!isDismissed) {
+      setIsSeekAiModalOpen(true);
+    }
+  }, []);
   const [posts, setPosts] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
@@ -1925,7 +1935,7 @@ export default function Home() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("settings")}
+          onClick={handleOpenSettings}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
             activeTab === "settings"
               ? "bg-primary text-primary-foreground shadow-xs"
@@ -2070,7 +2080,7 @@ export default function Home() {
           <Button
             variant={activeTab === "settings" ? "secondary" : "ghost"}
             className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "settings" ? "font-semibold shadow-2xs" : ""}`}
-            onClick={() => setActiveTab("settings")}
+            onClick={handleOpenSettings}
           >
             <Settings className="h-4 w-4 text-muted-foreground" /> Configurações
           </Button>
@@ -2551,7 +2561,7 @@ export default function Home() {
                   <CardDescription className="text-center">Você precisa configurar sua chave de API do Zernio para começar.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center pb-6">
-                  <Button onClick={() => setActiveTab("settings")}>Configurar API Key</Button>
+                  <Button onClick={handleOpenSettings}>Configurar API Key</Button>
                 </CardContent>
               </Card>
             ) : (
@@ -4871,7 +4881,7 @@ export default function Home() {
                                 <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                 <span>
                                   As chaves de API de IA são configuradas uma única vez na aba{" "}
-                                  <button onClick={() => setActiveTab("settings")} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
+                                  <button onClick={handleOpenSettings} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
                                 </span>
                               </div>
                               <div className="space-y-1.5">
@@ -5829,6 +5839,12 @@ export default function Home() {
             await fetchConfig(false);
           }
         }}
+      />
+
+      {/* SeekAI Promo Recommendation Modal */}
+      <SeekAiPromoModal
+        isOpen={isSeekAiModalOpen}
+        onClose={() => setIsSeekAiModalOpen(false)}
       />
 
       {videoModalOpen && (
