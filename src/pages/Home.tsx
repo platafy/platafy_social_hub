@@ -12,7 +12,7 @@ import {
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
   DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
-  Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User
+  Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User, ExternalLink
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -2487,13 +2487,33 @@ export default function Home() {
 
               {/* Conectar Nova Conta Form */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Key className="h-5 w-5" /> Conectar Nova Conta
-                  </CardTitle>
-                  <CardDescription>
-                    Adicione uma nova credencial e chave de API para vincular um novo perfil isolado.
-                  </CardDescription>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Key className="h-5 w-5 text-primary" /> Conectar Nova Conta
+                    </CardTitle>
+                    <CardDescription>
+                      Adicione uma nova credencial e chave de API para vincular um novo perfil isolado.
+                    </CardDescription>
+                  </div>
+                  <a
+                    href="https://zernio.com/dashboard/api-keys"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block shrink-0"
+                  >
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5 shadow-md shadow-primary/25"
+                    >
+                      <span className="btn-shimmer-sweep" />
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Obter Chave no Zernio</span>
+                      </span>
+                    </Button>
+                  </a>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid w-full items-center gap-1.5">
@@ -2506,7 +2526,7 @@ export default function Home() {
                       onChange={(e) => setNewAccountName(e.target.value)}
                     />
                   </div>
-                  <div className="grid w-full items-center gap-1.5">
+                  <div className="grid w-full items-center gap-2">
                     <Label htmlFor="apiKeyProf">Zernio API Key</Label>
                     <Input
                       type="password"
@@ -2515,12 +2535,36 @@ export default function Home() {
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Obtenha sua chave de API em{" "}
-                      <a href="https://zernio.com/dashboard/api-keys" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
-                        zernio.com/dashboard/api-keys
-                      </a>.
-                    </p>
+                    {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-primary/10 border border-primary/25 mt-1">
+                      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
+                        <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                          <Key className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
+                          <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
+                        </div>
+                      </div>
+                      <a
+                        href="https://zernio.com/dashboard/api-keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block shrink-0"
+                      >
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto"
+                        >
+                          <span className="btn-shimmer-sweep" />
+                          <span className="relative z-10 flex items-center justify-center gap-1.5">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Obtenha sua chave de API em zernio.com/dashboard/api-keys</span>
+                          </span>
+                        </Button>
+                      </a>
+                    </div>
                   </div>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="profileIdProf">Zernio Profile ID (Opcional)</Label>
@@ -2657,13 +2701,33 @@ export default function Home() {
 
             {/* Add New Account Form */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" /> Conectar Nova Conta Zernio
-                </CardTitle>
-                <CardDescription>
-                  Adicione uma nova credencial e chave de API para publicar em canais de outras contas.
-                </CardDescription>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5 text-primary" /> Conectar Nova Conta Zernio
+                  </CardTitle>
+                  <CardDescription>
+                    Adicione uma nova credencial e chave de API para publicar em canais de outras contas.
+                  </CardDescription>
+                </div>
+                <a
+                  href="https://zernio.com/dashboard/api-keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block shrink-0"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5 shadow-md shadow-primary/25"
+                  >
+                    <span className="btn-shimmer-sweep" />
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Obter Chave no Zernio</span>
+                    </span>
+                  </Button>
+                </a>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid w-full items-center gap-1.5">
@@ -2676,7 +2740,7 @@ export default function Home() {
                     onChange={(e) => setNewAccountName(e.target.value)}
                   />
                 </div>
-                <div className="grid w-full items-center gap-1.5">
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="apiKey">Zernio API Key</Label>
                   <Input
                     type="password"
@@ -2685,12 +2749,36 @@ export default function Home() {
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Obtenha sua chave de API em{" "}
-                    <a href="https://zernio.com/dashboard/api-keys" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
-                      zernio.com/dashboard/api-keys
-                    </a>.
-                  </p>
+                  {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-primary/10 border border-primary/25 mt-1">
+                    <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
+                      <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                        <Key className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
+                        <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
+                      </div>
+                    </div>
+                    <a
+                      href="https://zernio.com/dashboard/api-keys"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block shrink-0"
+                    >
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto"
+                      >
+                        <span className="btn-shimmer-sweep" />
+                        <span className="relative z-10 flex items-center justify-center gap-1.5">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Obtenha sua chave de API em zernio.com/dashboard/api-keys</span>
+                        </span>
+                      </Button>
+                    </a>
+                  </div>
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="profileId">Zernio Profile ID (Opcional)</Label>
