@@ -1413,64 +1413,6 @@ export default function Home() {
     }
   };
 
-  const syncWebhook = async () => {
-    setLoading(true);
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-      const webhookUrl = `${supabaseUrl}/functions/v1/zernio-webhook`;
-
-      for (const integration of config.integrations || []) {
-        let existingWebhooks: any[] = [];
-        try {
-          const res = await zernio.getWebhooksSettings(integration.id);
-          existingWebhooks = res?.webhooks || res || [];
-        } catch (err: any) {
-          const errMsg = (err?.message || '').toLowerCase();
-          if (errMsg.includes("webhook not found") || err?.status === 404) {
-            console.log(`[Webhook] No existing webhook settings for integration ${integration.name}.`);
-            existingWebhooks = [];
-          } else {
-            console.warn(`Could not get webhooks for integration ${integration.name}:`, err);
-            throw err;
-          }
-        }
-
-        const payload = {
-          name: "Zernio Automations Webhook",
-          url: webhookUrl,
-          secret: "zernio_secret_key_987654321",
-          events: [
-            "comment.received",
-            "comment.created",
-            "message.received",
-            "message.created",
-            "post.published",
-            "post.failed",
-            "post.partial"
-          ],
-          isActive: true
-        };
-
-        const matchedWebhook = existingWebhooks.find((w: any) => w.url === webhookUrl || w.name === "Zernio Automations Webhook");
-
-        if (matchedWebhook) {
-          const updatePayload = {
-            ...payload,
-            _id: matchedWebhook._id || matchedWebhook.id
-          };
-          await zernio.updateWebhook(updatePayload, integration.id);
-        } else {
-          await zernio.createWebhook(payload, integration.id);
-        }
-      }
-      toast.success("Webhook sincronizado em todas as contas Zernio!");
-    } catch (err: any) {
-      toast.error("Erro ao sincronizar webhook: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteConfig = async (id: string) => {
     setConfirmModal({
       open: true,
@@ -2605,327 +2547,110 @@ export default function Home() {
         {/* Settings Tab (Configurações do Workspace do Cliente) */}
         {activeTab === "settings" && (
           <div className="space-y-6">
-            {/* List of Connected Accounts */}
-            {config.integrations && config.integrations.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DatabaseZap className="h-5 w-5 text-primary" /> Contas Zernio Conectadas
-                  </CardTitle>
-                  <CardDescription>
-                    Gerencie suas múltiplas credenciais da Zernio conectadas a este workspace.
+            {/* Se o workspace ainda não tiver contas conectadas, exibir convite amigável para ir ao menu Perfil */}
+            {!config.connected && (
+              <Card className="border-dashed bg-muted/10">
+                <CardHeader className="text-center pb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto border border-primary/20 mb-1">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-lg">Conecte sua primeira conta no menu Perfil</CardTitle>
+                  <CardDescription className="max-w-md mx-auto">
+                    A gestão de perfis e credenciais de redes sociais agora é centralizada no menu <strong>Perfil</strong>.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="divide-y divide-border/40">
-                    {config.integrations.map((integration) => (
-                      <div key={integration.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold flex items-center gap-2">
-                            {integration.name}
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-medium">Ativo</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                            ID do Perfil: {integration.profileId || "Não definido"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingIntegrationId(integration.id);
-                              setEditingAccountName(integration.name);
-                              setEditingProfileId(integration.profileId || "");
-                              setIsEditingAccount(true);
-                            }}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteConfig(integration.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Edit Account Modal / Inline form */}
-            {isEditingAccount && editingIntegrationId && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="text-sm font-bold">Editar Identificação da Conta Zernio</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="editName" className="text-xs">Nome da Conta / Identificador</Label>
-                      <Input
-                        id="editName"
-                        value={editingAccountName}
-                        onChange={(e) => setEditingAccountName(e.target.value)}
-                        placeholder="ex: Conta Principal, Cliente X"
-                        className="bg-card"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="editProfile" className="text-xs">Profile ID (Opcional)</Label>
-                      <Input
-                        id="editProfile"
-                        value={editingProfileId}
-                        onChange={(e) => setEditingProfileId(e.target.value)}
-                        placeholder="ex: profile-xxxxxxxx"
-                        className="bg-card"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => { setIsEditingAccount(false); setEditingIntegrationId(null); }}>
-                    Cancelar
-                  </Button>
-                  <Button size="sm" onClick={handleUpdateAccount} disabled={loading}>
-                    Salvar Alterações
+                <CardFooter className="flex justify-center pt-2 pb-6">
+                  <Button onClick={() => setActiveTab("profiles")} className="gap-2 font-bold">
+                    <User className="h-4 w-4" />
+                    Ir para Perfil
                   </Button>
                 </CardFooter>
               </Card>
             )}
 
-            {/* Add New Account Form */}
+            {/* Provedores de IA */}
             <Card>
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-2">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Key className="h-5 w-5 text-primary" /> Conectar Nova Conta Zernio
+                    <Sparkles className="h-5 w-5 text-amber-500" /> Provedores de IA
                   </CardTitle>
                   <CardDescription>
-                    Adicione uma nova credencial e chave de API para publicar em canais de outras contas.
+                    Configure as chaves de API de IA para as automações deste workspace.
                   </CardDescription>
                 </div>
-                <a
-                  href="https://zernio.com/dashboard/api-keys"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-block shrink-0"
-                >
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5 shadow-md shadow-primary/25"
-                  >
-                    <span className="btn-shimmer-sweep" />
-                    <span className="relative z-10 flex items-center gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Obter Chave no Zernio</span>
-                    </span>
-                  </Button>
-                </a>
+                {config.integrations && config.integrations.length > 1 && (
+                  <div className="flex items-center gap-2 bg-secondary/15 p-1 rounded border">
+                    <Label htmlFor="aiIntegrationSelector" className="text-xs shrink-0 pl-1.5 font-medium">Conta Zernio:</Label>
+                    <select
+                      id="aiIntegrationSelector"
+                      value={selectedIntegrationIdForAiKeys}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedIntegrationIdForAiKeys(val);
+                        loadAiKeys(val);
+                      }}
+                      className="text-xs bg-background border rounded px-2 py-1 outline-none font-semibold focus:ring-1 focus:ring-primary"
+                    >
+                      {config.integrations.map((i) => (
+                        <option key={i.id} value={i.id}>{i.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="newAccountName">Nome Identificador</Label>
-                  <Input
-                    type="text"
-                    id="newAccountName"
-                    placeholder="ex: Conta Agência, Cliente Secundário"
-                    value={newAccountName}
-                    onChange={(e) => setNewAccountName(e.target.value)}
-                  />
-                </div>
-                <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="apiKey">Zernio API Key</Label>
-                  <Input
-                    type="password"
-                    id="apiKey"
-                    placeholder="Cole sua Zernio API Key aqui"
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                  />
-                  {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-primary/10 border border-primary/25 mt-1">
-                    <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
-                      <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                        <Key className="w-3.5 h-3.5" />
+                {[
+                  { id: 'seekai', label: 'SeekAI', hint: 'sk-...', link: 'https://platafy.com/seekai', model: 'GPT-4o Mini (Multi-modelo) · Ganhe U$ 200,00 em créditos', referral: true },
+                  { id: 'gemini', label: 'Google Gemini', hint: 'AIza...', link: 'https://aistudio.google.com/app/apikey', model: 'Gemini 2.0 Flash' },
+                  { id: 'openai', label: 'OpenAI', hint: 'sk-...', link: 'https://platform.openai.com/api-keys', model: 'GPT-4o Mini' },
+                  { id: 'anthropic', label: 'Anthropic (Claude)', hint: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys', model: 'Claude 3 Haiku' },
+                  { id: 'mistral', label: 'Mistral AI', hint: '32+ chars', link: 'https://console.mistral.ai/api-keys/', model: 'Mistral Small' },
+                  { id: 'groq', label: 'Groq Cloud', hint: 'gsk_...', link: 'https://console.groq.com/keys', model: 'Llama 3.1 8B' },
+                ].map(({ id, label, hint, link, model, referral }: any) => {
+                  const saved = aiKeys[id as keyof typeof aiKeys] === '••••••••';
+                  const val = aiKeys[id as keyof typeof aiKeys];
+                  return (
+                    <div key={id} className={`flex items-center gap-3 p-3 border rounded-lg bg-card ${referral ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold">{label}</p>
+                          {saved && <span className="text-[10px] bg-emerald-500/15 text-emerald-600 px-1.5 py-0.5 rounded font-medium">✓ Conectado</span>}
+                        </div>
+                        <p className={`text-[11px] ${referral ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                          {model} · Chave começa com {hint}
+                        </p>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
-                        <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!saved ? (
+                          <>
+                            <Input
+                              type="password"
+                              placeholder={`Cole sua chave ${label}`}
+                              value={val}
+                              onChange={(e) => setAiKeys(prev => ({ ...prev, [id]: e.target.value }))}
+                              className="text-xs font-mono w-56"
+                            />
+                            <Button size="sm" onClick={() => saveAiKey(id, val)} disabled={loading || !val}>
+                              Salvar
+                            </Button>
+                            <a href={link} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline whitespace-nowrap">{referral ? 'Criar conta grátis' : 'Obter chave'}</a>
+                          </>
+                        ) : (
+                          <>
+                            <Input type="password" value="••••••••" readOnly className="text-xs w-32 opacity-60" />
+                            <Button size="sm" variant="outline" onClick={() => setAiKeys(prev => ({ ...prev, [id]: '' }))}>Substituir</Button>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => removeAiKey(id)} disabled={loading}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <a
-                      href="https://zernio.com/dashboard/api-keys"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-block shrink-0"
-                    >
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto"
-                      >
-                        <span className="btn-shimmer-sweep" />
-                        <span className="relative z-10 flex items-center justify-center gap-1.5">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Obtenha sua chave de API em zernio.com/dashboard/api-keys</span>
-                        </span>
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="profileId">Zernio Profile ID (Opcional)</Label>
-                  <Input
-                    type="text"
-                    id="profileId"
-                    placeholder="ex: profile-xxxxxxxx"
-                    value={profileIdInput}
-                    onChange={(e) => setProfileIdInput(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    O ID do perfil padrão de redes sociais configurado nesta conta do Zernio.
-                  </p>
-                </div>
+                  );
+                })}
               </CardContent>
-              <CardFooter className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                  {config.connected ? (
-                    <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
-                      <Check className="h-4 w-4" /> {config.integrations?.length} Conta(s) Conectada(s)
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-amber-500 font-medium">
-                      <AlertCircle className="h-4 w-4" /> Desconectado
-                    </span>
-                  )}
-                </div>
-                <Button onClick={saveConfig} disabled={loading}>
-                  {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                  Conectar Conta
-                </Button>
-              </CardFooter>
             </Card>
-
-            {config.connected && (
-              <Card className="mt-6">
-                <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4 pb-2">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-amber-500" /> Provedores de IA
-                    </CardTitle>
-                    <CardDescription>
-                      Configure as chaves de API de IA para as automações deste workspace.
-                    </CardDescription>
-                  </div>
-                  {config.integrations && config.integrations.length > 1 && (
-                    <div className="flex items-center gap-2 bg-secondary/15 p-1 rounded border">
-                      <Label htmlFor="aiIntegrationSelector" className="text-xs shrink-0 pl-1.5 font-medium">Conta Zernio:</Label>
-                      <select
-                        id="aiIntegrationSelector"
-                        value={selectedIntegrationIdForAiKeys}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSelectedIntegrationIdForAiKeys(val);
-                          loadAiKeys(val);
-                        }}
-                        className="text-xs bg-background border rounded px-2 py-1 outline-none font-semibold focus:ring-1 focus:ring-primary"
-                      >
-                        {config.integrations.map((i) => (
-                          <option key={i.id} value={i.id}>{i.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {[
-                    { id: 'seekai', label: 'SeekAI', hint: 'sk-...', link: 'https://platafy.com/seekai', model: 'Ganhe U$ 200,00 em créditos diversas LLM', referral: true },
-                    { id: 'gemini', label: 'Google Gemini', hint: 'AIza...', link: 'https://aistudio.google.com/app/apikey', model: 'Gemini 2.0 Flash' },
-                    { id: 'openai', label: 'OpenAI', hint: 'sk-...', link: 'https://platform.openai.com/api-keys', model: 'GPT-4o Mini' },
-                    { id: 'anthropic', label: 'Anthropic (Claude)', hint: 'sk-ant-...', link: 'https://console.anthropic.com/settings/keys', model: 'Claude 3 Haiku' },
-                    { id: 'mistral', label: 'Mistral AI', hint: '32+ chars', link: 'https://console.mistral.ai/api-keys/', model: 'Mistral Small' },
-                    { id: 'groq', label: 'Groq Cloud', hint: 'gsk_...', link: 'https://console.groq.com/keys', model: 'Llama 3.1 8B' },
-                  ].map(({ id, label, hint, link, model, referral }: any) => {
-                    const saved = aiKeys[id as keyof typeof aiKeys] === '••••••••';
-                    const val = aiKeys[id as keyof typeof aiKeys];
-                    return (
-                      <div key={id} className={`flex items-center gap-3 p-3 border rounded-lg bg-card ${referral ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50'}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-semibold">{label}</p>
-                            {saved && <span className="text-[10px] bg-emerald-500/15 text-emerald-600 px-1.5 py-0.5 rounded font-medium">✓ Conectado</span>}
-                          </div>
-                          <p className={`text-[11px] ${referral ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
-                            {model} · Chave começa com {hint}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {!saved ? (
-                            <>
-                              <Input
-                                type="password"
-                                placeholder={`Cole sua chave ${label}`}
-                                value={val}
-                                onChange={(e) => setAiKeys(prev => ({ ...prev, [id]: e.target.value }))}
-                                className="text-xs font-mono w-56"
-                              />
-                              <Button size="sm" onClick={() => saveAiKey(id, val)} disabled={loading || !val}>
-                                Salvar
-                              </Button>
-                              <a href={link} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline whitespace-nowrap">{referral ? 'Criar conta grátis' : 'Obter chave'}</a>
-                            </>
-                          ) : (
-                            <>
-                              <Input type="password" value="••••••••" readOnly className="text-xs w-32 opacity-60" />
-                              <Button size="sm" variant="outline" onClick={() => setAiKeys(prev => ({ ...prev, [id]: '' }))}>Substituir</Button>
-                              <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => removeAiKey(id)} disabled={loading}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
-            {config.connected && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <Bot className="h-5 w-5" /> Configuração de Webhook Automático
-                  </CardTitle>
-                  <CardDescription>
-                    Cadastre a URL receptora deste projeto diretamente no painel do Zernio para receber eventos de novos comentários e mensagens em tempo real.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="bg-secondary/40 border border-primary/10 rounded-md p-3 text-xs text-muted-foreground space-y-1">
-                    <p className="font-semibold text-foreground">URL Receptora:</p>
-                    <code className="block bg-card p-1.5 rounded border text-[10px] break-all select-all">
-                      {`${import.meta.env.VITE_SUPABASE_URL || ""}/functions/v1/zernio-webhook`}
-                    </code>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Ao clicar no botão abaixo, o sistema fará a requisição para salvar e ativar as configurações de recebimento de webhook no Zernio de forma automática.
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button onClick={syncWebhook} disabled={loading} className="gap-2">
-                    {loading && <RefreshCw className="h-4 w-4 animate-spin" />}
-                    Sincronizar Webhook
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
           </div>
         )}
 
