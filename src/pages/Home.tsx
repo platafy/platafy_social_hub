@@ -4578,11 +4578,15 @@ export default function Home() {
               <CardContent className="space-y-6">
 
                 {/* Testing Notice */}
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3.5 text-xs text-amber-200/90 flex items-start gap-2.5">
-                  <span className="text-base leading-none">💡</span>
-                  <div>
-                    <span className="font-semibold text-amber-400 block mb-0.5">Dica essencial para testes no Instagram:</span>
-                    <span>Para testar automações de comentários e DMs, faça o comentário utilizando uma <strong>outra conta/perfil pessoal</strong> no Instagram. Por padrão de segurança da API oficial da Meta (Instagram Graph API), contas comerciais não podem responder ou enviar DMs automáticas para comentários feitos por elas mesmas.</span>
+                <div className="bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 dark:border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3 shadow-xs">
+                  <span className="text-base leading-none shrink-0 p-1.5 rounded-lg bg-amber-500/15 dark:bg-amber-500/25 text-amber-700 dark:text-amber-300">💡</span>
+                  <div className="space-y-1">
+                    <span className="font-bold text-amber-950 dark:text-amber-300 block text-xs tracking-tight">
+                      Dica essencial para testes no Instagram:
+                    </span>
+                    <p className="leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                      Para testar automações de comentários e DMs, faça o comentário utilizando uma <strong className="text-amber-950 dark:text-amber-100 font-semibold underline decoration-amber-500/40">outra conta/perfil pessoal</strong> no Instagram. Por padrão de segurança da API oficial da Meta (Instagram Graph API), contas comerciais não podem responder ou enviar DMs automáticas para comentários feitos por elas mesmas.
+                    </p>
                   </div>
                 </div>
 
