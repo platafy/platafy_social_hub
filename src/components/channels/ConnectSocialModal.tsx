@@ -224,8 +224,8 @@ export function ConnectSocialModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="bg-card border border-border rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3.5 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-card border border-border rounded-3xl max-w-2xl w-full p-4 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 flex flex-col max-h-[90dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
           <div className="flex items-center gap-2.5">

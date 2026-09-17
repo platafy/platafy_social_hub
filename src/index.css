@@ -75,6 +75,11 @@
   * {
     border-color: var(--color-border);
   }
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -83,6 +88,18 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+  img, video, canvas, svg {
+    max-width: 100%;
+  }
+}
+
+/* Utilitário para ocultar scrollbars nativas mantendo swipe em mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Glassmorphism and UI helper utilities */
@@ -168,4 +185,21 @@
   animation: connect-btn-shimmer 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   pointer-events: none;
   z-index: 1;
+}
+
+/* Dynamic Responsive Post Grid: 1 col on mobile, 2 cols on tablet, dynamic on desktop */
+.post-grid-dynamic {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .post-grid-dynamic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .post-grid-dynamic {
+    grid-template-columns: repeat(var(--grid-cols, 2), minmax(0, 1fr)) !important;
+  }
 }

@@ -250,7 +250,7 @@ export default function Login() {
       <div
         className={`w-full ${
           isFullscreen ? "max-w-md mx-auto" : "lg:w-1/2"
-        } min-h-screen flex items-center justify-center p-6 sm:p-10 relative z-10`}
+        } min-h-screen flex items-center justify-center p-4 sm:p-8 lg:p-10 relative z-10`}
       >
         <div className="w-full max-w-[420px] space-y-7">
           {/* Logo Aumentada e Centralizada na coluna da direita */}

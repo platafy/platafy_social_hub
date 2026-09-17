@@ -128,10 +128,10 @@ export function MercadoPagoSettings() {
   return (
     <Card className="border border-border/70 shadow-sm bg-card">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
+              <CreditCard className="h-5 w-5 text-primary shrink-0" />
               <CardTitle className="text-xl">Configuração do Mercado Pago</CardTitle>
             </div>
             <CardDescription>
@@ -139,7 +139,7 @@ export function MercadoPagoSettings() {
             </CardDescription>
           </div>
           {connectedUser && (
-            <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+            <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto shrink-0">
               <CheckCircle2 className="h-3.5 w-3.5" /> Conectado ({connectedUser})
             </span>
           )}
@@ -221,17 +221,17 @@ export function MercadoPagoSettings() {
             <ShieldCheck className="h-4 w-4 text-primary" />
             URL de Notificação / Webhook do Mercado Pago
           </Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               readOnly
               value={webhookUrl}
-              className="h-10 font-mono text-xs bg-muted/40 text-muted-foreground"
+              className="h-10 font-mono text-xs bg-muted/40 text-muted-foreground min-w-0 flex-1"
             />
             <Button
               type="button"
               variant="outline"
               onClick={copyWebhookUrl}
-              className="gap-1.5 shrink-0"
+              className="gap-1.5 shrink-0 w-full sm:w-auto"
             >
               <Copy className="h-4 w-4" /> Copiar
             </Button>
@@ -242,13 +242,13 @@ export function MercadoPagoSettings() {
         </div>
       </CardContent>
 
-      <CardFooter className="flex justify-between gap-3 pt-2 border-t border-border/40">
+      <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-border/40">
         <Button
           type="button"
           variant="outline"
           onClick={() => testMercadoPagoConnection(accessToken)}
           disabled={testing || !accessToken}
-          className="gap-2 text-xs"
+          className="gap-2 text-xs w-full sm:w-auto"
         >
           {testing && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
           Testar Conexão
@@ -257,7 +257,7 @@ export function MercadoPagoSettings() {
         <Button
           onClick={handleSave}
           disabled={saving || loading}
-          className="gap-2 px-6 font-semibold"
+          className="gap-2 px-6 font-semibold w-full sm:w-auto"
         >
           {saving ? "Salvando..." : "Salvar Configurações do Mercado Pago"}
         </Button>

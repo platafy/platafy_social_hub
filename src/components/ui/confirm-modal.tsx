@@ -50,7 +50,7 @@ export function ConfirmModal({
 
       {/* Panel */}
       <div
-        className="relative z-10 w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-border/80 bg-card shadow-2xl p-4 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Icon + title */}
@@ -67,11 +67,11 @@ export function ConfirmModal({
         <p className="text-sm text-muted-foreground leading-relaxed pl-1">{message}</p>
 
         {/* Actions */}
-        <div className="flex justify-end gap-2.5 pt-2 border-t border-border/40">
-          <Button variant="outline" size="sm" onClick={onCancel} className="font-medium">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2.5 pt-2 border-t border-border/40">
+          <Button variant="outline" size="sm" onClick={onCancel} className="font-medium w-full sm:w-auto">
             {cancelLabel}
           </Button>
-          <Button size="sm" className={`font-semibold ${confirmClass}`} onClick={onConfirm}>
+          <Button size="sm" className={`font-semibold w-full sm:w-auto ${confirmClass}`} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

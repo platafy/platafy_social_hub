@@ -17,7 +17,7 @@ export function SubscriptionBanner() {
   // Se está em período de testes (Trial)
   if (subscription.status === "trialing" && subscription.isAccessAllowed) {
     return (
-      <div className="bg-gradient-to-r from-primary/15 via-primary/10 to-primary/15 border-b border-primary/20 px-4 py-2.5 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 text-foreground">
+      <div className="bg-gradient-to-r from-primary/15 via-primary/10 to-primary/15 border-b border-primary/20 px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium flex flex-wrap items-center justify-center text-center gap-1.5 sm:gap-2 text-foreground">
         <Sparkles className="h-4 w-4 text-primary shrink-0 animate-pulse" />
         <span>
           Você está no <strong>Período de Teste Gratuito</strong>: restam{" "}
@@ -25,7 +25,7 @@ export function SubscriptionBanner() {
         </span>
         <Link
           to="/planos"
-          className="ml-2 inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+          className="inline-flex items-center gap-1 font-semibold text-primary hover:underline ml-1"
         >
           Ver Planos <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -36,14 +36,14 @@ export function SubscriptionBanner() {
   // Se expirou o trial ou assinatura
   if (!subscription.isAccessAllowed) {
     return (
-      <div className="bg-destructive/15 border-b border-destructive/30 px-4 py-2.5 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 text-destructive">
+      <div className="bg-destructive/15 border-b border-destructive/30 px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium flex flex-wrap items-center justify-center text-center gap-1.5 sm:gap-2 text-destructive">
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span>
           <strong>Acesso pausado:</strong> Seu período de testes ou assinatura encerrou.
         </span>
         <Link
           to="/planos"
-          className="ml-2 inline-flex items-center gap-1 font-bold underline hover:opacity-90"
+          className="inline-flex items-center gap-1 font-bold underline hover:opacity-90 ml-1"
         >
           Assinar um Plano <ArrowRight className="h-3.5 w-3.5" />
         </Link>

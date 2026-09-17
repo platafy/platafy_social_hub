@@ -49,7 +49,7 @@ export default function Planos() {
   };
 
   return (
-    <div className="min-h-[85vh] max-w-6xl mx-auto py-8 px-4 space-y-12">
+    <div className="min-h-[85vh] max-w-6xl mx-auto py-6 sm:py-8 px-3.5 sm:px-6 space-y-8 sm:space-y-12">
       {/* Botão de Retorno */}
       <div className="flex items-center justify-between">
         <Link
@@ -99,10 +99,10 @@ export default function Planos() {
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
           <Sparkles className="h-3.5 w-3.5" /> Planos & Assinaturas
         </div>
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
+        <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-foreground">
           Escolha o plano ideal para alavancar seu negócio
         </h1>
-        <p className="text-base text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Assinatura mensal transparente via <strong>Mercado Pago</strong> com cancelamento a qualquer momento, sem fidelidade.
         </p>
       </div>
@@ -115,7 +115,7 @@ export default function Planos() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
           {plans.map((plan) => {
             const isCurrentPlan = subscription?.status === "active" && subscription?.plan_id === plan.id;
             const isSubmitting = checkoutLoading && selectedPlanId === plan.id;
@@ -125,7 +125,7 @@ export default function Planos() {
                 key={plan.id}
                 className={`relative flex flex-col justify-between rounded-3xl transition-all duration-300 border-2 ${
                   plan.is_popular
-                    ? "border-primary shadow-2xl scale-105 z-10 bg-card"
+                    ? "border-primary shadow-2xl scale-100 md:scale-105 z-10 bg-card"
                     : "border-border/70 hover:border-border shadow-sm bg-card/80"
                 }`}
               >

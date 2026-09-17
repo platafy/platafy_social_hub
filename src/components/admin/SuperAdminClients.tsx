@@ -1143,7 +1143,7 @@ export function SuperAdminClients() {
         </div>
 
         {/* Footer com Paginação */}
-        <div className="bg-muted/30 border-t border-border px-4 py-3 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="bg-muted/30 border-t border-border px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-muted-foreground">
           <div>
             Mostrando <span className="text-foreground font-semibold">{paginatedClients.length}</span> de{" "}
             <span className="text-foreground font-semibold">{filteredClients.length}</span> clientes
@@ -1177,8 +1177,8 @@ export function SuperAdminClients() {
 
       {/* MODAL 1: Novo Cliente (Light Mode) */}
       {isNewClientOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 my-8 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-4 sm:my-8 animate-in fade-in zoom-in-95 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
@@ -1386,8 +1386,8 @@ export function SuperAdminClients() {
 
       {/* MODAL 2: Alterar Plano (Light Mode) */}
       {isChangePlanOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
@@ -1480,8 +1480,8 @@ export function SuperAdminClients() {
 
       {/* MODAL 3: Renovar Licença (Light Mode) */}
       {isRenewOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
@@ -1613,32 +1613,32 @@ export function SuperAdminClients() {
 
       {/* MODAL 5: Detalhes do Cliente (Drawer / Light Mode) */}
       {isDetailsOpen && selectedClient && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-card border border-border rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 my-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 overflow-y-auto">
+          <div className="bg-card border border-border rounded-2xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-4 sm:my-6 animate-in fade-in zoom-in-95 max-h-[90dvh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border pb-3 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base border border-primary/20">
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base border border-primary/20 shrink-0">
                   {selectedClient.fullName.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2 truncate">
                     {selectedClient.fullName}
                     {renderPlanBadge(selectedClient.subscription?.plan?.slug, selectedClient.subscription?.plan?.name)}
                   </h3>
-                  <p className="text-xs text-muted-foreground">{selectedClient.email} • {selectedClient.companyName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{selectedClient.email} • {selectedClient.companyName}</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsDetailsOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Abas */}
-            <div className="flex items-center gap-2 border-b border-border pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2 border-b border-border pb-2 flex-shrink-0 overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setDetailsTab("overview")}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${

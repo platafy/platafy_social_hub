@@ -74,13 +74,13 @@ export function BrandLogo({
         }}
       />
       {!imageOnly && (
-        <div className="flex items-center gap-1.5">
-          <span className={`${textSizes[size]} ${resolvedTextColor} transition-colors`}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className={`${textSizes[size]} ${resolvedTextColor} transition-colors whitespace-nowrap text-base sm:text-xl`}>
             {branding.app_name || "PLATAFY Social"}
           </span>
           {showTagline && branding.app_tagline && (
             <span
-              className={`${badgeSizes[size]} ${taglineColor || "bg-primary/15 text-primary"} font-bold rounded uppercase tracking-wider transition-colors`}
+              className={`${badgeSizes[size]} ${taglineColor || "bg-primary/15 text-primary"} font-bold rounded uppercase tracking-wider transition-colors hidden sm:inline-block shrink-0`}
             >
               {branding.app_tagline}
             </span>

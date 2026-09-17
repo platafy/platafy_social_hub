@@ -1798,175 +1798,231 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-4 gap-6 min-h-[75vh] w-full max-w-7xl mx-auto">
-      {/* Mobile Navigation Tabs (Horizontal Scrollable Strip) */}
-      <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-2 mb-1 no-scrollbar w-full">
-        <button
-          type="button"
-          onClick={() => setActiveTab("dashboard")}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-            activeTab === "dashboard"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <BarChart3 className="h-3.5 w-3.5" /> Painel
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("profiles")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "profiles"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <User className="h-3.5 w-3.5" /> Perfil
-          {profiles.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{profiles.length}</span>
+    <div className="flex flex-col lg:flex-row gap-6 min-h-[75vh] w-full max-w-7xl mx-auto">
+      {/* Mobile/Tablet Navigation Tabs (Horizontal Scrollable Strip + Profile Bar) */}
+      <div className="flex lg:hidden flex-col gap-2.5 w-full">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar w-full scroll-smooth">
+          <button
+            type="button"
+            onClick={() => setActiveTab("dashboard")}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+              activeTab === "dashboard"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <BarChart3 className="h-3.5 w-3.5" /> Painel
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("profiles")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "profiles"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <User className="h-3.5 w-3.5" /> Perfil
+            {profiles.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{profiles.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("channels")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "channels"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <Share2 className="h-3.5 w-3.5" /> Canais
+            {accounts.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{accounts.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("composer")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "composer"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo Post
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("inbox")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "inbox"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <MessageSquare className="h-3.5 w-3.5" /> Inbox
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("contacts")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "contacts"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" /> Contatos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("automation")}
+            disabled={!config.connected}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+              activeTab === "automation"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <Bot className="h-3.5 w-3.5" /> IA
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+              activeTab === "settings"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <Settings className="h-3.5 w-3.5" /> Ajustes
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("guide")}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+              activeTab === "guide"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+            }`}
+          >
+            <HelpCircle className="h-3.5 w-3.5" /> Guia
+          </button>
+          {isSuperAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => setActiveTab("clients")}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                  activeTab === "clients"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" /> Clientes
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("saas_plans")}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                  activeTab === "saas_plans"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                }`}
+              >
+                <CreditCard className="h-3.5 w-3.5" /> Planos (SaaS)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("saas_whitelabel")}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                  activeTab === "saas_whitelabel"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> White Label
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("saas_mercadopago")}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                  activeTab === "saas_mercadopago"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                }`}
+              >
+                <CreditCard className="h-3.5 w-3.5" /> Mercado Pago
+              </button>
+            </>
           )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("channels")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "channels"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Share2 className="h-3.5 w-3.5" /> Canais
-          {accounts.length > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-secondary/80 font-bold">{accounts.length}</span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("composer")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "composer"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Plus className="h-3.5 w-3.5" /> Novo Post
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("inbox")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "inbox"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <MessageSquare className="h-3.5 w-3.5" /> Inbox
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("contacts")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "contacts"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" /> Contatos
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("automation")}
-          disabled={!config.connected}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 ${
-            activeTab === "automation"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Bot className="h-3.5 w-3.5" /> IA
-        </button>
-        <button
-          type="button"
-          onClick={handleOpenSettings}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-            activeTab === "settings"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <Settings className="h-3.5 w-3.5" /> Ajustes
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("guide")}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-            activeTab === "guide"
-              ? "bg-primary text-primary-foreground shadow-xs"
-              : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
-          }`}
-        >
-          <HelpCircle className="h-3.5 w-3.5" /> Guia
-        </button>
-        {isSuperAdmin && (
-          <>
-            <button
-              type="button"
-              onClick={() => setActiveTab("clients")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeTab === "clients"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-              }`}
-            >
-              <Users className="h-3.5 w-3.5" /> Clientes
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("saas_plans")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeTab === "saas_plans"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-              }`}
-            >
-              <CreditCard className="h-3.5 w-3.5" /> Planos (SaaS)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("saas_whitelabel")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeTab === "saas_whitelabel"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-              }`}
-            >
-              <Sparkles className="h-3.5 w-3.5" /> White Label
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("saas_mercadopago")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeTab === "saas_mercadopago"
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
-              }`}
-            >
-              <CreditCard className="h-3.5 w-3.5" /> Mercado Pago
-            </button>
-          </>
+          <Link to="/planos" className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap shrink-0">
+            <CreditCard className="h-3.5 w-3.5" /> Planos
+          </Link>
+        </div>
+
+        {/* Mobile Perfil Ativo Quick Selector (visível apenas em telas menores quando conectado) */}
+        {config.connected && profiles.length > 0 && (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-2xl bg-card border border-border/80 text-xs shadow-2xs">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-primary" /> Perfil:
+              </span>
+              <select
+                value={selectedProfileId}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  const selectedProf = profiles.find((p) => (p._id || p.id) === val);
+                  setSelectedProfileId(val);
+                  if (selectedProf?.integrationId) {
+                    try {
+                      await zernio.saveConfig("", val, selectedProf.integrationId);
+                      toast.success("Perfil ativo atualizado.");
+                      await fetchConfig(false);
+                    } catch (err: any) {
+                      console.error("Failed to save profile selection:", err);
+                    }
+                  }
+                }}
+                className="text-xs font-semibold bg-background border border-border/80 rounded-xl px-2.5 py-1 outline-none truncate max-w-[180px] sm:max-w-xs cursor-pointer flex-1"
+              >
+                {profiles.map((p, index) => {
+                  const pId = p._id || p.id;
+                  const pAccounts = accounts.filter((a) => a.profileId === pId);
+                  const countLabel = pAccounts.length > 0 ? ` (${pAccounts.length}/2)` : "";
+                  return (
+                    <option key={pId || `profile-${index}`} value={pId || index}>
+                      {p.integrationName || p.name}
+                      {countLabel}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {profiles.length}/{maxProfiles === -1 ? "∞" : maxProfiles}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsNewProfileModalOpen(true)}
+                className="p-1 text-primary hover:text-primary/80 font-bold rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Novo Perfil"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
-        <Link to="/planos" className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
-          <CreditCard className="h-3.5 w-3.5" /> Planos
-        </Link>
       </div>
 
       {/* Desktop Sidebar Navigation */}
-      <div className="hidden md:flex md:col-span-1 md:sticky md:top-28 md:self-start md:max-h-[calc(100vh-8rem)] md:overflow-y-auto flex-col space-y-5 border-r border-border/50 pr-4">
+      <div className="hidden lg:flex w-64 shrink-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto flex-col space-y-5 border-r border-border/50 pr-4">
         {/* Navigation Group: Principal */}
         <div className="space-y-1">
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Visão Geral</p>
@@ -2238,7 +2294,7 @@ export default function Home() {
       </div>
 
       {/* Main Content Area */}
-      <div className="md:col-span-3 flex flex-col w-full min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col w-full">
 
         {/* Profiles Tab (Gestão de Perfis & Conexões) */}
         {activeTab === "profiles" && (() => {
@@ -2438,24 +2494,6 @@ export default function Home() {
                       Adicione uma nova credencial e chave de API para vincular um novo perfil isolado.
                     </CardDescription>
                   </div>
-                  <a
-                    href="https://zernio.com/dashboard/api-keys"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block shrink-0"
-                  >
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5 shadow-md shadow-primary/25"
-                    >
-                      <span className="btn-shimmer-sweep" />
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Obter Chave no Zernio</span>
-                      </span>
-                    </Button>
-                  </a>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid w-full items-center gap-1.5">
@@ -2478,12 +2516,12 @@ export default function Home() {
                       onChange={(e) => setApiKeyInput(e.target.value)}
                     />
                     {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-primary/10 border border-primary/25 mt-1">
-                      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
-                        <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                          <Key className="w-3.5 h-3.5" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-primary/10 border border-primary/25 mt-1 overflow-hidden">
+                      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                          <Key className="w-4 h-4" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
                           <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
                         </div>
@@ -2492,17 +2530,17 @@ export default function Home() {
                         href="https://zernio.com/dashboard/api-keys"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block shrink-0"
+                        className="w-full sm:w-auto shrink-0"
                       >
                         <Button
                           type="button"
                           size="sm"
-                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto"
+                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto text-center"
                         >
                           <span className="btn-shimmer-sweep" />
-                          <span className="relative z-10 flex items-center justify-center gap-1.5">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>Obtenha sua chave de API em zernio.com/dashboard/api-keys</span>
+                          <span className="relative z-10 flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                            <span>Obtenha sua chave de API Zernio</span>
                           </span>
                         </Button>
                       </a>
@@ -2522,7 +2560,7 @@ export default function Home() {
                     </p>
                   </div>
                 </CardContent>
-                <CardFooter className="flex items-center justify-between">
+                <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3">
                   <div className="flex items-center gap-2 text-sm">
                     {config.connected ? (
                       <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
@@ -2534,7 +2572,7 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                  <Button onClick={saveConfig} disabled={loading}>
+                  <Button onClick={saveConfig} disabled={loading} className="w-full sm:w-auto">
                     {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                     Conectar Conta
                   </Button>
@@ -2611,17 +2649,17 @@ export default function Home() {
                   const saved = aiKeys[id as keyof typeof aiKeys] === '••••••••';
                   const val = aiKeys[id as keyof typeof aiKeys];
                   return (
-                    <div key={id} className={`flex items-center gap-3 p-3 border rounded-lg bg-card ${referral ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50'}`}>
+                    <div key={id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 border rounded-2xl bg-card ${referral ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/60'}`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-sm font-semibold">{label}</p>
                           {saved && <span className="text-[10px] bg-emerald-500/15 text-emerald-600 px-1.5 py-0.5 rounded font-medium">✓ Conectado</span>}
                         </div>
-                        <p className={`text-[11px] ${referral ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
+                        <p className={`text-[11px] leading-relaxed ${referral ? 'text-amber-500 dark:text-amber-400 font-semibold' : 'text-muted-foreground'}`}>
                           {model} · Chave começa com {hint}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0">
                         {!saved ? (
                           <>
                             <Input
@@ -2629,18 +2667,18 @@ export default function Home() {
                               placeholder={`Cole sua chave ${label}`}
                               value={val}
                               onChange={(e) => setAiKeys(prev => ({ ...prev, [id]: e.target.value }))}
-                              className="text-xs font-mono w-56"
+                              className="text-xs font-mono w-full sm:w-56"
                             />
-                            <Button size="sm" onClick={() => saveAiKey(id, val)} disabled={loading || !val}>
+                            <Button size="sm" onClick={() => saveAiKey(id, val)} disabled={loading || !val} className="h-9 sm:h-8 px-3">
                               Salvar
                             </Button>
-                            <a href={link} target="_blank" rel="noreferrer" className="text-[10px] text-primary underline whitespace-nowrap">{referral ? 'Criar conta grátis' : 'Obter chave'}</a>
+                            <a href={link} target="_blank" rel="noreferrer" className="text-xs sm:text-[10px] text-primary underline whitespace-nowrap py-1">{referral ? 'Criar conta grátis' : 'Obter chave'}</a>
                           </>
                         ) : (
                           <>
-                            <Input type="password" value="••••••••" readOnly className="text-xs w-32 opacity-60" />
-                            <Button size="sm" variant="outline" onClick={() => setAiKeys(prev => ({ ...prev, [id]: '' }))}>Substituir</Button>
-                            <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => removeAiKey(id)} disabled={loading}>
+                            <Input type="password" value="••••••••" readOnly className="text-xs w-full sm:w-32 opacity-60" />
+                            <Button size="sm" variant="outline" onClick={() => setAiKeys(prev => ({ ...prev, [id]: '' }))} className="h-9 sm:h-8 px-3">Substituir</Button>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10 h-9 sm:h-8 px-2.5" onClick={() => removeAiKey(id)} disabled={loading}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </>
@@ -2793,7 +2831,7 @@ export default function Home() {
 
                       {/* Grid Columns Counter */}
                       {postHistoryView === "grid" && (
-                        <div className="flex items-center border border-border/80 rounded-md p-0.5 bg-secondary/10 text-xs">
+                        <div className="hidden sm:flex items-center border border-border/80 rounded-md p-0.5 bg-secondary/10 text-xs">
                           <button
                             onClick={() => setGridColumnsCount(prev => Math.max(1, prev - 1))}
                             disabled={gridColumnsCount <= 1}
@@ -3045,10 +3083,10 @@ export default function Home() {
                         })()
                       ) : (
                         <div
-                          className="grid gap-4"
+                          className="grid post-grid-dynamic gap-4"
                           style={{
-                            gridTemplateColumns: `repeat(${gridColumnsCount}, minmax(0, 1fr))`
-                          }}
+                            "--grid-cols": gridColumnsCount
+                          } as React.CSSProperties}
                         >
                           {filteredPosts.map((post, index) => {
                             const pId = post._id || post.id || `post-${index}`;
@@ -3058,9 +3096,9 @@ export default function Home() {
                             const usernameText = post.platforms?.[0]?.accountId?.username || "default";
 
                             return (
-                              <div key={pId} className="border border-border/60 rounded-lg bg-card text-card-foreground shadow-sm flex flex-col overflow-hidden">
-                                <div className="p-4 flex gap-4 items-start justify-between flex-1">
-                                  <div className="space-y-3 min-w-0 flex-1">
+                              <div key={pId} className="border border-border/60 rounded-xl bg-card text-card-foreground shadow-sm flex flex-col overflow-hidden w-full min-w-0">
+                                <div className="p-3.5 sm:p-4 flex gap-3 sm:gap-4 items-start justify-between flex-1 min-w-0">
+                                  <div className="space-y-2.5 sm:space-y-3 min-w-0 flex-1">
                                     <p className="text-sm font-semibold text-foreground break-words line-clamp-3">
                                       {post.content || post.text || "Sem conteúdo"}
                                     </p>
@@ -3074,20 +3112,19 @@ export default function Home() {
                                     </div>
 
                                     {postDate && (
-                                      <p className="text-xs text-muted-foreground text-capitalize">
+                                      <p className="text-xs text-muted-foreground">
                                         {new Date(postDate).toLocaleString("pt-BR", {
                                           day: "2-digit",
                                           month: "short",
                                           year: "numeric",
                                           hour: "2-digit",
                                           minute: "2-digit",
-                                          timeZoneName: "short"
                                         })}
                                       </p>
                                     )}
 
                                     <p className="text-[10px] text-muted-foreground/75 truncate">
-                                      @{usernameText} • {post.integrationName || 'Conta Principal'} • {pId.substring(0, 8)}...
+                                      @{usernameText} • {post.integrationName || 'Conta Principal'}
                                     </p>
                                   </div>
 
@@ -3095,20 +3132,20 @@ export default function Home() {
                                     isVideo ? (
                                       <video
                                         src={mediaUrl}
-                                        className="h-16 w-16 object-cover rounded border border-border/50 shrink-0"
+                                        className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border border-border/50 shrink-0"
                                         muted
                                       />
                                     ) : (
                                       <img
                                         src={mediaUrl}
                                         alt="Thumbnail"
-                                        className="h-16 w-16 object-cover rounded border border-border/50 shrink-0"
+                                        className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border border-border/50 shrink-0"
                                       />
                                     )
                                   )}
                                 </div>
 
-                                <div className="border-t border-border/40 px-4 py-2.5 bg-secondary/15 flex items-center justify-between">
+                                <div className="border-t border-border/40 px-3.5 sm:px-4 py-2.5 bg-secondary/15 flex items-center justify-between">
                                   {getStatusBadge(post.status)}
 
                                   {post.status === 'scheduled' && (
@@ -3421,16 +3458,16 @@ export default function Home() {
                         Gerencie as redes sociais conectadas diretamente via OAuth oficial. Cada perfil inclui <strong>2 contas gratuitas</strong> sem custos adicionais.
                       </CardDescription>
                     </div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
                       <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5" />
+                        <Users className="w-3.5 h-3.5 shrink-0" />
                         Franquia: {profiles.length} / {maxProfiles === -1 ? '∞' : maxProfiles} Perfis Ativos
                       </span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setIsNewProfileModalOpen(true)}
-                        className="text-xs font-bold rounded-xl cursor-pointer"
+                        className="text-xs font-bold rounded-xl cursor-pointer flex-1 sm:flex-none h-8 sm:h-9"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
                         Novo Perfil
@@ -3438,11 +3475,11 @@ export default function Home() {
                       <Button
                         size="sm"
                         onClick={() => setIsConnectSocialModalOpen(true)}
-                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5"
+                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-1.5 flex-1 sm:flex-none h-8 sm:h-9"
                       >
                         <span className="btn-shimmer-sweep" />
-                        <span className="relative z-10 flex items-center gap-1.5">
-                          <Plus className="w-3.5 h-3.5" />
+                        <span className="relative z-10 flex items-center justify-center gap-1.5">
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
                           <span>Conectar Rede</span>
                         </span>
                       </Button>
@@ -3450,8 +3487,8 @@ export default function Home() {
                   </div>
 
                   {/* Profile selector & Quota bar */}
-                  <div className="mt-4 pt-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-3 rounded-2xl">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <div className="mt-4 pt-4 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20 p-3 rounded-2xl">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
                         Perfil Ativo:
                       </Label>
@@ -3472,7 +3509,7 @@ export default function Home() {
                               }
                             }
                           }}
-                          className="text-xs font-semibold bg-background border border-border/80 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+                          className="text-xs font-semibold bg-background border border-border/80 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer max-w-[220px] sm:max-w-xs truncate"
                         >
                           {profiles.map((p) => {
                             const pId = p._id || p.id;
@@ -3497,7 +3534,7 @@ export default function Home() {
                             : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
                         }`}
                       >
-                        <span className="h-2 w-2 rounded-full bg-current animate-pulse"></span>
+                        <span className="h-2 w-2 rounded-full bg-current animate-pulse shrink-0"></span>
                         {currentProfileAccounts.length} / 2 contas gratuitas neste perfil
                       </span>
                     </div>
@@ -3621,21 +3658,24 @@ export default function Home() {
         })()}
 
         {/* Inbox Tab */}
-        {activeTab === "inbox" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 h-[calc(100vh-13rem)] min-h-[600px] max-h-[860px] border border-border/60 rounded-2xl overflow-hidden bg-card shadow-xs">
-            {/* List */}
-            <div className="md:col-span-1 border-r border-border/50 flex flex-col h-full min-h-0 bg-card">
-              <div className="p-4 border-b border-border/40 space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-lg tracking-tight text-foreground">Mensagens</h3>
-                  <button className="text-muted-foreground hover:text-foreground">
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
+        {activeTab === "inbox" && (() => {
+          const isMobileChatOpen = Boolean(inboxType === "dms" ? activeChat : selectedCommentPost);
 
-                {/* Search & Filters */}
-                <div className="space-y-2">
-                  <div className="flex gap-1.5 flex-wrap">
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-3 h-[calc(100dvh-12rem)] min-h-[520px] sm:min-h-[600px] max-h-[860px] border border-border/60 rounded-2xl overflow-hidden bg-card shadow-xs">
+              {/* List */}
+              <div className={`md:col-span-1 border-r border-border/50 flex-col h-full min-h-0 bg-card ${isMobileChatOpen ? "hidden md:flex" : "flex"}`}>
+                <div className="p-4 border-b border-border/40 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-lg tracking-tight text-foreground">Mensagens</h3>
+                    <button className="text-muted-foreground hover:text-foreground">
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Search & Filters */}
+                  <div className="space-y-2">
+                    <div className="flex gap-1.5 flex-wrap overflow-x-auto no-scrollbar py-0.5 max-w-full">
                     <div className="relative">
                       <button
                         onClick={() => setIsInboxPlatformDropdownOpen(!isInboxPlatformDropdownOpen)}
@@ -3981,7 +4021,7 @@ export default function Home() {
             </div>
 
             {/* Content Window */}
-            <div className="md:col-span-2 flex flex-col h-full min-h-0 bg-card/40">
+            <div className={`md:col-span-2 flex-col h-full min-h-0 bg-card/40 ${isMobileChatOpen ? "flex" : "hidden md:flex"}`}>
               {inboxType === "dms" ? (
                 activeChat ? (() => {
                   const lastIncomingMsg = chatMessages
@@ -3999,20 +4039,28 @@ export default function Home() {
                   <>
                     {/* Active Header */}
                     <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-card/80">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setActiveChat(null)}
+                          className="md:hidden p-1.5 -ml-1 text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-lg shrink-0 transition-colors"
+                          title="Voltar para lista de conversas"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                           {(activeChat.participantName || activeChat.contactName || "C").slice(0, 2).toUpperCase()}
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-foreground">{activeChat.participantName || activeChat.contactName || "Contato"}</h4>
-                          <p className={`text-[11px] flex items-center gap-1 font-medium ${
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm text-foreground truncate">{activeChat.participantName || activeChat.contactName || "Contato"}</h4>
+                          <p className={`text-[11px] flex items-center gap-1 font-medium truncate ${
                             isPast7Days
                               ? "text-rose-600 dark:text-rose-400"
                               : isPast24Hours
                               ? "text-amber-600 dark:text-amber-400"
                               : "text-emerald-600 dark:text-emerald-400"
                           }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${
+                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                               isPast7Days ? "bg-rose-500" : isPast24Hours ? "bg-amber-500" : "bg-emerald-500 animate-pulse"
                             }`}></span>
                             {isPast7Days ? "Janela Meta Expirada (>7d)" : isPast24Hours ? "Janela 24h Expirada (Agente Humano Ativo)" : "Conversa Ativa"}
@@ -4073,7 +4121,7 @@ export default function Home() {
                   </>
                   );
                 })() : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center p-8">
                     <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 mb-3">
                       <MessageSquare className="h-8 w-8 text-muted-foreground" />
                     </div>
@@ -4086,12 +4134,22 @@ export default function Home() {
                   <>
                     {/* Active Header */}
                     <div className="p-3.5 border-b border-border/50 flex items-center justify-between bg-card/80">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <MessageCircle className="h-4 w-4 text-primary" />
-                          <h4 className="font-bold text-xs text-foreground">Postagem de @{selectedCommentPost.accountUsername}</h4>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCommentPost(null)}
+                          className="md:hidden p-1.5 -ml-1 text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded-lg shrink-0 transition-colors"
+                          title="Voltar para lista de postagens"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                            <h4 className="font-bold text-xs text-foreground truncate">Postagem de @{selectedCommentPost.accountUsername}</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5 max-w-[420px]">{selectedCommentPost.content || "Sem legenda"}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5 max-w-[420px]">{selectedCommentPost.content || "Sem legenda"}</p>
                       </div>
                     </div>
 
@@ -4186,7 +4244,7 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <div className="hidden md:flex flex-1 flex-col items-center justify-center text-center p-8">
                     <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 mb-3">
                       <MessageSquare className="h-8 w-8 text-muted-foreground" />
                     </div>
@@ -4197,7 +4255,8 @@ export default function Home() {
               )}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Contacts Tab */}
         {activeTab === "contacts" && (
@@ -4354,17 +4413,17 @@ export default function Home() {
 
                 {/* Pagination */}
                 {contactsTotal > CONTACTS_PER_PAGE && (
-                  <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border/40">
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={contactsPage <= 1 || loadingContacts}
                       onClick={() => fetchContacts(contactsPage - 1, contactsSearch, contactsTagFilter)}
-                      className="gap-1.5 h-8 text-xs"
+                      className="gap-1.5 h-8 text-xs w-full sm:w-auto"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" /> Anterior
                     </Button>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground text-center">
                       Página {contactsPage} de {Math.ceil(contactsTotal / CONTACTS_PER_PAGE)} · {contactsTotal} contatos
                     </span>
                     <Button
@@ -4372,7 +4431,7 @@ export default function Home() {
                       size="sm"
                       disabled={contactsPage >= Math.ceil(contactsTotal / CONTACTS_PER_PAGE) || loadingContacts}
                       onClick={() => fetchContacts(contactsPage + 1, contactsSearch, contactsTagFilter)}
-                      className="gap-1.5 h-8 text-xs"
+                      className="gap-1.5 h-8 text-xs w-full sm:w-auto"
                     >
                       Próxima <ChevronRight className="h-3.5 w-3.5" />
                     </Button>
@@ -5159,24 +5218,24 @@ export default function Home() {
 
             {/* Automation Logs History */}
             <Card className="mt-6 border border-border/40 bg-card">
-              <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/30">
-                <div className="space-y-1">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/30">
+                <div className="space-y-1 min-w-0">
                   <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
-                    <Clock className="h-4 w-4 text-primary" /> Histórico de Disparos de Automação
+                    <Clock className="h-4 w-4 text-primary shrink-0" /> Histórico de Disparos de Automação
                   </CardTitle>
                   <CardDescription className="text-xs">
                     Monitore em tempo real as respostas geradas para comentários e DMs nas redes sociais.
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto pt-1 sm:pt-0">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleClearAutomationLogs}
                     disabled={loadingLogs || automationLogs.length === 0}
-                    className="gap-2 h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="gap-2 h-8 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive flex-1 sm:flex-initial justify-center"
                   >
-                    <Trash className="h-3 w-3" />
+                    <Trash className="h-3.5 w-3.5 shrink-0" />
                     Limpar Logs
                   </Button>
                   <Button
@@ -5184,9 +5243,9 @@ export default function Home() {
                     size="sm"
                     onClick={fetchAutomationLogs}
                     disabled={loadingLogs}
-                    className="gap-2 h-7 text-xs border-border/60 hover:bg-secondary/40"
+                    className="gap-2 h-8 text-xs border-border/60 hover:bg-secondary/40 flex-1 sm:flex-initial justify-center"
                   >
-                    <RefreshCw className={`h-3 w-3 ${loadingLogs ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${loadingLogs ? 'animate-spin' : ''}`} />
                     Atualizar Logs
                   </Button>
                 </div>
@@ -5263,11 +5322,11 @@ export default function Home() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="flex items-center justify-between p-4 border-t border-border/20 text-xs bg-secondary/5 rounded-b-lg">
-                        <div className="text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/20 text-xs bg-secondary/5 rounded-b-lg">
+                        <div className="text-muted-foreground text-center sm:text-left">
                           Mostrando {Math.min((logsPage - 1) * logsPerPage + 1, automationLogs.length)} a {Math.min(logsPage * logsPerPage, automationLogs.length)} de {automationLogs.length} logs
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-center">
                           <Button
                             variant="outline"
                             size="sm"
@@ -5621,7 +5680,7 @@ export default function Home() {
               </div>
 
               {/* Botões de Navegação Rápida entre Abas do Super Admin */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -5676,7 +5735,7 @@ export default function Home() {
               </div>
 
               {/* Botões de Navegação Rápida entre Abas do Super Admin */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"

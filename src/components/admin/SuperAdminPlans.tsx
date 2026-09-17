@@ -286,7 +286,7 @@ export function SuperAdminPlans() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <div className="inline-flex rounded-xl bg-muted p-1 border border-border">
             <button
               type="button"

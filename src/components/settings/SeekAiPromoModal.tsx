@@ -47,35 +47,36 @@ export function SeekAiPromoModal({ isOpen, onClose }: SeekAiPromoModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200"
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border border-primary/30 bg-card/95 backdrop-blur-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-foreground"
+        className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl border border-primary/30 bg-card/95 backdrop-blur-md shadow-2xl overflow-hidden max-h-[85dvh] flex flex-col animate-in zoom-in-95 duration-200 text-foreground"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Decorative Top Accent Glow */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-primary to-purple-600" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-primary to-purple-600 z-10" />
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors cursor-pointer z-10"
+          className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors cursor-pointer z-20"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="p-6 sm:p-7 space-y-5">
+        {/* Scrollable Content Body */}
+        <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1">
           {/* Badge & Title */}
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-              <Gift className="w-3.5 h-3.5" />
+          <div className="space-y-1.5 sm:space-y-2 pr-6">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+              <Gift className="w-3.5 h-3.5 shrink-0" />
               <span>BÔNUS EXCLUSIVO DE BOAS-VINDAS</span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground leading-snug">
+            <h2 className="text-lg sm:text-2xl font-extrabold tracking-tight text-foreground leading-snug">
               Ganhe <span className="bg-gradient-to-r from-amber-500 via-primary to-purple-600 bg-clip-text text-transparent">U$ 200,00</span> em créditos para diversas LLMs!
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -84,7 +85,7 @@ export function SeekAiPromoModal({ isOpen, onClose }: SeekAiPromoModalProps) {
           </div>
 
           {/* Benefits Box */}
-          <div className="p-4 rounded-2xl bg-secondary/35 border border-border/70 space-y-2.5">
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-secondary/35 border border-border/70 space-y-2.5">
             <div className="flex items-start gap-2.5">
               <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -112,30 +113,30 @@ export function SeekAiPromoModal({ isOpen, onClose }: SeekAiPromoModalProps) {
               </p>
             </div>
           </div>
+        </div>
 
-          {/* CTA Button */}
-          <div className="space-y-3 pt-1">
-            <Button
-              onClick={handleClaimBonus}
-              className="w-full h-11 bg-gradient-to-r from-amber-500 via-primary to-purple-600 hover:opacity-95 text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
-            >
-              <span>Cadastrar no SeekAI e Resgatar U$ 200</span>
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+        {/* Sticky Action Footer */}
+        <div className="p-3.5 sm:p-5 pt-3 border-t border-border/60 bg-card/95 shrink-0 space-y-2.5">
+          <Button
+            onClick={handleClaimBonus}
+            className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 via-primary to-purple-600 hover:opacity-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+          >
+            <span>Cadastrar no SeekAI e Resgatar U$ 200</span>
+            <ExternalLink className="w-4 h-4 shrink-0" />
+          </Button>
 
           {/* Checkbox "Já me cadastrei" */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/60 gap-3">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none group min-w-0">
               <input
                 type="checkbox"
                 id="seekai_already_registered"
                 checked={alreadyRegistered}
                 onChange={(e) => handleCheckboxChange(e.target.checked)}
-                className="w-4 h-4 rounded border-border bg-background accent-primary cursor-pointer transition-all"
+                className="w-4 h-4 rounded border-border bg-background accent-primary cursor-pointer transition-all shrink-0"
               />
-              <span className="text-xs text-muted-foreground group-hover:text-foreground font-medium transition-colors">
-                Já me cadastrei <span className="text-[11px] text-muted-foreground/70">(não mostrar novamente)</span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground group-hover:text-foreground font-medium transition-colors truncate">
+                Já me cadastrei <span className="text-[10px] sm:text-[11px] text-muted-foreground/70 hidden xs:inline">(não mostrar novamente)</span>
               </span>
             </label>
 
