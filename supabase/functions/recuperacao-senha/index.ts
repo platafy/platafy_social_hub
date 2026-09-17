@@ -7,6 +7,9 @@ interface RequestBody {
   action?: 'test-resend' | 'recover';
   resend_api_key?: string;
   resend_from_email?: string;
+  test_type?: 'connection' | 'recovery_template';
+  subject?: string;
+  template_html?: string;
 }
 
 Deno.serve(async (req) => {
@@ -34,6 +37,10 @@ Deno.serve(async (req) => {
     // 1. Obter configurações do Resend (Env Vars ou Database platform_branding)
     let resendApiKey = Deno.env.get('RESEND_API_KEY') || body.resend_api_key;
     let resendFrom = Deno.env.get('RESEND_FROM_EMAIL') || body.resend_from_email || 'PLATAFY Social Hub <onboarding@resend.dev>';
+    let customRecoverySubject: string | undefined;
+    let customRecoveryHtml: string | undefined;
+    let appName = 'PLATAFY Social Hub';
+    let logoUrl = '';
 
     try {
       const { data: brandingRow } = await supabaseAdmin
@@ -43,11 +50,24 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (brandingRow?.branding) {
-        if (!resendApiKey && brandingRow.branding.resend_api_key) {
-          resendApiKey = brandingRow.branding.resend_api_key;
+        const b = brandingRow.branding;
+        if (!resendApiKey && b.resend_api_key) {
+          resendApiKey = b.resend_api_key;
         }
-        if ((!resendFrom || resendFrom.includes('onboarding@resend.dev')) && brandingRow.branding.resend_from_email) {
-          resendFrom = brandingRow.branding.resend_from_email;
+        if ((!resendFrom || resendFrom.includes('onboarding@resend.dev')) && b.resend_from_email) {
+          resendFrom = b.resend_from_email;
+        }
+        if (b.email_recovery_subject) {
+          customRecoverySubject = b.email_recovery_subject;
+        }
+        if (b.email_recovery_html) {
+          customRecoveryHtml = b.email_recovery_html;
+        }
+        if (b.app_name) {
+          appName = b.app_name;
+        }
+        if (b.logo_url) {
+          logoUrl = b.logo_url;
         }
       }
     } catch (e) {
@@ -63,6 +83,108 @@ Deno.serve(async (req) => {
         });
       }
 
+      const testType = body.test_type || 'recovery_template';
+      let subject = 'Teste de Conexão - PLATAFY SOCIAL HUB (Resend)';
+      let html = '';
+
+      if (testType === 'connection') {
+        subject = `Teste de Conexão - ${appName} (Resend)`;
+        html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #070b14; color: #f8fafc; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+              <div style="display: inline-block; padding: 6px 16px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 999px; color: #f59e0b; font-weight: bold; font-size: 13px; margin-bottom: 20px;">
+                ${appName}
+              </div>
+              <h1 style="color: #ffffff; font-size: 22px; margin-bottom: 12px; font-weight: 800;">Conexão com Resend com Sucesso! 🚀</h1>
+              <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+                Este é um e-mail de teste confirmando que a sua chave de API e remetente do <strong>Resend</strong> estão configurados corretamente para o envio de e-mails transacionais.
+              </p>
+              <div style="background: #1e293b; border-radius: 8px; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; font-family: monospace;">
+                <div><strong>Remetente:</strong> ${resendFrom}</div>
+                <div><strong>Destinatário:</strong> ${cleanEmail}</div>
+                <div><strong>Status:</strong> Ativo e Operacional</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Envia o template de recuperação formatado como teste real
+        const templateRaw = body.template_html || customRecoveryHtml || '';
+        const subjectRaw = body.subject || customRecoverySubject || `Redefinição de Senha - {{app_name}}`;
+        const sampleUrl = 'https://platafy.com/#/redefinir-senha?token=exemplo-token-teste-validacao';
+        const currentYear = new Date().getFullYear().toString();
+
+        subject = subjectRaw.replace(/\{\{\s*app_name\s*\}\}/gi, appName);
+        html = (templateRaw || `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Recuperação de Senha</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #070b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070b14; padding: 40px 15px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden;">
+          <tr>
+            <td height="4" style="background: linear-gradient(90deg, #f59e0b, #ea580c);"></td>
+          </tr>
+          <tr>
+            <td style="padding: 36px 36px 20px 36px; text-align: center;">
+              <div style="display: inline-block; padding: 6px 18px; background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 999px; margin-bottom: 16px;">
+                <span style="color: #f59e0b; font-size: 14px; font-weight: 800;">${appName}</span>
+              </div>
+              <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 800;">Recuperação de Senha</h1>
+              <p style="margin: 0; color: #94a3b8; font-size: 14px;">Instruções para redefinir o acesso à sua conta</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 36px 30px 36px;">
+              <p style="color: #e2e8f0; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">Olá,</p>
+              <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
+                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>${appName}</strong>. Clique no botão abaixo para cadastrar uma nova senha:
+              </p>
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${sampleUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #ea580c); color: #090d16; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 32px; border-radius: 12px;">
+                      Redefinir Minha Senha &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="background-color: rgba(30, 41, 59, 0.7); border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 24px 0;">
+                <p style="margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.5;">
+                  🔒 <strong>Dica de Segurança:</strong> Este link é de uso único e expira em breve. Se você não solicitou a redefinição de senha, nenhuma ação é necessária.
+                </p>
+              </div>
+              <p style="color: #64748b; font-size: 11px; line-height: 1.5; margin: 20px 0 0 0; word-break: break-all;">
+                Se o botão acima não funcionar, copie e cole o link a seguir no seu navegador:<br>
+                <a href="${sampleUrl}" style="color: #f59e0b; text-decoration: underline;">${sampleUrl}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 36px; background-color: #090d16; border-top: 1px solid #1e293b; text-align: center;">
+              <p style="margin: 0 0 6px 0; color: #64748b; font-size: 12px;">© ${currentYear} ${appName} • Todos os direitos reservados.</p>
+              <p style="margin: 0; color: #475569; font-size: 11px;">Este é um e-mail transacional de teste.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+        `)
+          .replace(/\{\{\s*\.ConfirmationURL\s*\}\}|\{\{\s*reset_url\s*\}\}|\{\{\s*link_recuperacao\s*\}\}/gi, sampleUrl)
+          .replace(/\{\{\s*\.Email\s*\}\}|\{\{\s*email\s*\}\}/gi, cleanEmail)
+          .replace(/\{\{\s*app_name\s*\}\}/gi, appName)
+          .replace(/\{\{\s*logo_url\s*\}\}/gi, logoUrl)
+          .replace(/\{\{\s*ano\s*\}\}/gi, currentYear);
+      }
+
       const testRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -72,25 +194,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: resendFrom.trim(),
           to: [cleanEmail],
-          subject: 'Teste de Conexão - PLATAFY SOCIAL HUB (Resend)',
-          html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #070b14; color: #f8fafc; padding: 40px 20px; text-align: center;">
-              <div style="max-width: 500px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                <div style="display: inline-block; padding: 6px 16px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 999px; color: #f59e0b; font-weight: bold; font-size: 13px; margin-bottom: 20px;">
-                  PLATAFY SOCIAL HUB
-                </div>
-                <h1 style="color: #ffffff; font-size: 22px; margin-bottom: 12px; font-weight: 800;">Conexão com Resend com Sucesso! 🚀</h1>
-                <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-                  Este é um e-mail de teste confirmando que a sua chave de API e remetente do <strong>Resend</strong> estão configurados corretamente para o envio de e-mails transacionais.
-                </p>
-                <div style="background: #1e293b; border-radius: 8px; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; font-family: monospace;">
-                  <div><strong>Remetente:</strong> ${resendFrom}</div>
-                  <div><strong>Destinatário:</strong> ${cleanEmail}</div>
-                  <div><strong>Status:</strong> Ativo e Operacional</div>
-                </div>
-              </div>
-            </div>
-          `,
+          subject: subject,
+          html: html,
         }),
       });
 
@@ -249,6 +354,17 @@ Deno.serve(async (req) => {
 </html>
       `;
 
+      const currentYear = new Date().getFullYear().toString();
+      const subjectToUse = (customRecoverySubject || 'Redefinição de Senha - {{app_name}}').replace(/\{\{\s*app_name\s*\}\}/gi, appName);
+      let htmlToUse = customRecoveryHtml || emailHtml;
+
+      htmlToUse = htmlToUse
+        .replace(/\{\{\s*\.ConfirmationURL\s*\}\}|\{\{\s*reset_url\s*\}\}|\{\{\s*link_recuperacao\s*\}\}/gi, resetUrl)
+        .replace(/\{\{\s*\.Email\s*\}\}|\{\{\s*email\s*\}\}/gi, cleanEmail)
+        .replace(/\{\{\s*app_name\s*\}\}/gi, appName)
+        .replace(/\{\{\s*logo_url\s*\}\}/gi, logoUrl)
+        .replace(/\{\{\s*ano\s*\}\}/gi, currentYear);
+
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -258,8 +374,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: resendFrom.trim(),
           to: [cleanEmail],
-          subject: 'Redefinição de Senha - PLATAFY SOCIAL HUB',
-          html: emailHtml,
+          subject: subjectToUse,
+          html: htmlToUse,
         }),
       });
 

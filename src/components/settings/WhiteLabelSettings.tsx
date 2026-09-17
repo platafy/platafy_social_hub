@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useBranding, DEFAULT_BRANDING } from "@/contexts/BrandingContext";
+import { 
+  useBranding, 
+  DEFAULT_BRANDING, 
+  DEFAULT_RECOVERY_EMAIL_HTML, 
+  DEFAULT_RECOVERY_EMAIL_SUBJECT 
+} from "@/contexts/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,7 +18,8 @@ import { toast } from "sonner";
 import { 
   Sparkles, Upload, RotateCcw, Check, Palette, Eye, EyeOff, AlertCircle, Image as ImageIcon,
   Sun, Moon, LogIn, Type, LayoutGrid, Save, Loader2, RefreshCw,
-  Share2, MessageCircle, ExternalLink, CheckCheck, ShieldCheck, Mail
+  Share2, MessageCircle, ExternalLink, CheckCheck, ShieldCheck, Mail,
+  Code, Smartphone, Monitor, Copy
 } from "lucide-react";
 
 const PRESET_LIGHT_COLORS = [
@@ -172,11 +178,20 @@ export function WhiteLabelSettings() {
     branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial."
   );
 
-  // Resend E-mails Transacionais
+  // Resend E-mails Transacionais & Templates
   const [resendApiKey, setResendApiKey] = useState(branding.resend_api_key || "");
   const [resendFromEmail, setResendFromEmail] = useState(
     branding.resend_from_email || "PLATAFY Social Hub <onboarding@resend.dev>"
   );
+  const [emailRecoverySubject, setEmailRecoverySubject] = useState(
+    branding.email_recovery_subject || DEFAULT_RECOVERY_EMAIL_SUBJECT
+  );
+  const [emailRecoveryHtml, setEmailRecoveryHtml] = useState(
+    branding.email_recovery_html || DEFAULT_RECOVERY_EMAIL_HTML
+  );
+  const [emailEditorTab, setEmailEditorTab] = useState<"code" | "preview">("code");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [testEmailType, setTestEmailType] = useState<"recovery_template" | "connection">("recovery_template");
   const [testingResend, setTestingResend] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState("");
   const [showResendApiKey, setShowResendApiKey] = useState(false);
@@ -226,6 +241,8 @@ export function WhiteLabelSettings() {
     setOgDescription(branding.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
     setResendApiKey(branding.resend_api_key || "");
     setResendFromEmail(branding.resend_from_email || "PLATAFY Social Hub <onboarding@resend.dev>");
+    setEmailRecoverySubject(branding.email_recovery_subject || DEFAULT_RECOVERY_EMAIL_SUBJECT);
+    setEmailRecoveryHtml(branding.email_recovery_html || DEFAULT_RECOVERY_EMAIL_HTML);
   }, [branding]);
 
   // Upload no Supabase Storage
@@ -314,6 +331,8 @@ export function WhiteLabelSettings() {
       og_description: ogDescription.trim(),
       resend_api_key: resendApiKey.trim(),
       resend_from_email: resendFromEmail.trim(),
+      email_recovery_subject: emailRecoverySubject.trim(),
+      email_recovery_html: emailRecoveryHtml,
     });
     setSaving(false);
   }
@@ -341,6 +360,8 @@ export function WhiteLabelSettings() {
     setOgDescription(DEFAULT_BRANDING.og_description || "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.");
     setResendApiKey("");
     setResendFromEmail("PLATAFY Social Hub <onboarding@resend.dev>");
+    setEmailRecoverySubject(DEFAULT_RECOVERY_EMAIL_SUBJECT);
+    setEmailRecoveryHtml(DEFAULT_RECOVERY_EMAIL_HTML);
     applyBrandColors(DEFAULT_BRANDING.primary_color_light, DEFAULT_BRANDING.primary_color_dark);
     setSaving(false);
   }
@@ -364,6 +385,9 @@ export function WhiteLabelSettings() {
           email: targetEmail,
           resend_api_key: resendApiKey.trim(),
           resend_from_email: resendFromEmail.trim(),
+          test_type: testEmailType,
+          subject: emailRecoverySubject.trim(),
+          template_html: emailRecoveryHtml,
         },
       });
 
@@ -371,12 +395,50 @@ export function WhiteLabelSettings() {
         throw new Error(data?.error || error?.message || "Falha ao enviar e-mail de teste pelo Resend");
       }
 
-      toast.success(`E-mail de teste enviado com sucesso para ${targetEmail}! Verifique sua caixa de entrada.`);
+      toast.success(`E-mail de teste (${testEmailType === "recovery_template" ? "Template Personalizado" : "Teste Simples"}) enviado para ${targetEmail}! Verifique sua caixa de entrada.`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao conectar com a API do Resend.");
     } finally {
       setTestingResend(false);
     }
+  }
+
+  function getRenderedPreviewHtml() {
+    const fallbackUrl = "https://platafy.com/#/redefinir-senha?token=exemplo-token-demonstrativo";
+    const curYear = new Date().getFullYear().toString();
+    const cleanAppName = appName.trim() || "PLATAFY Social Hub";
+    const cleanLogo = logoUrl.trim();
+
+    let html = emailRecoveryHtml || DEFAULT_RECOVERY_EMAIL_HTML;
+    html = html.replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, fallbackUrl);
+    html = html.replace(/\{\{\s*app_name\s*\}\}/g, cleanAppName);
+    html = html.replace(/\{\{\s*logo_url\s*\}\}/g, cleanLogo);
+    html = html.replace(/\{\{\s*email\s*\}\}/g, testEmailAddress.trim() || user?.email || "cliente@empresa.com");
+    html = html.replace(/\{\{\s*ano\s*\}\}/g, curYear);
+    return html;
+  }
+
+  function handleCopySupabaseTemplate() {
+    navigator.clipboard.writeText(emailRecoveryHtml);
+    toast.success("Template HTML copiado com sucesso!", {
+      description: "Agora cole no Supabase Dashboard: Authentication -> Email Templates -> Reset Password.",
+      duration: 6000,
+    });
+  }
+
+  function handleRestoreDefaultTemplate() {
+    if (confirm("Deseja restaurar o template oficial de e-mail em português?")) {
+      setEmailRecoverySubject(DEFAULT_RECOVERY_EMAIL_SUBJECT);
+      setEmailRecoveryHtml(DEFAULT_RECOVERY_EMAIL_HTML);
+      toast.success("Template restaurado para a versão padrão!");
+    }
+  }
+
+  function handleInsertVariable(variableStr: string) {
+    navigator.clipboard.writeText(variableStr);
+    toast.info(`Variável copiada: ${variableStr}`, {
+      description: "Cole onde desejar dentro do código HTML.",
+    });
   }
 
   const currentPreviewColor = previewTheme === "dark" ? primaryColorDark : primaryColorLight;
@@ -1504,10 +1566,41 @@ export function WhiteLabelSettings() {
                     Testar Disparo via Resend
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Envie um e-mail de teste em tempo real para validar se sua chave de API e remetente estão funcionando.
+                    Envie um e-mail de teste em tempo real para validar sua chave e pré-visualizar a entrega na sua caixa de entrada.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3.5">
+                  {/* Tipo de teste */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-muted-foreground">Tipo de Envio do Teste</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTestEmailType("recovery_template")}
+                        className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                          testEmailType === "recovery_template"
+                            ? "border-amber-500 bg-amber-500/10 font-semibold text-amber-400"
+                            : "border-border/60 bg-background/50 text-muted-foreground hover:border-border"
+                        }`}
+                      >
+                        <div className="font-medium text-foreground text-xs">Template HTML</div>
+                        <div className="text-[10px] text-muted-foreground">E-mail completo em português</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTestEmailType("connection")}
+                        className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                          testEmailType === "connection"
+                            ? "border-amber-500 bg-amber-500/10 font-semibold text-amber-400"
+                            : "border-border/60 bg-background/50 text-muted-foreground hover:border-border"
+                        }`}
+                      >
+                        <div className="font-medium text-foreground text-xs">Conexão Básica</div>
+                        <div className="text-[10px] text-muted-foreground">Apenas teste de API</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label htmlFor="testEmailAddress" className="text-xs">Destinatário do Teste</Label>
                     <div className="flex gap-2">
@@ -1597,6 +1690,230 @@ export function WhiteLabelSettings() {
               </Card>
             </div>
           </div>
+
+          {/* Card Principal: Editor de Template HTML */}
+          <Card className="border border-border/70 bg-card shadow-sm overflow-hidden">
+            <CardHeader className="pb-4 border-b border-border/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-amber-500" />
+                    <CardTitle className="text-lg font-bold">
+                      Editor de Template de E-mail (Recuperação de Senha)
+                    </CardTitle>
+                    <span className="text-[11px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
+                      HTML &amp; Tradução
+                    </span>
+                  </div>
+                  <CardDescription className="text-xs mt-1">
+                    Personalize o assunto e o layout HTML do e-mail em português enviado quando o usuário solicita a redefinição de senha.
+                  </CardDescription>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRestoreDefaultTemplate}
+                    className="text-xs gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Restaurar Padrão
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCopySupabaseTemplate}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-sm"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Copiar HTML para Supabase
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6 space-y-6">
+              {/* Linha do Assunto (Subject) */}
+              <div className="space-y-2">
+                <Label htmlFor="emailRecoverySubject" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Assunto do E-mail (Subject)
+                </Label>
+                <Input
+                  id="emailRecoverySubject"
+                  value={emailRecoverySubject}
+                  onChange={(e) => setEmailRecoverySubject(e.target.value)}
+                  placeholder="Redefinição de Senha - {{app_name}}"
+                  className="h-10 text-sm bg-background font-medium"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Você pode usar a tag <code className="font-mono text-amber-400">{"{{app_name}}"}</code> no assunto para inserir o nome da sua marca automaticamente.
+                </p>
+              </div>
+
+              {/* Tags / Variáveis Dinâmicas */}
+              <div className="space-y-2 p-3.5 rounded-xl bg-muted/40 border border-border/60">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Variáveis Dinâmicas Disponíveis (clique em uma tag para copiar)
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">Compatível com Supabase &amp; Resend</span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {[
+                    { tag: "{{ .ConfirmationURL }}", desc: "Link de redefinição de senha" },
+                    { tag: "{{app_name}}", desc: "Nome da plataforma White Label" },
+                    { tag: "{{logo_url}}", desc: "URL do logotipo" },
+                    { tag: "{{email}}", desc: "E-mail do usuário destinatário" },
+                    { tag: "{{ano}}", desc: "Ano vigente (ex: 2026)" },
+                  ].map((item) => (
+                    <button
+                      key={item.tag}
+                      type="button"
+                      onClick={() => handleInsertVariable(item.tag)}
+                      title={`Copiar ${item.tag} - ${item.desc}`}
+                      className="group flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border/80 text-xs font-mono text-foreground hover:border-amber-500 hover:text-amber-400 hover:bg-amber-500/5 transition-all cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3 text-muted-foreground group-hover:text-amber-400" />
+                      <span>{item.tag}</span>
+                      <span className="text-[10px] text-muted-foreground group-hover:text-amber-400/80 hidden sm:inline">({item.desc})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Barra de Ferramentas de Visualização (Código vs Preview ao Vivo) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={emailEditorTab === "code" ? "default" : "outline"}
+                    onClick={() => setEmailEditorTab("code")}
+                    className={`text-xs gap-1.5 ${
+                      emailEditorTab === "code" ? "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold" : ""
+                    }`}
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                    Código HTML
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={emailEditorTab === "preview" ? "default" : "outline"}
+                    onClick={() => setEmailEditorTab("preview")}
+                    className={`text-xs gap-1.5 ${
+                      emailEditorTab === "preview" ? "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold" : ""
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Pré-visualização ao Vivo
+                  </Button>
+                </div>
+
+                {emailEditorTab === "preview" && (
+                  <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/60">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={previewDevice === "desktop" ? "secondary" : "ghost"}
+                      onClick={() => setPreviewDevice("desktop")}
+                      className="text-xs h-7 px-2.5 gap-1"
+                    >
+                      <Monitor className="w-3 h-3" />
+                      Desktop
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={previewDevice === "mobile" ? "secondary" : "ghost"}
+                      onClick={() => setPreviewDevice("mobile")}
+                      className="text-xs h-7 px-2.5 gap-1"
+                    >
+                      <Smartphone className="w-3 h-3" />
+                      Mobile (375px)
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Área do Editor / Preview */}
+              {emailEditorTab === "code" ? (
+                <div className="space-y-2">
+                  <div className="relative rounded-xl border border-slate-800 bg-[#070b14] overflow-hidden focus-within:border-amber-500/80 focus-within:ring-1 focus-within:ring-amber-500/50 transition-all">
+                    <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
+                      <span>HTML Document • UTF-8</span>
+                      <span>{emailRecoveryHtml.length} caracteres</span>
+                    </div>
+                    <textarea
+                      value={emailRecoveryHtml}
+                      onChange={(e) => setEmailRecoveryHtml(e.target.value)}
+                      rows={22}
+                      spellCheck={false}
+                      placeholder="Cole ou edite seu template HTML aqui..."
+                      className="w-full font-mono text-xs leading-relaxed bg-[#070b14] text-slate-200 p-4 border-0 outline-none resize-y selection:bg-amber-500/30 selection:text-white"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                    <CheckCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    Template formatado em tabelas responsivas inline, otimizado para Gmail, Outlook, Apple Mail e modo escuro nativo.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-6 bg-slate-950/60 rounded-xl border border-border/60 min-h-[600px] overflow-hidden">
+                  <div
+                    className={`w-full transition-all duration-300 ${
+                      previewDevice === "desktop"
+                        ? "max-w-[650px] shadow-2xl rounded-2xl overflow-hidden border border-slate-800"
+                        : "max-w-[380px] shadow-2xl rounded-[36px] border-[8px] border-slate-800 p-1.5 bg-slate-900"
+                    }`}
+                  >
+                    {previewDevice === "mobile" && (
+                      <div className="w-20 h-4 bg-slate-800 rounded-full mx-auto my-1" />
+                    )}
+                    <iframe
+                      srcDoc={getRenderedPreviewHtml()}
+                      className="w-full h-[580px] bg-[#070b14] border-0 rounded-xl"
+                      sandbox="allow-same-origin"
+                      title="Pré-visualização do E-mail"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Caixa de Orientação: Sincronização no Supabase Auth */}
+              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2.5">
+                <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider">
+                  <ExternalLink className="w-4 h-4" />
+                  Como sincronizar este e-mail em português no Supabase Auth
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Por padrão, o Supabase envia o e-mail de recuperação em inglês (&ldquo;Reset your password&rdquo;). Para que seus usuários recebam este template traduzido e formatado:
+                </p>
+                <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside font-medium">
+                  <li>
+                    Clique em <strong className="text-foreground">&ldquo;Copiar HTML para Supabase&rdquo;</strong> no botão acima.
+                  </li>
+                  <li>
+                    Acesse o <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline inline-flex items-center gap-0.5">Supabase Dashboard <ExternalLink className="w-3 h-3 inline" /></a> &rarr; <strong>Authentication</strong> &rarr; <strong>Email Templates</strong> &rarr; <strong>&ldquo;Reset Password&rdquo;</strong>.
+                  </li>
+                  <li>
+                    No campo <strong>Subject</strong>, insira: <code className="font-mono text-amber-400 bg-background/80 px-1 py-0.5 rounded">Redefinição de Senha - {"{{ .Data.app_name }}"}</code> (ou apenas &ldquo;Redefinição de Senha&rdquo;).
+                  </li>
+                  <li>
+                    No campo <strong>Message (HTML)</strong>, selecione todo o texto em inglês, apague e <strong>cole o código HTML</strong> copiado.
+                  </li>
+                  <li>
+                    Clique em <strong>Save Changes</strong> no Supabase!
+                  </li>
+                </ol>
+                <p className="text-[11px] text-amber-400/90 pt-1">
+                  ✓ Pronto! Todos os disparos de recuperação de senha passarão a chegar aos usuários 100% em português com a sua identidade visual.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

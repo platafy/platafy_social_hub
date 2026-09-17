@@ -28,7 +28,100 @@ export interface BrandingSettings {
   // Resend E-mails Transacionais
   resend_api_key?: string;
   resend_from_email?: string;
+  email_recovery_subject?: string;
+  email_recovery_html?: string;
 }
+
+export const DEFAULT_RECOVERY_EMAIL_SUBJECT = "Redefinição de Senha - {{app_name}}";
+
+export const DEFAULT_RECOVERY_EMAIL_HTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de Senha</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #070b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070b14; padding: 40px 15px;">
+    <tr>
+      <td align="center">
+        <!-- Container Principal -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 540px; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+          
+          <!-- Top Accent Line -->
+          <tr>
+            <td height="4" style="background: linear-gradient(90deg, #f59e0b, #ea580c);"></td>
+          </tr>
+
+          <!-- Header / Logo -->
+          <tr>
+            <td style="padding: 36px 36px 20px 36px; text-align: center;">
+              <div style="display: inline-block; padding: 6px 18px; background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 999px; margin-bottom: 16px;">
+                <span style="color: #f59e0b; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">{{app_name}}</span>
+              </div>
+              <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">
+                Recuperação de Senha
+              </h1>
+              <p style="margin: 0; color: #94a3b8; font-size: 14px;">
+                Instruções para redefinir o acesso à sua conta
+              </p>
+            </td>
+          </tr>
+
+          <!-- Conteúdo Principal -->
+          <tr>
+            <td style="padding: 10px 36px 30px 36px;">
+              <p style="color: #e2e8f0; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">
+                Olá,
+              </p>
+              <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
+                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>{{app_name}}</strong>. Para cadastrar uma nova senha e restabelecer seu acesso, clique no botão abaixo:
+              </p>
+
+              <!-- Botão CTA -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #ea580c); color: #090d16; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35); text-align: center;">
+                      Redefinir Minha Senha &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Aviso de Segurança -->
+              <div style="background-color: rgba(30, 41, 59, 0.7); border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 24px 0;">
+                <p style="margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.5;">
+                  🔒 <strong>Dica de Segurança:</strong> Este link é de uso único e expira em breve. Se você não solicitou a redefinição de senha, nenhuma ação é necessária e sua conta permanece segura.
+                </p>
+              </div>
+
+              <!-- Link alternativo se o botão falhar -->
+              <p style="color: #64748b; font-size: 11px; line-height: 1.5; margin: 20px 0 0 0; word-break: break-all;">
+                Se o botão acima não funcionar, copie e cole o link a seguir no seu navegador:<br>
+                <a href="{{ .ConfirmationURL }}" style="color: #f59e0b; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Rodapé -->
+          <tr>
+            <td style="padding: 24px 36px; background-color: #090d16; border-top: 1px solid #1e293b; text-align: center;">
+              <p style="margin: 0 0 6px 0; color: #64748b; font-size: 12px;">
+                © {{ano}} {{app_name}} • Todos os direitos reservados.
+              </p>
+              <p style="margin: 0; color: #475569; font-size: 11px;">
+                Este é um e-mail transacional automático. Por favor, não responda diretamente a esta mensagem.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
 export const DEFAULT_BRANDING: BrandingSettings = {
   app_name: "PLATAFY Social",
@@ -49,6 +142,8 @@ export const DEFAULT_BRANDING: BrandingSettings = {
   og_image_url: "https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/og-default.jpg",
   og_title: "PLATAFY Social Hub - Gestão Inteligente de Redes Sociais",
   og_description: "Automatize comentários, DMs e publicações multicanais com Inteligência Artificial.",
+  email_recovery_subject: DEFAULT_RECOVERY_EMAIL_SUBJECT,
+  email_recovery_html: DEFAULT_RECOVERY_EMAIL_HTML,
 };
 
 const STORAGE_KEY = "platafy_branding_settings";
@@ -94,6 +189,8 @@ export function sanitizeBranding(raw: any): BrandingSettings {
     og_description: raw.og_description !== undefined ? raw.og_description : DEFAULT_BRANDING.og_description,
     resend_api_key: raw.resend_api_key !== undefined ? raw.resend_api_key : DEFAULT_BRANDING.resend_api_key,
     resend_from_email: raw.resend_from_email !== undefined ? raw.resend_from_email : DEFAULT_BRANDING.resend_from_email,
+    email_recovery_subject: raw.email_recovery_subject !== undefined ? raw.email_recovery_subject : DEFAULT_BRANDING.email_recovery_subject,
+    email_recovery_html: raw.email_recovery_html !== undefined ? raw.email_recovery_html : DEFAULT_BRANDING.email_recovery_html,
   };
 }
 
