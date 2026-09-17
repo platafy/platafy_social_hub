@@ -313,9 +313,16 @@ export const zernio = {
     return zernioApiCall(url, { integrationId });
   },
   getPostsByAccount: (profileId: string, accountId: string, source = 'external', integrationId?: string, skipCache = true) => {
-    const url = `/v1/posts?profileId=${profileId}&accountId=${accountId}&source=${source}&sortBy=scheduledAt_desc&limit=50`;
+    const url = `/v1/posts?profileId=${profileId}&accountId=${accountId}&source=${source}&sortBy=scheduled-desc&limit=50`;
     return zernioApiCall(url, { integrationId, skipCache });
   },
+  syncExternalPosts: (accountId: string, integrationId?: string, locator?: { url?: string; postId?: string }) =>
+    zernioApiCall('/v1/posts/sync-external', {
+      method: 'POST',
+      body: { accountId, ...(locator || {}) },
+      integrationId,
+      skipCache: true,
+    }),
   createPost: (postData: any, integrationId?: string) => zernioApiCall('/v1/posts', { method: 'POST', body: postData, integrationId }),
   deletePost: (postId: string, integrationId?: string) => zernioApiCall(`/v1/posts/${postId}`, { method: 'DELETE', integrationId }),
 

@@ -1164,7 +1164,7 @@ export default function Home() {
     loadSelectedAutomationConfig();
   }, [selectedAutomationAccount, automationType, loadSelectedAutomationConfig]);
 
-  // Robust multi-tier fetch for automation posts (account-specific external + profile external fallback + zernio posts)
+  // Robust multi-tier fetch for automation posts (account-specific live sync + external + profile external fallback + zernio posts)
   const fetchAutomationPosts = useCallback(async (forcedAccountId?: string) => {
     const targetAccountId = forcedAccountId || selectedAutomationAccount;
     if (!targetAccountId) {
@@ -1190,36 +1190,64 @@ export default function Home() {
     }
 
     try {
-      // 1. Fetch external posts filtered by account
-      // 2. Fetch external posts for the profile (as fallback in case accountId wasn't indexed by Zernio)
-      // 3. Fetch zernio-authored posts
-      const [accExtRes, profileExtRes, zernioRes] = await Promise.allSettled([
+      // 1. Trigger on-demand sync of external posts for this account from the platform
+      // 2. Fetch external posts already recorded in Zernio
+      // 3. Fallback: fetch profile-level external posts
+      // 4. Fetch zernio-authored posts
+      const [syncExtRes, accExtRes, profileExtRes, zernioRes] = await Promise.allSettled([
+        zernio.syncExternalPosts(targetAccountId, integrationId).catch(() => null),
         zernio.getPostsByAccount(accProfileId, targetAccountId, 'external', integrationId, true),
         zernioApiCall(`/v1/posts?profileId=${accProfileId}&source=external&limit=50`, { integrationId, skipCache: true }),
         zernio.getPostsByAccount(accProfileId, targetAccountId, 'zernio', integrationId, true),
       ]);
 
-      const accExtPosts = accExtRes.status === 'fulfilled' ? (accExtRes.value?.posts || []) : [];
-      const rawProfileExtPosts = profileExtRes.status === 'fulfilled' ? (profileExtRes.value?.posts || []) : [];
-      const zernioPosts = zernioRes.status === 'fulfilled' ? (zernioRes.value?.posts || []) : [];
+      const syncPosts = (syncExtRes.status === 'fulfilled' && syncExtRes.value?.posts) ? syncExtRes.value.posts : [];
+      const accExtPosts = (accExtRes.status === 'fulfilled' && accExtRes.value?.posts) ? accExtRes.value.posts : [];
+      const rawProfileExtPosts = (profileExtRes.status === 'fulfilled' && profileExtRes.value?.posts) ? profileExtRes.value.posts : [];
+      const zernioPosts = (zernioRes.status === 'fulfilled' && zernioRes.value?.posts) ? zernioRes.value.posts : [];
 
-      // Filter profile external posts for this specific account
+      // Filter profile external posts (match account or platform)
       const filteredProfileExt = rawProfileExtPosts.filter((p: any) => {
-        if (p.accountId === targetAccountId) return true;
-        return p.platforms?.some((plat: any) => {
+        if (p.accountId && p.accountId === targetAccountId) return true;
+        if (p.platforms?.some((plat: any) => {
           const pAccId = typeof plat.accountId === 'object' ? (plat.accountId?._id || plat.accountId?.id) : plat.accountId;
           return pAccId === targetAccountId;
-        });
+        })) return true;
+        // If external post has platform matching this account and no conflicting accountId
+        if (!p.accountId && (!p.platforms || p.platforms.length === 0) && matchedAccount?.platform && p.platform === matchedAccount.platform) {
+          return true;
+        }
+        return false;
       });
 
-      // Merge and deduplicate by ID
+      // Normalization helper for uniform display and selection
+      const normalizePost = (p: any) => {
+        const platformId = p.platformPostId || p.platforms?.[0]?.platformPostId || p._id || p.id;
+        const canonicalId = p._id || p.id || platformId;
+        return {
+          ...p,
+          _id: canonicalId,
+          id: canonicalId,
+          platformPostId: platformId,
+          platform: p.platform || p.platforms?.[0]?.platform || matchedAccount?.platform,
+          accountId: p.accountId || targetAccountId,
+          publishedAt: p.publishedAt || p.scheduledFor || p.scheduledAt || p.createdAt,
+          content: p.content || p.text || '',
+          thumbnailUrl: p.thumbnailUrl || p.mediaItems?.[0]?.thumbnail || p.mediaItems?.[0]?.url || (Array.isArray(p.mediaUrls) ? p.mediaUrls[0] : '')
+        };
+      };
+
+      const rawCombined = [...syncPosts, ...accExtPosts, ...filteredProfileExt, ...zernioPosts];
       const seen = new Set<string>();
-      let merged = [...accExtPosts, ...filteredProfileExt, ...zernioPosts].filter(p => {
-        const id = p._id || p.id;
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
+      let merged: any[] = [];
+
+      for (const rawP of rawCombined) {
+        const p = normalizePost(rawP);
+        const key = p.platformPostId || p._id || p.id;
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        merged.push(p);
+      }
 
       // Memory fallback: if still 0, check global posts in state
       if (merged.length === 0 && posts.length > 0) {
@@ -1231,9 +1259,16 @@ export default function Home() {
             });
         });
         if (localMatched.length > 0) {
-          merged = localMatched;
+          merged = localMatched.map(normalizePost);
         }
       }
+
+      // Sort by publication/creation date descending (newest first)
+      merged.sort((a, b) => {
+        const timeA = new Date(a.publishedAt || a.scheduledFor || a.scheduledAt || a.createdAt || 0).getTime();
+        const timeB = new Date(b.publishedAt || b.scheduledFor || b.scheduledAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
 
       setAutomationPosts(merged);
     } catch (err) {
@@ -5128,78 +5163,87 @@ export default function Home() {
                                   </Button>
                                 </div>
                               ) : (
-                                automationPosts.map((post, idx) => {
-                                  const pId = post._id || post.id || `post-${idx}`;
-                                  const allPlatformPostIds: string[] = (post.platforms || [])
-                                    .map((p: any) => p.platformPostId)
-                                    .filter(Boolean);
-                                  const isChecked = automationTargetPostIds.includes(pId) ||
-                                    allPlatformPostIds.some((id: string) => automationTargetPostIds.includes(id));
-                                  const thumbUrl = post.mediaItems?.[0]?.thumbnail
-                                    || post.mediaItems?.[0]?.url
-                                    || post.mediaItems?.[0]?.thumbnailUrl
-                                    || post.thumbnailUrl
-                                    || (Array.isArray(post.mediaUrls) ? post.mediaUrls[0] : '')
-                                    || '';
-                                  const postDate = post.scheduledFor || post.scheduledAt || post.publishedAt || post.createdAt;
-                                  const postText = post.content || post.text || '';
-                                  return (
-                                    <label key={pId} className={`flex items-center gap-2.5 text-xs text-foreground cursor-pointer p-2 rounded-lg transition-all border ${isChecked ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-secondary/40'}`}>
-                                      <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={() => {
-                                          if (isChecked) {
-                                            setAutomationTargetPostIds(prev => prev.filter(id => id !== pId && !allPlatformPostIds.includes(id)));
-                                          } else {
-                                            setAutomationTargetPostIds(prev => Array.from(new Set([...prev, pId, ...allPlatformPostIds])));
-                                          }
-                                        }}
-                                        className="shrink-0 accent-primary"
-                                      />
-                                      {/* Thumbnail */}
-                                      <div className="shrink-0 h-12 w-12 rounded overflow-hidden border border-border/40 bg-secondary/20 flex items-center justify-center relative">
-                                        {thumbUrl ? (
-                                          <img
-                                            src={thumbUrl}
-                                            alt=""
-                                            referrerPolicy="no-referrer"
-                                            className="h-full w-full object-cover"
-                                            onError={(e) => {
-                                              const target = e.target as HTMLImageElement;
-                                              target.style.display = 'none';
-                                              if (target.parentElement) {
-                                                const fallbackSpan = document.createElement('span');
-                                                fallbackSpan.className = 'text-base select-none';
-                                                fallbackSpan.textContent = '📸';
-                                                target.parentElement.appendChild(fallbackSpan);
-                                              }
-                                            }}
-                                          />
-                                        ) : (
-                                          <span className="text-base select-none">🖼️</span>
-                                        )}
-                                      </div>
-                                      {/* Info */}
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-semibold truncate leading-snug">{postText || 'Sem legenda'}</p>
-                                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                          {post.platforms?.slice(0, 3).map((p: any, i: number) => (
-                                            <span key={i} className="inline-flex items-center justify-center p-0.5 rounded bg-secondary/40 border border-border/20">
-                                              {getPlatformIcon(p.platform)}
-                                            </span>
-                                          ))}
-                                          {postDate && (
-                                            <span className="text-[9px] text-muted-foreground">
-                                              {new Date(postDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                            </span>
+                                  automationPosts.map((post, idx) => {
+                                    const pId = post.platformPostId || post._id || post.id || `post-${idx}`;
+                                    const allPlatformPostIds: string[] = [
+                                      post.platformPostId,
+                                      post._id,
+                                      post.id,
+                                      ...(post.platforms || []).map((p: any) => p.platformPostId)
+                                    ].filter(Boolean).map(String);
+                                    const isChecked = automationTargetPostIds.includes(pId) ||
+                                      allPlatformPostIds.some((id: string) => automationTargetPostIds.includes(id));
+                                    const thumbUrl = post.mediaItems?.[0]?.thumbnail
+                                      || post.mediaItems?.[0]?.url
+                                      || post.mediaItems?.[0]?.thumbnailUrl
+                                      || post.thumbnailUrl
+                                      || (Array.isArray(post.mediaUrls) ? post.mediaUrls[0] : '')
+                                      || '';
+                                    const postDate = post.publishedAt || post.scheduledFor || post.scheduledAt || post.createdAt;
+                                    const postText = post.content || post.text || '';
+                                    return (
+                                      <label key={pId} className={`flex items-center gap-2.5 text-xs text-foreground cursor-pointer p-2 rounded-lg transition-all border ${isChecked ? 'border-primary/50 bg-primary/5' : 'border-transparent hover:bg-secondary/40'}`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={() => {
+                                            if (isChecked) {
+                                              setAutomationTargetPostIds(prev => prev.filter(id => id !== pId && !allPlatformPostIds.includes(id)));
+                                            } else {
+                                              setAutomationTargetPostIds(prev => Array.from(new Set([...prev, pId, ...allPlatformPostIds])));
+                                            }
+                                          }}
+                                          className="shrink-0 accent-primary"
+                                        />
+                                        {/* Thumbnail */}
+                                        <div className="shrink-0 h-12 w-12 rounded overflow-hidden border border-border/40 bg-secondary/20 flex items-center justify-center relative">
+                                          {thumbUrl ? (
+                                            <img
+                                              src={thumbUrl}
+                                              alt=""
+                                              referrerPolicy="no-referrer"
+                                              className="h-full w-full object-cover"
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                if (target.parentElement) {
+                                                  const fallbackSpan = document.createElement('span');
+                                                  fallbackSpan.className = 'text-base select-none';
+                                                  fallbackSpan.textContent = '📸';
+                                                  target.parentElement.appendChild(fallbackSpan);
+                                                }
+                                              }}
+                                            />
+                                          ) : (
+                                            <span className="text-base select-none">🖼️</span>
                                           )}
-                                          <span className={`text-[9px] px-1 py-0.5 rounded font-medium ${post.status === 'published' ? 'bg-emerald-500/15 text-emerald-600' : post.status === 'scheduled' ? 'bg-blue-500/15 text-blue-600' : 'bg-secondary/40 text-muted-foreground'}`}>
-                                            {post.status || 'externo'}
-                                          </span>
                                         </div>
-                                      </div>
-                                    </label>
+                                        {/* Info */}
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-semibold truncate leading-snug">{postText || 'Sem legenda'}</p>
+                                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                            {post.platforms && post.platforms.length > 0 ? (
+                                              post.platforms.slice(0, 3).map((p: any, i: number) => (
+                                                <span key={i} className="inline-flex items-center justify-center p-0.5 rounded bg-secondary/40 border border-border/20">
+                                                  {getPlatformIcon(p.platform)}
+                                                </span>
+                                              ))
+                                            ) : post.platform ? (
+                                              <span className="inline-flex items-center justify-center p-0.5 rounded bg-secondary/40 border border-border/20">
+                                                {getPlatformIcon(post.platform)}
+                                              </span>
+                                            ) : null}
+                                            {postDate && (
+                                              <span className="text-[9px] text-muted-foreground">
+                                                {new Date(postDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                              </span>
+                                            )}
+                                            <span className={`text-[9px] px-1 py-0.5 rounded font-medium ${post.status === 'published' || (!post.status && post.platformPostId) ? 'bg-emerald-500/15 text-emerald-600' : post.status === 'scheduled' ? 'bg-blue-500/15 text-blue-600' : 'bg-secondary/40 text-muted-foreground'}`}>
+                                              {post.status || 'publicado'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </label>
                                   );
                                 })
                               )}
