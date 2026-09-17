@@ -1889,7 +1889,7 @@ export default function Home() {
                 : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Bot className="h-3.5 w-3.5 text-primary" /> Comentário/DM
+            <Bot className="h-3.5 w-3.5 text-primary" /> Comentários/DMs
           </button>
           <button
             type="button"
@@ -2103,7 +2103,7 @@ export default function Home() {
             onClick={() => setActiveTab("automation")}
             disabled={!config.connected}
           >
-            <Bot className="h-4 w-4 text-primary" /> Comentário/DM
+            <Bot className="h-4 w-4 text-primary" /> Comentários/DMs
           </Button>
         </div>
 
