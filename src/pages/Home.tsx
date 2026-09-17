@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import {
-  Share2, MessageSquare, BarChart3, Settings,
+  Share2, MessageSquare, BarChart3,
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
@@ -1889,7 +1889,7 @@ export default function Home() {
                 : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
             }`}
           >
-            <Bot className="h-3.5 w-3.5" /> IA
+            <Bot className="h-3.5 w-3.5 text-primary" /> Comentário/DM
           </button>
           <button
             type="button"
@@ -1900,7 +1900,7 @@ export default function Home() {
                 : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
             }`}
           >
-            <Settings className="h-3.5 w-3.5" /> Ajustes
+            <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Provedores de IA
           </button>
           <button
             type="button"
@@ -1911,7 +1911,7 @@ export default function Home() {
                 : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
             }`}
           >
-            <HelpCircle className="h-3.5 w-3.5" /> Guia
+            <HelpCircle className="h-3.5 w-3.5" /> Guia de Uso
           </button>
           {isSuperAdmin && (
             <>
@@ -2094,27 +2094,32 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* Navigation Group: Inteligência & Ajustes */}
+        {/* Navigation Group: Automação */}
         <div className="space-y-1">
-          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Automação & Sistema</p>
+          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Automação</p>
           <Button
             variant={activeTab === "automation" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "automation" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "automation" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
             onClick={() => setActiveTab("automation")}
             disabled={!config.connected}
           >
-            <Bot className="h-4 w-4 text-primary" /> Automação IA
+            <Bot className="h-4 w-4 text-primary" /> Comentário/DM
           </Button>
+        </div>
+
+        {/* Navigation Group: Configurações */}
+        <div className="space-y-1 mt-3">
+          <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Configurações</p>
           <Button
             variant={activeTab === "settings" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "settings" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "settings" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
             onClick={handleOpenSettings}
           >
-            <Settings className="h-4 w-4 text-muted-foreground" /> Configurações
+            <Sparkles className="h-4 w-4 text-amber-500" /> Provedores de IA
           </Button>
           <Button
             variant={activeTab === "guide" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "guide" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "guide" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
             onClick={() => setActiveTab("guide")}
           >
             <HelpCircle className="h-4 w-4 text-muted-foreground" /> Guia de Uso
