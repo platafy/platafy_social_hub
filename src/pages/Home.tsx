@@ -1805,10 +1805,10 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setActiveTab("dashboard")}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
               activeTab === "dashboard"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <BarChart3 className="h-3.5 w-3.5" /> Painel
@@ -1817,10 +1817,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("profiles")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "profiles"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <User className="h-3.5 w-3.5" /> Perfil
@@ -1832,10 +1832,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("channels")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "channels"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <Share2 className="h-3.5 w-3.5" /> Canais
@@ -1847,10 +1847,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("composer")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "composer"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <Plus className="h-3.5 w-3.5" /> Novo Post
@@ -1859,10 +1859,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("inbox")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "inbox"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <MessageSquare className="h-3.5 w-3.5" /> Inbox
@@ -1871,10 +1871,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("contacts")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "contacts"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <Users className="h-3.5 w-3.5" /> Contatos
@@ -1883,10 +1883,10 @@ export default function Home() {
             type="button"
             onClick={() => setActiveTab("automation")}
             disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
               activeTab === "automation"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <Bot className="h-3.5 w-3.5 text-primary" /> Comentário/DM
@@ -1894,10 +1894,10 @@ export default function Home() {
           <button
             type="button"
             onClick={handleOpenSettings}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
               activeTab === "settings"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Provedores de IA
@@ -1905,10 +1905,10 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setActiveTab("guide")}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
               activeTab === "guide"
-                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                : "bg-card text-muted-foreground hover:text-foreground border border-border/70"
+                ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
             <HelpCircle className="h-3.5 w-3.5" /> Guia de Uso
@@ -1918,10 +1918,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setActiveTab("clients")}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
                   activeTab === "clients"
-                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                    ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "border-primary/30 bg-card text-primary font-semibold hover:text-primary/90"
                 }`}
               >
                 <Users className="h-3.5 w-3.5" /> Clientes
@@ -1929,10 +1929,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setActiveTab("saas_plans")}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
                   activeTab === "saas_plans"
-                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                    ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "border-primary/30 bg-card text-primary font-semibold hover:text-primary/90"
                 }`}
               >
                 <CreditCard className="h-3.5 w-3.5" /> Planos (SaaS)
@@ -1940,10 +1940,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setActiveTab("saas_whitelabel")}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
                   activeTab === "saas_whitelabel"
-                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                    ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "border-primary/30 bg-card text-primary font-semibold hover:text-primary/90"
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" /> White Label
@@ -1951,10 +1951,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setActiveTab("saas_mercadopago")}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
                   activeTab === "saas_mercadopago"
-                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
-                    : "bg-card text-primary font-semibold hover:text-primary/90 border border-primary/30"
+                    ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "border-primary/30 bg-card text-primary font-semibold hover:text-primary/90"
                 }`}
               >
                 <CreditCard className="h-3.5 w-3.5" /> Mercado Pago
@@ -2028,14 +2028,14 @@ export default function Home() {
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Visão Geral</p>
           <Button
             variant={activeTab === "dashboard" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "dashboard" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "dashboard" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("dashboard")}
           >
             <BarChart3 className="h-4 w-4 text-primary" /> Painel Geral
           </Button>
           <Button
             variant={activeTab === "profiles" ? "secondary" : "ghost"}
-            className={`justify-between w-full font-medium transition-all ${activeTab === "profiles" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-between w-full font-medium transition-all border-2 ${activeTab === "profiles" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("profiles")}
             disabled={!config.connected}
           >
@@ -2050,7 +2050,7 @@ export default function Home() {
           </Button>
           <Button
             variant={activeTab === "channels" ? "secondary" : "ghost"}
-            className={`justify-between w-full font-medium transition-all ${activeTab === "channels" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-between w-full font-medium transition-all border-2 ${activeTab === "channels" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("channels")}
             disabled={!config.connected}
           >
@@ -2070,7 +2070,7 @@ export default function Home() {
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Comunicação</p>
           <Button
             variant={activeTab === "composer" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "composer" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "composer" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("composer")}
             disabled={!config.connected}
           >
@@ -2078,7 +2078,7 @@ export default function Home() {
           </Button>
           <Button
             variant={activeTab === "inbox" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "inbox" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "inbox" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("inbox")}
             disabled={!config.connected}
           >
@@ -2086,7 +2086,7 @@ export default function Home() {
           </Button>
           <Button
             variant={activeTab === "contacts" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "contacts" ? "font-semibold shadow-2xs" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "contacts" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("contacts")}
             disabled={!config.connected}
           >
@@ -2099,7 +2099,7 @@ export default function Home() {
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Automação</p>
           <Button
             variant={activeTab === "automation" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "automation" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "automation" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("automation")}
             disabled={!config.connected}
           >
@@ -2112,14 +2112,14 @@ export default function Home() {
           <p className="px-3 text-[11px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Configurações</p>
           <Button
             variant={activeTab === "settings" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "settings" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "settings" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={handleOpenSettings}
           >
             <Sparkles className="h-4 w-4 text-amber-500" /> Provedores de IA
           </Button>
           <Button
             variant={activeTab === "guide" ? "secondary" : "ghost"}
-            className={`justify-start gap-3 w-full font-medium transition-all ${activeTab === "guide" ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20" : ""}`}
+            className={`justify-start gap-3 w-full font-medium transition-all border-2 ${activeTab === "guide" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("guide")}
           >
             <HelpCircle className="h-4 w-4 text-muted-foreground" /> Guia de Uso
@@ -2135,10 +2135,10 @@ export default function Home() {
             </p>
             <Button
               variant={activeTab === "clients" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${
+              className={`justify-start gap-3 w-full font-medium transition-all border-2 ${
                 activeTab === "clients"
-                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setActiveTab("clients")}
             >
@@ -2146,10 +2146,10 @@ export default function Home() {
             </Button>
             <Button
               variant={activeTab === "saas_plans" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${
+              className={`justify-start gap-3 w-full font-medium transition-all border-2 ${
                 activeTab === "saas_plans"
-                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setActiveTab("saas_plans")}
             >
@@ -2157,10 +2157,10 @@ export default function Home() {
             </Button>
             <Button
               variant={activeTab === "saas_whitelabel" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${
+              className={`justify-start gap-3 w-full font-medium transition-all border-2 ${
                 activeTab === "saas_whitelabel"
-                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setActiveTab("saas_whitelabel")}
             >
@@ -2168,10 +2168,10 @@ export default function Home() {
             </Button>
             <Button
               variant={activeTab === "saas_mercadopago" ? "secondary" : "ghost"}
-              className={`justify-start gap-3 w-full font-medium transition-all ${
+              className={`justify-start gap-3 w-full font-medium transition-all border-2 ${
                 activeTab === "saas_mercadopago"
-                  ? "font-semibold shadow-2xs text-primary bg-primary/10 border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
               onClick={() => setActiveTab("saas_mercadopago")}
             >
