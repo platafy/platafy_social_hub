@@ -242,7 +242,9 @@ export function WhiteLabelSettings() {
     setResendApiKey(branding.resend_api_key || "");
     setResendFromEmail(branding.resend_from_email || "PLATAFY Social Hub <onboarding@resend.dev>");
     setEmailRecoverySubject(branding.email_recovery_subject || DEFAULT_RECOVERY_EMAIL_SUBJECT);
-    setEmailRecoveryHtml(branding.email_recovery_html || DEFAULT_RECOVERY_EMAIL_HTML);
+    const savedHtml = branding.email_recovery_html || "";
+    const isOldPill = savedHtml.includes("background-color: rgba(245, 158, 11, 0.12)") && !savedHtml.includes("logo_url");
+    setEmailRecoveryHtml(!savedHtml || isOldPill ? DEFAULT_RECOVERY_EMAIL_HTML : savedHtml);
   }, [branding]);
 
   // Upload no Supabase Storage
@@ -406,20 +408,95 @@ export function WhiteLabelSettings() {
   function getRenderedPreviewHtml() {
     const fallbackUrl = "https://platafy.com/#/redefinir-senha?token=exemplo-token-demonstrativo";
     const curYear = new Date().getFullYear().toString();
-    const cleanAppName = appName.trim() || "PLATAFY Social Hub";
-    const cleanLogo = logoUrl.trim();
+    
+    // Nome base, tagline e nome completo (ex: PLATAFY SOCIAL + HUB = PLATAFY SOCIAL HUB)
+    const rawTagline = (appTagline?.trim() || branding.app_tagline?.trim() || "Hub");
+    const rawBaseName = (appName?.trim() || branding.app_name?.trim() || "PLATAFY Social");
+    const fullBrandName = rawBaseName.toLowerCase().endsWith(rawTagline.toLowerCase())
+      ? rawBaseName
+      : `${rawBaseName} ${rawTagline}`.trim();
+    const cleanLogo = (logoUrl?.trim() || branding.logo_url || branding.favicon_url || DEFAULT_BRANDING.logo_url).trim();
 
     let html = emailRecoveryHtml || DEFAULT_RECOVERY_EMAIL_HTML;
+
+    // Se o HTML possuir apenas o pill antigo sem imagem de logo, atualiza a seção do header para puxar a logo igual ao header da plataforma
+    const oldHeaderPattern = /<div style="display:\s*inline-block;\s*padding:\s*6px 18px;\s*background-color:\s*rgba\(245,\s*158,\s*11,\s*0\.12\);[\s\S]*?<\/div>/i;
+    if (oldHeaderPattern.test(html) && !html.includes("{{logo_url}}")) {
+      const newHeaderTable = `
+              <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin: 0 auto 18px auto;">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 10px;">
+                    <img src="{{logo_url}}" alt="{{app_name}}" width="38" height="38" style="display: block; width: 38px; height: 38px; border-radius: 8px; object-fit: contain;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-right: 8px;">
+                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; white-space: nowrap; text-transform: uppercase;">
+                      {{brand_title}}
+                    </span>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <span style="display: inline-block; background-color: #f59e0b; color: #090d16; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; vertical-align: middle;">
+                      {{app_tagline}}
+                    </span>
+                  </td>
+                </tr>
+              </table>`.trim();
+      html = html.replace(oldHeaderPattern, newHeaderTable);
+    }
+
+    // Substituições de variáveis dinâmicas
     html = html.replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, fallbackUrl);
-    html = html.replace(/\{\{\s*app_name\s*\}\}/g, cleanAppName);
     html = html.replace(/\{\{\s*logo_url\s*\}\}/g, cleanLogo);
+    html = html.replace(/\{\{\s*brand_title\s*\}\}/g, rawBaseName.toUpperCase());
+    html = html.replace(/\{\{\s*app_tagline\s*\}\}/g, rawTagline.toUpperCase());
+    html = html.replace(/\{\{\s*app_name\s*\}\}/g, fullBrandName.toUpperCase());
     html = html.replace(/\{\{\s*email\s*\}\}/g, testEmailAddress.trim() || user?.email || "cliente@empresa.com");
     html = html.replace(/\{\{\s*ano\s*\}\}/g, curYear);
     return html;
   }
 
   function handleCopySupabaseTemplate() {
-    navigator.clipboard.writeText(emailRecoveryHtml);
+    const rawTagline = (appTagline?.trim() || branding.app_tagline?.trim() || "Hub");
+    const rawBaseName = (appName?.trim() || branding.app_name?.trim() || "PLATAFY Social");
+    const fullBrandName = rawBaseName.toLowerCase().endsWith(rawTagline.toLowerCase())
+      ? rawBaseName
+      : `${rawBaseName} ${rawTagline}`.trim();
+    const cleanLogo = (logoUrl?.trim() || branding.logo_url || branding.favicon_url || DEFAULT_BRANDING.logo_url).trim();
+    const curYear = new Date().getFullYear().toString();
+
+    let readyHtml = emailRecoveryHtml || DEFAULT_RECOVERY_EMAIL_HTML;
+
+    // Atualiza o header se tiver o pill antigo
+    const oldHeaderPattern = /<div style="display:\s*inline-block;\s*padding:\s*6px 18px;\s*background-color:\s*rgba\(245,\s*158,\s*11,\s*0\.12\);[\s\S]*?<\/div>/i;
+    if (oldHeaderPattern.test(readyHtml) && !readyHtml.includes("{{logo_url}}")) {
+      const newHeaderTable = `
+              <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin: 0 auto 18px auto;">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 10px;">
+                    <img src="${cleanLogo}" alt="${fullBrandName.toUpperCase()}" width="38" height="38" style="display: block; width: 38px; height: 38px; border-radius: 8px; object-fit: contain;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-right: 8px;">
+                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; white-space: nowrap; text-transform: uppercase;">
+                      ${rawBaseName.toUpperCase()}
+                    </span>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <span style="display: inline-block; background-color: #f59e0b; color: #090d16; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; vertical-align: middle;">
+                      ${rawTagline.toUpperCase()}
+                    </span>
+                  </td>
+                </tr>
+              </table>`.trim();
+      readyHtml = readyHtml.replace(oldHeaderPattern, newHeaderTable);
+    }
+
+    // Pré-resolve as tags da marca para o Supabase, mantendo {{ .ConfirmationURL }} para o Supabase Auth
+    readyHtml = readyHtml.replace(/\{\{\s*logo_url\s*\}\}/g, cleanLogo);
+    readyHtml = readyHtml.replace(/\{\{\s*brand_title\s*\}\}/g, rawBaseName.toUpperCase());
+    readyHtml = readyHtml.replace(/\{\{\s*app_tagline\s*\}\}/g, rawTagline.toUpperCase());
+    readyHtml = readyHtml.replace(/\{\{\s*app_name\s*\}\}/g, fullBrandName.toUpperCase());
+    readyHtml = readyHtml.replace(/\{\{\s*ano\s*\}\}/g, curYear);
+
+    navigator.clipboard.writeText(readyHtml);
     toast.success("Template HTML copiado com sucesso!", {
       description: "Agora cole no Supabase Dashboard: Authentication -> Email Templates -> Reset Password.",
       duration: 6000,
@@ -1763,8 +1840,10 @@ export function WhiteLabelSettings() {
                 <div className="flex flex-wrap gap-2 pt-1">
                   {[
                     { tag: "{{ .ConfirmationURL }}", desc: "Link de redefinição de senha" },
-                    { tag: "{{app_name}}", desc: "Nome da plataforma White Label" },
-                    { tag: "{{logo_url}}", desc: "URL do logotipo" },
+                    { tag: "{{logo_url}}", desc: "Ícone / Logo da plataforma" },
+                    { tag: "{{brand_title}}", desc: "Nome principal (ex: PLATAFY SOCIAL)" },
+                    { tag: "{{app_tagline}}", desc: "Badge/Slogan (ex: HUB)" },
+                    { tag: "{{app_name}}", desc: "Nome completo (ex: PLATAFY SOCIAL HUB)" },
                     { tag: "{{email}}", desc: "E-mail do usuário destinatário" },
                     { tag: "{{ano}}", desc: "Ano vigente (ex: 2026)" },
                   ].map((item) => (

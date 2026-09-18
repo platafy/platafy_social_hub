@@ -53,12 +53,26 @@ export const DEFAULT_RECOVERY_EMAIL_HTML = `<!DOCTYPE html>
             <td height="4" style="background: linear-gradient(90deg, #f59e0b, #ea580c);"></td>
           </tr>
 
-          <!-- Header / Logo -->
+          <!-- Header / Logo Idêntico ao Header da Página -->
           <tr>
             <td style="padding: 36px 36px 20px 36px; text-align: center;">
-              <div style="display: inline-block; padding: 6px 18px; background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 999px; margin-bottom: 16px;">
-                <span style="color: #f59e0b; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">{{app_name}}</span>
-              </div>
+              <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin: 0 auto 18px auto;">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 10px;">
+                    <img src="{{logo_url}}" alt="{{app_name}}" width="38" height="38" style="display: block; width: 38px; height: 38px; border-radius: 8px; object-fit: contain;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-right: 8px;">
+                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; white-space: nowrap; text-transform: uppercase;">
+                      {{brand_title}}
+                    </span>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <span style="display: inline-block; background-color: #f59e0b; color: #090d16; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; vertical-align: middle;">
+                      {{app_tagline}}
+                    </span>
+                  </td>
+                </tr>
+              </table>
               <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">
                 Recuperação de Senha
               </h1>

@@ -39,8 +39,10 @@ Deno.serve(async (req) => {
     let resendFrom = Deno.env.get('RESEND_FROM_EMAIL') || body.resend_from_email || 'PLATAFY Social Hub <onboarding@resend.dev>';
     let customRecoverySubject: string | undefined;
     let customRecoveryHtml: string | undefined;
-    let appName = 'PLATAFY Social Hub';
-    let logoUrl = '';
+    let appName = 'PLATAFY SOCIAL HUB';
+    let baseName = 'PLATAFY SOCIAL';
+    let appTagline = 'HUB';
+    let logoUrl = 'https://sabzbazyxfxorrfshhgf.supabase.co/storage/v1/object/public/media/branding/logo-65aaac69-3248-446c-b846-fc602d67e8e5-1788896633632.png';
 
     try {
       const { data: brandingRow } = await supabaseAdmin
@@ -63,12 +65,16 @@ Deno.serve(async (req) => {
         if (b.email_recovery_html) {
           customRecoveryHtml = b.email_recovery_html;
         }
-        if (b.app_name) {
-          appName = b.app_name;
-        }
         if (b.logo_url) {
           logoUrl = b.logo_url;
         }
+        const rawTagline = (b.app_tagline || 'Hub').trim();
+        const rawBase = (b.app_name || 'PLATAFY Social').trim();
+        baseName = rawBase;
+        appTagline = rawTagline;
+        appName = rawBase.toLowerCase().endsWith(rawTagline.toLowerCase())
+          ? rawBase
+          : `${rawBase} ${rawTagline}`.trim();
       }
     } catch (e) {
       console.warn('[RecuperacaoSenha] Erro ao ler platform_branding:', e);
@@ -88,12 +94,12 @@ Deno.serve(async (req) => {
       let html = '';
 
       if (testType === 'connection') {
-        subject = `Teste de Conexão - ${appName} (Resend)`;
+        subject = `Teste de Conexão - ${appName.toUpperCase()} (Resend)`;
         html = `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #070b14; color: #f8fafc; padding: 40px 20px; text-align: center;">
             <div style="max-width: 500px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
               <div style="display: inline-block; padding: 6px 16px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 999px; color: #f59e0b; font-weight: bold; font-size: 13px; margin-bottom: 20px;">
-                ${appName}
+                ${appName.toUpperCase()}
               </div>
               <h1 style="color: #ffffff; font-size: 22px; margin-bottom: 12px; font-weight: 800;">Conexão com Resend com Sucesso! 🚀</h1>
               <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
@@ -114,7 +120,10 @@ Deno.serve(async (req) => {
         const sampleUrl = 'https://platafy.com/#/redefinir-senha?token=exemplo-token-teste-validacao';
         const currentYear = new Date().getFullYear().toString();
 
-        subject = subjectRaw.replace(/\{\{\s*app_name\s*\}\}/gi, appName);
+        subject = subjectRaw
+          .replace(/\{\{\s*app_name\s*\}\}/gi, appName.toUpperCase())
+          .replace(/\{\{\s*brand_title\s*\}\}/gi, baseName.toUpperCase());
+
         html = (templateRaw || `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -132,9 +141,23 @@ Deno.serve(async (req) => {
           </tr>
           <tr>
             <td style="padding: 36px 36px 20px 36px; text-align: center;">
-              <div style="display: inline-block; padding: 6px 18px; background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 999px; margin-bottom: 16px;">
-                <span style="color: #f59e0b; font-size: 14px; font-weight: 800;">${appName}</span>
-              </div>
+              <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin: 0 auto 18px auto;">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 10px;">
+                    <img src="${logoUrl}" alt="${appName.toUpperCase()}" width="38" height="38" style="display: block; width: 38px; height: 38px; border-radius: 8px; object-fit: contain;" />
+                  </td>
+                  <td style="vertical-align: middle; padding-right: 8px;">
+                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; white-space: nowrap; text-transform: uppercase;">
+                      ${baseName.toUpperCase()}
+                    </span>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <span style="display: inline-block; background-color: #f59e0b; color: #090d16; font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; vertical-align: middle;">
+                      ${appTagline.toUpperCase()}
+                    </span>
+                  </td>
+                </tr>
+              </table>
               <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 800;">Recuperação de Senha</h1>
               <p style="margin: 0; color: #94a3b8; font-size: 14px;">Instruções para redefinir o acesso à sua conta</p>
             </td>
@@ -143,7 +166,7 @@ Deno.serve(async (req) => {
             <td style="padding: 10px 36px 30px 36px;">
               <p style="color: #e2e8f0; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0;">Olá,</p>
               <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
-                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>${appName}</strong>. Clique no botão abaixo para cadastrar uma nova senha:
+                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>${appName.toUpperCase()}</strong>. Clique no botão abaixo para cadastrar uma nova senha:
               </p>
               <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
                 <tr>
@@ -167,7 +190,7 @@ Deno.serve(async (req) => {
           </tr>
           <tr>
             <td style="padding: 24px 36px; background-color: #090d16; border-top: 1px solid #1e293b; text-align: center;">
-              <p style="margin: 0 0 6px 0; color: #64748b; font-size: 12px;">© ${currentYear} ${appName} • Todos os direitos reservados.</p>
+              <p style="margin: 0 0 6px 0; color: #64748b; font-size: 12px;">© ${currentYear} ${appName.toUpperCase()} • Todos os direitos reservados.</p>
               <p style="margin: 0; color: #475569; font-size: 11px;">Este é um e-mail transacional de teste.</p>
             </td>
           </tr>
@@ -178,10 +201,12 @@ Deno.serve(async (req) => {
 </body>
 </html>
         `)
-          .replace(/\{\{\s*\.ConfirmationURL\s*\}\}|\{\{\s*reset_url\s*\}\}|\{\{\s*link_recuperacao\s*\}\}/gi, sampleUrl)
+          .replace(/\{\{\s*\.ConfirmationURL\s*\}\}|\\{\{\s*reset_url\s*\}\}|\{\{\s*link_recuperacao\s*\}\}/gi, sampleUrl)
           .replace(/\{\{\s*\.Email\s*\}\}|\{\{\s*email\s*\}\}/gi, cleanEmail)
-          .replace(/\{\{\s*app_name\s*\}\}/gi, appName)
           .replace(/\{\{\s*logo_url\s*\}\}/gi, logoUrl)
+          .replace(/\{\{\s*brand_title\s*\}\}/gi, baseName.toUpperCase())
+          .replace(/\{\{\s*app_tagline\s*\}\}/gi, appTagline.toUpperCase())
+          .replace(/\{\{\s*app_name\s*\}\}/gi, appName.toUpperCase())
           .replace(/\{\{\s*ano\s*\}\}/gi, currentYear);
       }
 
@@ -355,14 +380,18 @@ Deno.serve(async (req) => {
       `;
 
       const currentYear = new Date().getFullYear().toString();
-      const subjectToUse = (customRecoverySubject || 'Redefinição de Senha - {{app_name}}').replace(/\{\{\s*app_name\s*\}\}/gi, appName);
+      const subjectToUse = (customRecoverySubject || 'Redefinição de Senha - {{app_name}}')
+        .replace(/\{\{\s*app_name\s*\}\}/gi, appName.toUpperCase())
+        .replace(/\{\{\s*brand_title\s*\}\}/gi, baseName.toUpperCase());
       let htmlToUse = customRecoveryHtml || emailHtml;
 
       htmlToUse = htmlToUse
         .replace(/\{\{\s*\.ConfirmationURL\s*\}\}|\{\{\s*reset_url\s*\}\}|\{\{\s*link_recuperacao\s*\}\}/gi, resetUrl)
         .replace(/\{\{\s*\.Email\s*\}\}|\{\{\s*email\s*\}\}/gi, cleanEmail)
-        .replace(/\{\{\s*app_name\s*\}\}/gi, appName)
         .replace(/\{\{\s*logo_url\s*\}\}/gi, logoUrl)
+        .replace(/\{\{\s*brand_title\s*\}\}/gi, baseName.toUpperCase())
+        .replace(/\{\{\s*app_tagline\s*\}\}/gi, appTagline.toUpperCase())
+        .replace(/\{\{\s*app_name\s*\}\}/gi, appName.toUpperCase())
         .replace(/\{\{\s*ano\s*\}\}/gi, currentYear);
 
       const resendRes = await fetch('https://api.resend.com/emails', {
