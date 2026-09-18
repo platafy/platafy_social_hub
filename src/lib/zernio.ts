@@ -199,6 +199,9 @@ export async function zernioApiCall(path: string, options: ZernioRequestOptions 
       } catch (e) {
         console.warn('Could not extract error details:', e);
       }
+      if (typeof detailedMsg === 'string' && (detailedMsg.includes("Add a payment method") || detailedMsg.includes("more than 2 accounts"))) {
+        detailedMsg = "Esta conta Zernio gratuita atingiu o limite de 2 canais conectados. Para adicionar mais perfis sem custo adicional, utilize uma nova Chave de API Zernio gratuita.";
+      }
       throw new Error(detailedMsg);
     }
 
@@ -209,6 +212,9 @@ export async function zernioApiCall(path: string, options: ZernioRequestOptions 
         finalErrMsg = parsed.error || parsed.message || data.error;
       } catch {
         // Plain text error
+      }
+      if (typeof finalErrMsg === 'string' && (finalErrMsg.includes("Add a payment method") || finalErrMsg.includes("more than 2 accounts"))) {
+        finalErrMsg = "Esta conta Zernio gratuita atingiu o limite de 2 canais conectados. Para adicionar mais perfis sem custo adicional, utilize uma nova Chave de API Zernio gratuita.";
       }
       throw new Error(finalErrMsg);
     }

@@ -140,9 +140,31 @@ export default function Home() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
   const [isNewProfileModalOpen, setIsNewProfileModalOpen] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+  const [newProfileApiKey, setNewProfileApiKey] = useState("");
+  const [newProfileMode, setNewProfileMode] = useState<"new_key" | "existing">("new_key");
   const [newProfileIntegrationId, setNewProfileIntegrationId] = useState("");
   const [creatingProfile, setCreatingProfile] = useState(false);
+  const [profileCreationError, setProfileCreationError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<any[]>([]);
+
+  const openNewProfileModal = useCallback((preferredMode?: "new_key" | "existing") => {
+    if (!config.connected) {
+      toast.error("Por favor, conecte sua Chave de API do Zernio antes de criar perfis.");
+      return;
+    }
+    const firstInteg = config.integrations?.[0];
+    const firstIntegAccounts = firstInteg ? accounts.filter((a: any) => a.integrationId === firstInteg.id).length : 0;
+    const defaultMode = preferredMode || (firstIntegAccounts >= 2 ? "new_key" : "new_key");
+
+    setNewProfileMode(defaultMode);
+    setNewProfileName("");
+    setNewProfileApiKey("");
+    setProfileCreationError(null);
+    if (firstInteg) {
+      setNewProfileIntegrationId(firstInteg.id);
+    }
+    setIsNewProfileModalOpen(true);
+  }, [config.connected, config.integrations, accounts]);
   const [isConnectSocialModalOpen, setIsConnectSocialModalOpen] = useState(false);
   const [isFacebookSelectModalOpen, setIsFacebookSelectModalOpen] = useState(false);
   const [facebookTempToken, setFacebookTempToken] = useState<string>("");
@@ -2048,7 +2070,7 @@ export default function Home() {
               </span>
               <button
                 type="button"
-                onClick={() => setIsNewProfileModalOpen(true)}
+                onClick={() => openNewProfileModal()}
                 className="p-1 text-primary hover:text-primary/80 font-bold rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
                 title="Novo Perfil"
               >
@@ -2287,7 +2309,7 @@ export default function Home() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsNewProfileModalOpen(true)}
+                  onClick={() => openNewProfileModal()}
                   className="inline-flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 font-bold transition-colors cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Novo Perfil
@@ -2366,13 +2388,7 @@ export default function Home() {
                       </span>
                       <Button
                         size="sm"
-                        onClick={() => {
-                          if (!config.connected) {
-                            toast.error("Por favor, conecte sua Chave de API do Zernio abaixo antes de criar perfis.");
-                            return;
-                          }
-                          setIsNewProfileModalOpen(true);
-                        }}
+                        onClick={() => openNewProfileModal()}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
@@ -2526,11 +2542,11 @@ export default function Home() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowAddAccountForm(!showAddAccountForm)}
+                    onClick={() => openNewProfileModal("new_key")}
                     className="text-xs font-semibold gap-2 rounded-xl border-dashed hover:border-primary/50 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    {showAddAccountForm ? "Ocultar Formulário" : "Conectar Conta Adicional (Opcional)"}
+                    Conectar Conta Adicional (Opcional)
                   </Button>
                 </div>
               )}
@@ -2891,7 +2907,7 @@ export default function Home() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => setIsNewProfileModalOpen(true)}
+                        onClick={() => openNewProfileModal()}
                         className="text-[11px] text-primary hover:underline font-bold flex items-center gap-0.5 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" /> Adicionar
@@ -3625,7 +3641,7 @@ export default function Home() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setIsNewProfileModalOpen(true)}
+                        onClick={() => openNewProfileModal()}
                         className="text-xs font-bold rounded-xl cursor-pointer flex-1 sm:flex-none h-8 sm:h-9"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
@@ -5993,7 +6009,8 @@ export default function Home() {
               /* Estado: Formulário de Criação */
               <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (!newProfileName.trim()) {
+                const cleanName = newProfileName.trim();
+                if (!cleanName) {
                   toast.error("Informe o nome do perfil.");
                   return;
                 }
@@ -6001,26 +6018,68 @@ export default function Home() {
                   toast.error(`Limite de Perfis Ativos atingido (${profiles.length}/${maxProfiles}). Faça upgrade do plano.`);
                   return;
                 }
+
+                setProfileCreationError(null);
                 setCreatingProfile(true);
-                try {
-                  const integrationToUse = newProfileIntegrationId || config.integrations?.[0]?.id;
-                  const created = await zernio.createProfile(newProfileName.trim(), integrationToUse);
-                  const newId = created?._id || created?.id;
-                  toast.success("Perfil Ativo criado com sucesso!");
-                  setNewProfileName("");
-                  setIsNewProfileModalOpen(false);
-                  clearZernioCache();
-                  if (newId) {
-                    setSelectedProfileId(newId);
+
+                if (newProfileMode === "new_key") {
+                  const cleanKey = newProfileApiKey.trim();
+                  if (!cleanKey) {
+                    setCreatingProfile(false);
+                    toast.error("Informe a chave de API do Zernio.");
+                    return;
                   }
-                  if (config.integrations && config.integrations.length > 0) {
-                    await fetchMultiAccountData(config.integrations);
+                  try {
+                    await zernio.saveConfig(cleanKey, undefined, undefined, cleanName);
+                    toast.success(`Perfil "${cleanName}" criado com sucesso!`);
+                    setNewProfileName("");
+                    setNewProfileApiKey("");
+                    setIsNewProfileModalOpen(false);
+                    clearZernioCache();
+                    await fetchConfig(true);
+                  } catch (err: any) {
+                    console.error("Erro ao criar perfil com nova chave:", err);
+                    setProfileCreationError(err.message || "Erro ao conectar conta Zernio.");
+                    toast.error(err.message || "Erro ao conectar conta Zernio.");
+                  } finally {
+                    setCreatingProfile(false);
                   }
-                } catch (err: any) {
-                  console.error("Erro ao criar perfil:", err);
-                  toast.error(err.message || "Erro ao criar perfil no Zernio.");
-                } finally {
-                  setCreatingProfile(false);
+                } else {
+                  // Modo: Usar Conta Zernio Existente
+                  try {
+                    const integrationToUse = newProfileIntegrationId || config.integrations?.[0]?.id;
+                    const created = await zernio.createProfile(cleanName, integrationToUse);
+                    const newId = created?._id || created?.id;
+                    toast.success("Perfil Ativo criado com sucesso!");
+                    setNewProfileName("");
+                    setIsNewProfileModalOpen(false);
+                    clearZernioCache();
+                    if (newId) {
+                      setSelectedProfileId(newId);
+                    }
+                    if (config.integrations && config.integrations.length > 0) {
+                      await fetchMultiAccountData(config.integrations);
+                    }
+                  } catch (err: any) {
+                    console.error("Erro ao criar perfil:", err);
+                    const rawMsg = err.message || "";
+                    if (
+                      rawMsg.includes("payment method") ||
+                      rawMsg.includes("more than 2 accounts") ||
+                      rawMsg.includes("limite gratuito de 2 canais") ||
+                      rawMsg.includes("limite de 2 canais")
+                    ) {
+                      setProfileCreationError(
+                        "Sua conta Zernio existente atingiu a franquia gratuita de 2 canais sociais. Para ativar este perfil sem custo adicional, adicione uma Nova Chave de API Zernio gratuita abaixo."
+                      );
+                      setNewProfileMode("new_key");
+                    } else {
+                      setProfileCreationError(rawMsg || "Erro ao criar perfil no Zernio.");
+                      toast.error(rawMsg || "Erro ao criar perfil no Zernio.");
+                    }
+                  } finally {
+                    setCreatingProfile(false);
+                  }
                 }
               }} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
@@ -6038,11 +6097,23 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setIsNewProfileModalOpen(false)}
-                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted"
+                    className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+
+                {profileCreationError && (
+                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400 space-y-1 animate-in fade-in-50">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      Limite da Conta Zernio Atingido
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      {profileCreationError}
+                    </p>
+                  </div>
+                )}
 
                 <div className="p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-xs text-violet-800 dark:text-violet-300 space-y-1">
                   <p className="font-semibold">💡 Regra do Plano</p>
@@ -6052,32 +6123,139 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-foreground">Nome do Perfil</Label>
+                  <Label className="text-xs font-bold text-foreground">Nome do Perfil *</Label>
                   <Input
                     type="text"
                     required
                     autoFocus
-                    placeholder="Ex: Marca Principal, Cliente XPTO..."
+                    placeholder="Ex: Marca Principal, Cliente XPTO, Loja Filial..."
                     value={newProfileName}
-                    onChange={(e) => setNewProfileName(e.target.value)}
+                    onChange={(e) => {
+                      setNewProfileName(e.target.value);
+                      if (profileCreationError) setProfileCreationError(null);
+                    }}
                     className="rounded-xl h-10 text-sm"
                   />
                 </div>
 
-                {config.integrations && config.integrations.length > 1 && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">Conta Zernio</Label>
-                    <select
-                      value={newProfileIntegrationId}
-                      onChange={(e) => setNewProfileIntegrationId(e.target.value)}
-                      className="w-full text-xs rounded-xl border border-border bg-background p-2.5 outline-none"
+                {/* Seletor de Modo de Conexão */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground">Método de Conexão</Label>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-muted/40 rounded-2xl border border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewProfileMode("new_key");
+                        setProfileCreationError(null);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                        newProfileMode === "new_key"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      {config.integrations.map((integ) => (
-                        <option key={integ.id} value={integ.id}>
-                          {integ.name}
-                        </option>
-                      ))}
-                    </select>
+                      <span>Nova Chave Zernio</span>
+                      <span className="text-[10px] font-normal opacity-90">2 canais grátis</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewProfileMode("existing");
+                        setProfileCreationError(null);
+                      }}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                        newProfileMode === "existing"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>Conta Existente</span>
+                      <span className="text-[10px] font-normal opacity-90">Na mesma conta</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Modo Nova Chave Zernio */}
+                {newProfileMode === "new_key" && (
+                  <div className="space-y-2.5 animate-in fade-in-50">
+                    <div className="space-y-1">
+                      <Label htmlFor="newProfileApiKey" className="text-xs font-bold text-foreground">
+                        Zernio API Key *
+                      </Label>
+                      <Input
+                        id="newProfileApiKey"
+                        type="password"
+                        placeholder="Cole sua Zernio API Key aqui"
+                        value={newProfileApiKey}
+                        onChange={(e) => {
+                          setNewProfileApiKey(e.target.value);
+                          if (profileCreationError) setProfileCreationError(null);
+                        }}
+                        className="rounded-xl text-sm"
+                      />
+                    </div>
+
+                    {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-primary/10 border border-primary/25 overflow-hidden">
+                      <div className="flex items-center gap-2 text-xs text-foreground font-medium min-w-0">
+                        <div className="w-7 h-7 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                          <Key className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-xs">Precisa da sua chave de acesso?</p>
+                          <p className="text-[10px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
+                        </div>
+                      </div>
+                      <a
+                        href="https://zernio.com/dashboard/api-keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full sm:w-auto shrink-0"
+                      >
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl px-3 py-1.5 shadow-xs w-full sm:w-auto"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          <span>Obter Chave</span>
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modo Conta Existente */}
+                {newProfileMode === "existing" && (
+                  <div className="space-y-2.5 animate-in fade-in-50">
+                    {config.integrations && config.integrations.length > 1 ? (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-foreground">Selecionar Conta Zernio</Label>
+                        <select
+                          value={newProfileIntegrationId || config.integrations[0]?.id}
+                          onChange={(e) => setNewProfileIntegrationId(e.target.value)}
+                          className="w-full text-xs rounded-xl border border-border bg-background p-2.5 outline-none"
+                        >
+                          {config.integrations.map((integ) => (
+                            <option key={integ.id} value={integ.id}>
+                              {integ.name} ({accounts.filter((a: any) => a.integrationId === integ.id).length}/2 canais)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-2xl bg-muted/40 border border-border text-xs text-muted-foreground space-y-1">
+                        <p className="font-semibold text-foreground">
+                          Conta: {config.integrations?.[0]?.name || "Conta Principal"}
+                        </p>
+                        <p className="text-[11px] leading-relaxed">
+                          Canais conectados nesta conta: <strong>{accounts.filter((a: any) => a.integrationId === config.integrations?.[0]?.id).length}/2 canais</strong>.
+                        </p>
+                      </div>
+                    )}
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-400">
+                      ⚠️ Contas gratuitas da Zernio permitem no máximo 2 canais por conta. Se esta conta já possui 2 canais, a Zernio exigirá um cartão de crédito. Se preferir sem custos, use <strong>"Nova Chave Zernio"</strong>.
+                    </div>
                   </div>
                 )}
 
@@ -6092,7 +6270,7 @@ export default function Home() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={creatingProfile || !newProfileName.trim()}
+                    disabled={creatingProfile || !newProfileName.trim() || (newProfileMode === "new_key" && !newProfileApiKey.trim())}
                     className="rounded-xl bg-primary font-bold shadow-xs cursor-pointer"
                   >
                     {creatingProfile ? (
@@ -6103,7 +6281,7 @@ export default function Home() {
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-1.5" />
-                        Criar Perfil
+                        {newProfileMode === "new_key" ? "Criar Perfil e Conectar" : "Criar Perfil na Conta"}
                       </>
                     )}
                   </Button>

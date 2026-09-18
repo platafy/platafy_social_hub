@@ -146,6 +146,36 @@ serve(async (req) => {
             e.api_key === finalApiKey || e.name === accountLabel || e.account_name === accountLabel
           )
 
+          // Validate commercial plan limits if adding a new integration
+          if (!match) {
+            try {
+              const { data: sub } = await supabaseClient
+                .from('subscriptions')
+                .select('status, plan_id, plans(slug, limits)')
+                .eq('tenant_id', tenantId)
+                .maybeSingle()
+
+              const planLimits = (sub?.plans as any)?.limits || {}
+              let maxProfiles = 1
+              if (typeof planLimits.max_profiles === 'number') {
+                maxProfiles = planLimits.max_profiles
+              } else if (typeof planLimits.max_channels === 'number') {
+                maxProfiles = planLimits.max_channels === -1 ? -1 : Math.max(1, Math.ceil(planLimits.max_channels / 2))
+              }
+
+              if (maxProfiles !== -1 && existingList && existingList.length >= maxProfiles) {
+                return new Response(JSON.stringify({
+                  error: `Limite de Perfis Ativos atingido (${existingList.length}/${maxProfiles}). Faça upgrade do seu plano para adicionar novos perfis.`
+                }), {
+                  status: 403,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                })
+              }
+            } catch (quotaErr) {
+              console.warn('Erro ao validar cota de perfis em /config:', quotaErr)
+            }
+          }
+
           let insertError = null
           if (match) {
             const { error } = await supabaseClient
@@ -392,10 +422,15 @@ serve(async (req) => {
     }
 
     const zernioResponse = await fetch(zernioUrl, requestOptions)
-    const responseData = await zernioResponse.text()
+    let responseData = await zernioResponse.text()
 
     if (!zernioResponse.ok) {
       console.error(`Zernio API Error on ${req.method} ${zernioUrl} (status: ${zernioResponse.status}):`, responseData)
+      if (responseData.includes("Add a payment method") || responseData.includes("more than 2 accounts")) {
+        responseData = JSON.stringify({
+          error: "Esta conta Zernio gratuita atingiu o limite de 2 canais conectados. Para adicionar mais perfis sem custo adicional, utilize uma nova Chave de API Zernio gratuita."
+        })
+      }
       return new Response(JSON.stringify({ success: false, error: responseData }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
