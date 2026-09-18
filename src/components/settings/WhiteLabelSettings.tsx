@@ -407,7 +407,7 @@ export function WhiteLabelSettings() {
   }
 
   function getRenderedPreviewHtml() {
-    const fallbackUrl = "https://platafy.com/#/redefinir-senha?token=exemplo-token-demonstrativo";
+    const fallbackUrl = "https://socialhub.platafy.com/#/redefinir-senha?token=exemplo-token-demonstrativo";
     const curYear = new Date().getFullYear().toString();
     
     // Nome base, tagline e nome completo (ex: PLATAFY SOCIAL + HUB = PLATAFY SOCIAL HUB)
@@ -2009,14 +2009,14 @@ export function WhiteLabelSettings() {
                       No <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline inline-flex items-center gap-0.5 font-bold">Supabase Dashboard <ExternalLink className="w-2.5 h-2.5 inline" /></a>, acesse <strong>Authentication</strong> &rarr; <strong>URL Configuration</strong>.
                     </li>
                     <li>
-                      No campo <strong>Site URL</strong>, altere para o endereço real da sua plataforma (ex: <code className="font-mono text-amber-400 bg-background/80 px-1 py-0.5 rounded">https://platafy-social-hub.vercel.app</code> ou seu domínio próprio).
+                      No campo <strong>Site URL</strong>, altere para o endereço oficial da plataforma: <code className="font-mono text-amber-400 bg-background/80 px-1 py-0.5 rounded font-bold">https://socialhub.platafy.com/</code>
                     </li>
                     <li>
                       Em <strong>Redirect URLs</strong>, adicione:
                       <div className="pt-1 pl-4 space-y-0.5 font-mono text-[11px] text-slate-300">
+                        <div>• <code className="text-amber-400">https://socialhub.platafy.com/**</code></div>
+                        <div>• <code className="text-amber-400">https://socialhub.platafy.com/#/redefinir-senha</code></div>
                         <div>• <code className="text-amber-400">https://platafy-social-hub.vercel.app/**</code></div>
-                        <div>• <code className="text-amber-400">https://platafy-social-hub.vercel.app/#/redefinir-senha</code></div>
-                        <div>• <code className="text-amber-400">https://platafy.com/**</code> (se tiver domínio próprio)</div>
                       </div>
                     </li>
                     <li className="pt-1">

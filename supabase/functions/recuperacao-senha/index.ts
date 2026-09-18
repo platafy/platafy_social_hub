@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   try {
     const body: RequestBody = await req.json().catch(() => ({}));
     const cleanEmail = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const redirect_to = body.redirect_to || 'https://platafy-social-hub.vercel.app/#/redefinir-senha';
+    const redirect_to = body.redirect_to || 'https://socialhub.platafy.com/#/redefinir-senha';
     const action = body.action || 'recover';
 
     if (!cleanEmail) {
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         // Envia o template de recuperação formatado como teste real
         const templateRaw = body.template_html || customRecoveryHtml || '';
         const subjectRaw = body.subject || customRecoverySubject || `Redefinição de Senha - {{app_name}}`;
-        const sampleUrl = 'https://platafy.com/#/redefinir-senha?token=exemplo-token-teste-validacao';
+        const sampleUrl = 'https://socialhub.platafy.com/#/redefinir-senha?token=exemplo-token-teste-validacao';
         const currentYear = new Date().getFullYear().toString();
 
         subject = subjectRaw
