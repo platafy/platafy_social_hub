@@ -34,7 +34,24 @@ function SupabaseConfigAlert() {
 function Layout({ children }: { children: React.ReactNode }) {
   const { session, signOut, user } = useAuth();
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login" || location.pathname === "/cadastro" || location.pathname === "/recuperar-senha" || location.pathname === "/redefinir-senha" || location.pathname === "/auth-error" || location.pathname === "/oauth-callback";
+
+  const isAuthCallback =
+    typeof window !== "undefined" &&
+    (window.location.hash.includes("access_token=") ||
+      window.location.hash.includes("refresh_token=") ||
+      window.location.hash.includes("type=recovery") ||
+      window.location.search.includes("code=") ||
+      location.pathname.includes("access_token=") ||
+      location.pathname.includes("refresh_token="));
+
+  const isLoginPage =
+    isAuthCallback ||
+    location.pathname === "/login" ||
+    location.pathname === "/cadastro" ||
+    location.pathname === "/recuperar-senha" ||
+    location.pathname === "/redefinir-senha" ||
+    location.pathname === "/auth-error" ||
+    location.pathname === "/oauth-callback";
 
   if (isLoginPage) {
     const isDedicatedLogin = location.pathname === "/login";

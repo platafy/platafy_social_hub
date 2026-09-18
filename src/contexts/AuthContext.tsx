@@ -73,6 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(data.session);
     setUser(data.session?.user ?? null);
     if (data.session?.user) {
+      if (
+        typeof window !== "undefined" &&
+        (window.location.hash.includes("access_token=") ||
+          window.location.hash.includes("refresh_token="))
+      ) {
+        window.location.hash = "/";
+      }
       await loadTenantAndRoles();
     } else {
       setTenantId(null);
@@ -88,8 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === "PASSWORD_RECOVERY") {
+      if (
+        event === "PASSWORD_RECOVERY" ||
+        (typeof window !== "undefined" && window.location.hash.includes("type=recovery"))
+      ) {
         window.location.hash = "/redefinir-senha";
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        if (
+          typeof window !== "undefined" &&
+          (window.location.hash.includes("access_token=") ||
+            window.location.hash.includes("refresh_token="))
+        ) {
+          window.location.hash = "/";
+        }
       }
       setSession(newSession);
       setUser(newSession?.user ?? null);
