@@ -1346,13 +1346,17 @@ export default function Home() {
   };
 
   const saveConfig = async () => {
-    if (!apiKeyInput) {
-      toast.error("Informe a chave de API.");
+    if (!newAccountName.trim()) {
+      toast.error("Informe o Nome do seu Perfil ou Empresa.");
+      return;
+    }
+    if (!apiKeyInput.trim()) {
+      toast.error("Informe a chave de API do Zernio.");
       return;
     }
     setLoading(true);
     try {
-      await zernio.saveConfig(apiKeyInput, undefined, undefined, newAccountName || "Conta Principal");
+      await zernio.saveConfig(apiKeyInput.trim(), undefined, undefined, newAccountName.trim());
       toast.success("Conta Zernio conectada com sucesso!");
       setApiKeyInput("");
       setNewAccountName("");
@@ -2548,26 +2552,28 @@ export default function Home() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {config.connected && (
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="newAccountNameProf">Nome Identificador da Conta Adicional</Label>
-                        <Input
-                          type="text"
-                          id="newAccountNameProf"
-                          placeholder="ex: Conta Agência, Cliente Secundário"
-                          value={newAccountName}
-                          onChange={(e) => setNewAccountName(e.target.value)}
-                        />
-                      </div>
-                    )}
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor="newAccountNameProf" className="text-xs font-semibold">
+                        {!config.connected ? "Nome do seu Perfil ou Empresa *" : "Nome da Conta Adicional *"}
+                      </Label>
+                      <Input
+                        type="text"
+                        id="newAccountNameProf"
+                        placeholder={!config.connected ? "ex: Minha Empresa, Agência Digital, Loja X" : "ex: Conta Agência, Cliente Secundário"}
+                        value={newAccountName}
+                        onChange={(e) => setNewAccountName(e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
                     <div className="grid w-full items-center gap-2">
-                      <Label htmlFor="apiKeyProf">Zernio API Key *</Label>
+                      <Label htmlFor="apiKeyProf" className="text-xs font-semibold">Zernio API Key *</Label>
                       <Input
                         type="password"
                         id="apiKeyProf"
                         placeholder="Cole sua Zernio API Key aqui"
                         value={apiKeyInput}
                         onChange={(e) => setApiKeyInput(e.target.value)}
+                        className="rounded-xl"
                       />
                       {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-primary/10 border border-primary/25 mt-1 overflow-hidden">
@@ -2624,7 +2630,7 @@ export default function Home() {
                           Cancelar
                         </Button>
                       )}
-                      <Button onClick={saveConfig} disabled={loading || !apiKeyInput.trim()} className="w-full sm:w-auto cursor-pointer">
+                      <Button onClick={saveConfig} disabled={loading || !apiKeyInput.trim() || !newAccountName.trim()} className="w-full sm:w-auto cursor-pointer">
                         {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
                         {config.connected ? "Conectar Conta Adicional" : "Conectar Conta"}
                       </Button>
@@ -2792,21 +2798,41 @@ export default function Home() {
                 </div>
 
                 <CardContent className="p-5 sm:p-6 space-y-5">
-                  <div className="space-y-2 max-w-2xl">
-                    <Label htmlFor="dashApiKey" className="text-xs font-semibold text-foreground flex items-center justify-between">
-                      <span>Chave de API do Zernio *</span>
-                      <span className="text-[11px] text-muted-foreground font-normal">Gere ou copie no painel oficial do Zernio</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="dashApiKey"
-                        type="password"
-                        placeholder="Cole sua Zernio API Key aqui"
-                        value={apiKeyInput}
-                        onChange={(e) => setApiKeyInput(e.target.value)}
-                        className="rounded-xl h-11 pr-10 text-sm font-mono bg-background/50 border-primary/20 focus:border-primary"
-                      />
-                      <Key className="w-4 h-4 text-muted-foreground/60 absolute right-3.5 top-3.5 pointer-events-none" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dashProfileName" className="text-xs font-semibold text-foreground flex items-center justify-between">
+                        <span>Nome do seu Perfil ou Empresa *</span>
+                        <span className="text-[11px] text-muted-foreground font-normal">Identificação no painel</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="dashProfileName"
+                          type="text"
+                          placeholder="ex: Minha Empresa, Agência Digital, Loja X"
+                          value={newAccountName}
+                          onChange={(e) => setNewAccountName(e.target.value)}
+                          className="rounded-xl h-11 pl-4 pr-10 text-sm bg-background/50 border-primary/20 focus:border-primary"
+                        />
+                        <User className="w-4 h-4 text-muted-foreground/60 absolute right-3.5 top-3.5 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dashApiKey" className="text-xs font-semibold text-foreground flex items-center justify-between">
+                        <span>Chave de API do Zernio *</span>
+                        <span className="text-[11px] text-muted-foreground font-normal">Gere no botão acima</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="dashApiKey"
+                          type="password"
+                          placeholder="Cole sua Zernio API Key aqui"
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          className="rounded-xl h-11 pl-4 pr-10 text-sm font-mono bg-background/50 border-primary/20 focus:border-primary"
+                        />
+                        <Key className="w-4 h-4 text-muted-foreground/60 absolute right-3.5 top-3.5 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 
@@ -2822,7 +2848,7 @@ export default function Home() {
 
                     <Button
                       onClick={saveConfig}
-                      disabled={loading || !apiKeyInput.trim()}
+                      disabled={loading || !apiKeyInput.trim() || !newAccountName.trim()}
                       className="w-full sm:w-auto px-6 rounded-xl font-bold gap-2 shadow-md cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       {loading ? (
