@@ -2767,16 +2767,18 @@ export default function Home() {
                       href="https://zernio.com/dashboard/api-keys"
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0"
+                      className="w-full sm:w-auto shrink-0"
                     >
                       <Button
                         type="button"
                         size="sm"
-                        variant="outline"
-                        className="w-full sm:w-auto rounded-xl gap-2 font-semibold text-xs border-primary/30 hover:bg-primary/10 cursor-pointer"
+                        className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto text-center"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Obter chave no Zernio
+                        <span className="btn-shimmer-sweep" />
+                        <span className="relative z-10 flex items-center justify-center gap-1.5 whitespace-nowrap">
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                          <span>Obtenha sua chave de API Zernio</span>
+                        </span>
                       </Button>
                     </a>
                   </div>
