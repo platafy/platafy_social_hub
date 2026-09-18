@@ -385,6 +385,7 @@ export function WhiteLabelSettings() {
         body: {
           action: "test-resend",
           email: targetEmail,
+          redirect_to: window.location.origin + "/#/redefinir-senha",
           resend_api_key: resendApiKey.trim(),
           resend_from_email: resendFromEmail.trim(),
           test_type: testEmailType,
@@ -1990,6 +1991,39 @@ export function WhiteLabelSettings() {
                 <p className="text-[11px] text-amber-400/90 pt-1">
                   ✓ Pronto! Todos os disparos de recuperação de senha passarão a chegar aos usuários 100% em português com a sua identidade visual.
                 </p>
+              </div>
+
+              {/* Caixa de Alerta: Configuração de Redirecionamento (Evita localhost:3000) */}
+              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-2.5">
+                <div className="flex items-center gap-2 text-rose-500 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  Passo Essencial: Alterar Site URL no Supabase (Evita erro de localhost:3000)
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Por padrão, novos projetos no Supabase vêm com a <strong>Site URL</strong> configurada como <code className="font-mono text-rose-400 bg-background/80 px-1 py-0.5 rounded">http://localhost:3000</code>. Se não for alterada, ao clicar no link do e-mail o usuário será levado para uma tela de erro no localhost.
+                </p>
+                <div className="space-y-1.5 text-xs text-muted-foreground font-medium">
+                  <p className="text-foreground">Para corrigir em menos de 1 minuto:</p>
+                  <ol className="space-y-1 list-decimal list-inside pl-1 text-[11px]">
+                    <li>
+                      No <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline inline-flex items-center gap-0.5 font-bold">Supabase Dashboard <ExternalLink className="w-2.5 h-2.5 inline" /></a>, acesse <strong>Authentication</strong> &rarr; <strong>URL Configuration</strong>.
+                    </li>
+                    <li>
+                      No campo <strong>Site URL</strong>, altere para o endereço real da sua plataforma (ex: <code className="font-mono text-amber-400 bg-background/80 px-1 py-0.5 rounded">https://platafy-social-hub.vercel.app</code> ou seu domínio próprio).
+                    </li>
+                    <li>
+                      Em <strong>Redirect URLs</strong>, adicione:
+                      <div className="pt-1 pl-4 space-y-0.5 font-mono text-[11px] text-slate-300">
+                        <div>• <code className="text-amber-400">https://platafy-social-hub.vercel.app/**</code></div>
+                        <div>• <code className="text-amber-400">https://platafy-social-hub.vercel.app/#/redefinir-senha</code></div>
+                        <div>• <code className="text-amber-400">https://platafy.com/**</code> (se tiver domínio próprio)</div>
+                      </div>
+                    </li>
+                    <li className="pt-1">
+                      Clique em <strong>Save</strong> no final da página do Supabase.
+                    </li>
+                  </ol>
+                </div>
               </div>
             </CardContent>
           </Card>

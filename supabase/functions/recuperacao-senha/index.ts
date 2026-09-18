@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   try {
     const body: RequestBody = await req.json().catch(() => ({}));
     const cleanEmail = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const redirect_to = body.redirect_to || 'https://platafy.com/#/redefinir-senha';
+    const redirect_to = body.redirect_to || 'https://platafy-social-hub.vercel.app/#/redefinir-senha';
     const action = body.action || 'recover';
 
     if (!cleanEmail) {
@@ -276,12 +276,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const resetUrl = linkData?.properties?.action_link;
+    let resetUrl = linkData?.properties?.action_link;
     if (!resetUrl) {
       return new Response(JSON.stringify({ error: 'Não foi possível gerar o link de recuperação.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Se o Supabase gerou action_link apontando para localhost:3000 por falta de Site URL no Dashboard, sanitiza para a URL de produção
+    if (resetUrl.includes('localhost:3000') || resetUrl.includes('localhost%3A3000')) {
+      resetUrl = resetUrl
+        .replace(/redirect_to=http%3A%2F%2Flocalhost%3A3000%2F%23%2Fredefinir-senha/g, `redirect_to=${encodeURIComponent(redirect_to)}`)
+        .replace(/redirect_to=http%3A%2F%2Flocalhost%3A3000%2F%3F/g, `redirect_to=${encodeURIComponent(redirect_to)}`)
+        .replace(/redirect_to=http%3A%2F%2Flocalhost%3A3000/g, `redirect_to=${encodeURIComponent(redirect_to)}`)
+        .replace(/redirect_to=http:\/\/localhost:3000\/?/g, `redirect_to=${encodeURIComponent(redirect_to)}`);
     }
 
     // 4. Se tiver Resend configurado, enviar e-mail transacional via Resend API
