@@ -12,8 +12,12 @@ import {
   CreditCard, Clock, CheckCircle2, AlertCircle,
   Edit3, ArrowUpRight, Ban, Play, Trash2,
   Phone, Mail, Building, Key, Eye, X,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, LogIn
 } from "lucide-react";
+import {
+  PLATAFY_ADMIN_BACKUP_KEY,
+  PLATAFY_IMPERSONATED_CLIENT_KEY,
+} from "@/components/ImpersonationBanner";
 
 export interface PlanItem {
   id: string;
@@ -90,9 +94,91 @@ export function SuperAdminClients() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingClient, setDeletingClient] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isImpersonateModalOpen, setIsImpersonateModalOpen] = useState(false);
+  const [impersonatingClientId, setImpersonatingClientId] = useState<string | null>(null);
 
   // Cliente selecionado para ação
   const [selectedClient, setSelectedClient] = useState<ClientRecord | null>(null);
+
+  const handleStartImpersonation = async (client: ClientRecord) => {
+    if (!client.email) {
+      toast.error("Cliente sem e-mail cadastrado.");
+      return;
+    }
+
+    setImpersonatingClientId(client.userId);
+    try {
+      // 1. Salvar sessão do Super Admin em sessionStorage
+      const { data: { session: adminSession } } = await supabase.auth.getSession();
+      if (!adminSession) {
+        throw new Error("Sessão do Super Admin não encontrada.");
+      }
+
+      sessionStorage.setItem(PLATAFY_ADMIN_BACKUP_KEY, JSON.stringify({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token,
+        email: adminSession.user?.email || "suporte@platafy.com",
+      }));
+
+      sessionStorage.setItem(PLATAFY_IMPERSONATED_CLIENT_KEY, JSON.stringify({
+        email: client.email,
+        fullName: client.fullName,
+        companyName: client.companyName,
+        tenantId: client.tenantId,
+        startedAt: new Date().toISOString(),
+      }));
+
+      // 2. Chamar Edge Function para gerar o link / OTP de acesso
+      const { data, error } = await supabase.functions.invoke("admin-clients", {
+        body: {
+          action: "impersonate-client",
+          client_email: client.email,
+          client_user_id: client.userId,
+          tenant_id: client.tenantId,
+          reason: "Suporte técnico ao cliente",
+        },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || "Falha ao gerar acesso de suporte.");
+      }
+
+      toast.success(`Acessando conta de ${client.companyName || client.fullName}...`);
+
+      // 3. Autenticar com o token hash via verifyOtp diretamente
+      if (data.hashed_token) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          token_hash: data.hashed_token,
+          type: "magiclink",
+        });
+
+        if (!otpError) {
+          window.dispatchEvent(new Event("platafy:impersonation-changed"));
+          window.location.hash = "/";
+          window.location.reload();
+          return;
+        }
+      }
+
+      // Fallback via action_link
+      if (data.action_link) {
+        window.dispatchEvent(new Event("platafy:impersonation-changed"));
+        window.location.href = data.action_link;
+        return;
+      }
+
+      throw new Error("Nenhum token ou link de acesso retornado pela Edge Function.");
+    } catch (err: any) {
+      console.error("Erro ao iniciar suporte ao cliente:", err);
+      // Limpar sessionStorage em caso de falha
+      sessionStorage.removeItem(PLATAFY_ADMIN_BACKUP_KEY);
+      sessionStorage.removeItem(PLATAFY_IMPERSONATED_CLIENT_KEY);
+      toast.error(err.message || "Erro ao entrar na conta do cliente.");
+    } finally {
+      setImpersonatingClientId(null);
+      setIsImpersonateModalOpen(false);
+    }
+  };
 
   // Formulário: Novo Cliente
   const [newClientForm, setNewClientForm] = useState({
@@ -1079,6 +1165,29 @@ export function SuperAdminClients() {
                             <Eye className="w-4 h-4" />
                           </Button>
 
+                          {/* Botão de Acessar Conta do Cliente (Modo Suporte) */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={isSuperAdminClient ? "Sua própria conta de Super Admin" : "Acessar Conta do Cliente (Modo Suporte)"}
+                            disabled={isSuperAdminClient || impersonatingClientId === client.userId}
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setIsImpersonateModalOpen(true);
+                            }}
+                            className={`h-8 w-8 p-0 ${
+                              isSuperAdminClient
+                                ? "text-muted-foreground/30 cursor-not-allowed"
+                                : "text-muted-foreground hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-500/10"
+                            }`}
+                          >
+                            {impersonatingClientId === client.userId ? (
+                              <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
+                            ) : (
+                              <LogIn className="w-4 h-4" />
+                            )}
+                          </Button>
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -2041,6 +2150,23 @@ export function SuperAdminClients() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Confirmação: Acessar Conta em Modo Suporte */}
+      {isImpersonateModalOpen && selectedClient && (
+        <ConfirmModal
+          open={isImpersonateModalOpen}
+          title="Acessar Conta do Cliente (Modo Suporte)"
+          message={`Você entrará no painel de "${selectedClient.companyName || selectedClient.fullName}" (${selectedClient.email}) para prestar suporte.\n\nUma barra superior fixa permanecerá visível para que você possa retornar à sua conta de Super Admin com 1 clique a qualquer momento.`}
+          confirmLabel={impersonatingClientId === selectedClient.userId ? "Conectando..." : "Entrar no Modo Suporte"}
+          variant="warning"
+          onConfirm={() => handleStartImpersonation(selectedClient)}
+          onCancel={() => {
+            if (!impersonatingClientId) {
+              setIsImpersonateModalOpen(false);
+            }
+          }}
+        />
       )}
     </div>
   );

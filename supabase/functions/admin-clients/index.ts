@@ -444,6 +444,74 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 7. Operação: impersonate-client
+    if (action === 'impersonate-client') {
+      const { client_user_id, client_email, reason = 'Acesso em modo suporte' } = body;
+
+      if (!client_email) {
+        return new Response(JSON.stringify({ error: 'E-mail do cliente é obrigatório para gerar o acesso.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Proteger para não gerar impersonate da própria conta
+      if (client_email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        return new Response(JSON.stringify({ error: 'Você já está conectado na conta do Super Admin.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Obter tenant_id do cliente para auditoria
+      const { data: clientProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, tenant_id, full_name')
+        .eq('email', client_email)
+        .maybeSingle();
+
+      // Gerar link mágico de login instantâneo usando API Admin do Supabase
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: client_email,
+      });
+
+      if (linkError || !linkData) {
+        return new Response(JSON.stringify({ error: linkError?.message || 'Falha ao gerar link de suporte.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Registrar auditoria permanente
+      try {
+        await supabaseAdmin.from('admin_audit_logs').insert({
+          admin_email: SUPER_ADMIN_EMAIL,
+          target_tenant_id: clientProfile?.tenant_id || body.tenant_id || null,
+          action: 'admin_impersonate_client',
+          details: {
+            client_email,
+            client_user_id: client_user_id || clientProfile?.id || null,
+            client_name: clientProfile?.full_name || null,
+            reason,
+            accessed_at: new Date().toISOString(),
+          },
+        });
+      } catch (auditErr) {
+        console.warn('Erro ao registrar auditoria de impersonate:', auditErr);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        action_link: linkData.properties.action_link,
+        hashed_token: linkData.properties.hashed_token,
+        email_otp: linkData.properties.email_otp,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: `Ação desconhecida: ${action}` }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

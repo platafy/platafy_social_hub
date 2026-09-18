@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ProtectedRoute, GuestOnlyRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -75,6 +76,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <ImpersonationBanner />
       <SupabaseConfigAlert />
       <SubscriptionBanner />
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-md transition-all">
