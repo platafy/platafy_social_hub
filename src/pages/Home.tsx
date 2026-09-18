@@ -1851,8 +1851,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setActiveTab("profiles")}
-            disabled={!config.connected}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all disabled:opacity-40 shrink-0 border-2 ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 border-2 ${
               activeTab === "profiles"
                 ? "border-[#ffaa00] bg-primary text-primary-foreground shadow-xs font-semibold"
                 : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
@@ -2072,7 +2071,6 @@ export default function Home() {
             variant={activeTab === "profiles" ? "secondary" : "ghost"}
             className={`justify-between w-full font-medium transition-all border-2 ${activeTab === "profiles" ? "border-[#ffaa00] font-semibold shadow-2xs text-foreground bg-secondary/85" : "border-transparent"}`}
             onClick={() => setActiveTab("profiles")}
-            disabled={!config.connected}
           >
             <span className="flex items-center gap-3">
               <User className="h-4 w-4 text-primary" /> Perfil
@@ -2364,7 +2362,13 @@ export default function Home() {
                       </span>
                       <Button
                         size="sm"
-                        onClick={() => setIsNewProfileModalOpen(true)}
+                        onClick={() => {
+                          if (!config.connected) {
+                            toast.error("Por favor, conecte sua Chave de API do Zernio abaixo antes de criar perfis.");
+                            return;
+                          }
+                          setIsNewProfileModalOpen(true);
+                        }}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
@@ -2524,14 +2528,17 @@ export default function Home() {
               )}
 
               {/* Conectar Nova Conta Form */}
-              <Card>
+              <Card className={!config.connected ? "border-2 border-primary/30 shadow-md bg-card/95" : ""}>
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5 text-primary" /> Conectar Nova Conta
+                      <Key className="h-5 w-5 text-primary" />
+                      {!config.connected ? "Conectar Chave de API do Zernio (Primeiro Acesso)" : "Conectar Nova Conta"}
                     </CardTitle>
                     <CardDescription>
-                      Adicione uma nova credencial e chave de API para vincular um novo perfil isolado.
+                      {!config.connected
+                        ? "Insira sua Zernio API Key para ativar este workspace e sincronizar seus perfis e canais."
+                        : "Adicione uma nova credencial e chave de API para vincular um novo perfil isolado."}
                     </CardDescription>
                   </div>
                 </CardHeader>
@@ -2736,13 +2743,101 @@ export default function Home() {
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             {!config.connected ? (
-              <Card className="border-dashed">
-                <CardHeader>
-                  <CardTitle className="text-center">Primeiros Passos</CardTitle>
-                  <CardDescription className="text-center">Você precisa configurar sua chave de API do Zernio para começar.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center pb-6">
-                  <Button onClick={handleOpenSettings}>Configurar API Key</Button>
+              <Card className="border-2 border-primary/25 shadow-lg overflow-hidden bg-card/90 backdrop-blur-md">
+                <div className="bg-gradient-to-r from-primary/15 via-amber-500/10 to-primary/5 p-5 sm:p-6 border-b border-border/60">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center shrink-0 border border-primary/30 shadow-inner">
+                        <Key className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+                          Primeiros Passos: Conecte sua Conta Zernio
+                          <span className="px-2 py-0.5 text-[10px] rounded-full bg-primary/15 text-primary font-bold uppercase tracking-wider">
+                            Passo Inicial
+                          </span>
+                        </h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 max-w-2xl">
+                          Para gerenciar suas redes sociais, agendar publicações e usar nossos Agentes de IA, insira sua chave de API do Zernio.
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href="https://zernio.com/dashboard/api-keys"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0"
+                    >
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="w-full sm:w-auto rounded-xl gap-2 font-semibold text-xs border-primary/30 hover:bg-primary/10 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Obter chave no Zernio
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+
+                <CardContent className="p-5 sm:p-6 space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="dashAccountName" className="text-xs font-semibold text-foreground">
+                        Nome Identificador da Conta (Opcional)
+                      </Label>
+                      <Input
+                        id="dashAccountName"
+                        type="text"
+                        placeholder="ex: Meu Workspace Principal"
+                        value={newAccountName}
+                        onChange={(e) => setNewAccountName(e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="dashApiKey" className="text-xs font-semibold text-foreground">
+                        Chave de API do Zernio *
+                      </Label>
+                      <Input
+                        id="dashApiKey"
+                        type="password"
+                        placeholder="Cole sua Zernio API Key aqui"
+                        value={apiKeyInput}
+                        onChange={(e) => setApiKeyInput(e.target.value)}
+                        className="rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("profiles")}
+                      className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <User className="w-4 h-4 text-primary" />
+                      <span>Preferir configurar na aba <strong>Perfil</strong>? Clique aqui</span>
+                    </button>
+
+                    <Button
+                      onClick={saveConfig}
+                      disabled={loading || !apiKeyInput.trim()}
+                      className="w-full sm:w-auto px-6 rounded-xl font-bold gap-2 shadow-md cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      {loading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" /> Conectando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" /> Conectar Conta
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
