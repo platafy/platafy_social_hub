@@ -431,20 +431,25 @@ export function CrmKanbanView({
                             <div className="flex items-start gap-3">
                               {/* Avatar */}
                               <div className="relative shrink-0">
-                                {contact.avatar_url ? (
+                                {contact.avatar_url || contact.avatarUrl ? (
                                   <img
-                                    src={contact.avatar_url}
+                                    src={contact.avatar_url || contact.avatarUrl}
                                     alt={contact.name}
                                     className="w-11 h-11 rounded-full object-cover border border-border/80 shadow-2xs"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (e.target as HTMLElement).style.display = 'none';
+                                      const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = 'flex';
                                     }}
                                   />
-                                ) : (
-                                  <div className="w-11 h-11 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold text-xs shadow-2xs">
-                                    {initials}
-                                  </div>
-                                )}
+                                ) : null}
+                                <div
+                                  className={`w-11 h-11 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold text-xs shadow-2xs ${
+                                    contact.avatar_url || contact.avatarUrl ? 'hidden' : ''
+                                  }`}
+                                >
+                                  {initials}
+                                </div>
                               </div>
 
                               {/* Info */}
@@ -582,17 +587,27 @@ export function CrmKanbanView({
                       {/* Lead info */}
                       <td className="p-3.5">
                         <div className="flex items-center gap-3">
-                          {contact.avatar_url ? (
-                            <img
-                              src={contact.avatar_url}
-                              alt={contact.name}
-                              className="w-9 h-9 rounded-full object-cover border border-border/80"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold text-xs">
+                          <div className="relative shrink-0">
+                            {contact.avatar_url || contact.avatarUrl ? (
+                              <img
+                                src={contact.avatar_url || contact.avatarUrl}
+                                alt={contact.name}
+                                className="w-9 h-9 rounded-full object-cover border border-border/80"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                  const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`w-9 h-9 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-bold text-xs ${
+                                contact.avatar_url || contact.avatarUrl ? 'hidden' : ''
+                              }`}
+                            >
                               {initials}
                             </div>
-                          )}
+                          </div>
                           <div>
                             <p className="font-bold text-foreground text-sm">{contact.name || 'Lead sem nome'}</p>
                             {contact.username && (

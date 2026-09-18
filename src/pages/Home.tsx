@@ -732,27 +732,44 @@ export default function Home() {
 
         if (!dbError && dbData && dbData.length > 0) {
           console.log('[Contacts] Loaded from local database:', dbData.length);
-          const mapped = dbData.map((d: any) => ({
-            id: d.id || d.zernio_contact_id,
-            zernio_contact_id: d.zernio_contact_id,
-            _id: d.zernio_contact_id,
-            name: d.name,
-            username: d.username,
-            email: d.email,
-            phone: d.phone,
-            avatar_url: d.avatar_url,
-            avatarUrl: d.avatar_url,
-            follower_count: d.follower_count,
-            tags: d.tags || [],
-            platforms: d.platforms || [],
-            crm_column_id: d.crm_column_id,
-            is_automation_enabled: d.is_automation_enabled !== false,
-            notes: d.notes,
-            last_interaction_at: d.last_interaction_at,
-            lastInteractionAt: d.last_interaction_at,
-            channels: (d.platforms || []).map((p: string) => ({ platform: p })),
-            raw_data: d.raw_data
-          }));
+          const mapped = dbData.map((d: any) => {
+            const cId = String(d.id || d.zernio_contact_id || '');
+            const cName = (d.name || '').toLowerCase().trim();
+            const cUsername = (d.username || '').toLowerCase().trim();
+            const conv = conversations.find((cv: any) => {
+              const pId = String(cv.participantId || cv.contactId || cv.participant?._id || cv.participant?.id || cv._id || cv.id || '');
+              if (cId && pId && (cId === pId || pId.includes(cId) || cId.includes(pId))) return true;
+              const cvUsername = (cv.participantUsername || cv.participant?.username || '').toLowerCase().trim();
+              if (cUsername && cvUsername && cUsername === cvUsername) return true;
+              const cvName = (cv.participantName || cv.contactName || cv.participant?.name || '').toLowerCase().trim();
+              if (cName && cvName && cName === cvName) return true;
+              return false;
+            });
+            const pic = d.avatar_url || conv?.participantPicture || conv?.picture || conv?.avatarUrl || conv?.participant?.picture || conv?.participant?.avatarUrl || null;
+            const fCount = d.follower_count || conv?.instagramProfile?.followerCount || 0;
+            const uName = d.username || conv?.participantUsername || conv?.participant?.username || null;
+            return {
+              id: d.id || d.zernio_contact_id,
+              zernio_contact_id: d.zernio_contact_id,
+              _id: d.zernio_contact_id,
+              name: d.name,
+              username: uName,
+              email: d.email,
+              phone: d.phone,
+              avatar_url: pic,
+              avatarUrl: pic,
+              follower_count: fCount,
+              tags: d.tags || [],
+              platforms: d.platforms || [],
+              crm_column_id: d.crm_column_id,
+              is_automation_enabled: d.is_automation_enabled !== false,
+              notes: d.notes,
+              last_interaction_at: d.last_interaction_at,
+              lastInteractionAt: d.last_interaction_at,
+              channels: (d.platforms || []).map((p: string) => ({ platform: p })),
+              raw_data: d.raw_data
+            };
+          });
           setContacts(mapped);
           setLoadingContacts(false);
           return;
@@ -780,6 +797,39 @@ export default function Home() {
         console.warn('[Contacts] Contacts API failed:', apiErr.message);
       }
 
+      // ── 2.1. Enriquecer contatos da API Zernio com dados das conversas (foto de perfil, seguidores, username) ──
+      if (list.length > 0 && conversations.length > 0) {
+        list = list.map((c: any) => {
+          const cId = String(c._id || c.id || '');
+          const cPlatformId = String(c.platformIdentifier || '');
+          const cName = (c.name || c.displayName || '').toLowerCase().trim();
+          const cUsername = (c.username || '').toLowerCase().trim();
+
+          const matchedConv = conversations.find((conv: any) => {
+            const pId = String(conv.participantId || conv.contactId || conv.participant?._id || conv.participant?.id || conv._id || conv.id || '');
+            if (cPlatformId && pId && (cPlatformId === pId || pId.includes(cPlatformId) || cPlatformId.includes(pId))) return true;
+            if (cId && pId && (cId === pId || pId.includes(cId) || cId.includes(pId))) return true;
+            const convUsername = (conv.participantUsername || conv.participant?.username || '').toLowerCase().trim();
+            if (cUsername && convUsername && cUsername === convUsername) return true;
+            const convName = (conv.participantName || conv.contactName || conv.participant?.name || '').toLowerCase().trim();
+            if (cName && convName && cName === convName) return true;
+            return false;
+          });
+
+          const picture = c.avatarUrl || c.avatar_url || c.picture || matchedConv?.participantPicture || matchedConv?.picture || matchedConv?.avatarUrl || matchedConv?.participantAvatar || null;
+          const username = c.username || matchedConv?.participantUsername || matchedConv?.participant?.username || null;
+          const followerCount = c.follower_count || c.followerCount || matchedConv?.instagramProfile?.followerCount || null;
+
+          return {
+            ...c,
+            avatarUrl: picture,
+            avatar_url: picture,
+            username,
+            follower_count: followerCount
+          };
+        });
+      }
+
       // ── 3. Fallback: extrai das conversas locais ──
       if (list.length === 0 && conversations.length > 0) {
         console.log('[Contacts] Falling back to conversations as contact source');
@@ -790,14 +840,19 @@ export default function Home() {
             const id = participant._id || participant.id || conv.participantId || conv.contactId || conv._id || conv.id;
             if (!id || seenIds.has(id)) return null;
             seenIds.add(id);
+            const picture = conv.participantPicture || conv.picture || participant.avatarUrl || participant.picture || participant.avatar || conv.avatarUrl || conv.avatar_url || conv.participantAvatar || null;
+            const username = conv.participantUsername || participant.username || null;
+            const followerCount = conv.instagramProfile?.followerCount ?? participant.follower_count ?? null;
             return {
               _id: id,
               id,
               name: participant.name || participant.displayName || conv.participantName || conv.contactName || 'Contato',
-              username: participant.username || conv.participantUsername || null,
+              username,
               email: participant.email || null,
               phone: participant.phone || null,
-              avatarUrl: participant.avatarUrl || participant.avatar || conv.participantAvatar || null,
+              avatarUrl: picture,
+              avatar_url: picture,
+              follower_count: followerCount,
               tags: [],
               channels: conv.platform || conv.networkType ? [{ platform: conv.platform || conv.networkType }] : [],
               _source: 'conversation',
@@ -838,17 +893,20 @@ export default function Home() {
           const cId = c._id || c.id;
           if (!cId) return null;
           const existingContact = contacts.find((ex: any) => ex.id === cId || ex.zernio_contact_id === cId);
+          const picture = c.avatarUrl || c.avatar_url || c.participantPicture || c.picture || existingContact?.avatar_url || null;
+          const username = c.username || existingContact?.username || null;
+          const followerCount = c.follower_count || c.followers_count || existingContact?.follower_count || null;
           return {
             tenant_id: tenantId,
             zernio_contact_id: String(cId),
             profile_id: selectedProfileId,
             integration_id: integration.id,
             name: c.name || c.displayName || null,
-            username: c.username || existingContact?.username || null,
+            username,
             email: c.email || null,
             phone: c.phone || c.phoneNumber || null,
-            avatar_url: c.avatarUrl || c.picture || c.avatar || null,
-            follower_count: c.follower_count || c.followers_count || existingContact?.follower_count || null,
+            avatar_url: picture,
+            follower_count: followerCount,
             crm_column_id: existingContact?.crm_column_id || c.crm_column_id || undefined,
             is_automation_enabled: existingContact?.is_automation_enabled !== undefined ? existingContact.is_automation_enabled : true,
             notes: existingContact?.notes || c.notes || null,
@@ -4088,6 +4146,7 @@ export default function Home() {
                         const initial = (conv.participantName || conv.contactName || (conv.participant?.name) || "C").charAt(0).toUpperCase();
                         const platform = conv.platform || "instagram";
                         const timeStr = formatConvTime(conv.updatedAt || conv.updated_at || conv.createdAt || conv.created_at);
+                        const avatarSrc = conv.participantPicture || conv.avatarUrl || conv.avatar_url || conv.picture || conv.avatar || conv.participant?.avatarUrl || conv.participant?.picture || conv.participantAvatar;
 
                         return (
                           <button
@@ -4096,10 +4155,26 @@ export default function Home() {
                             className={`w-full p-3.5 text-left flex items-start gap-3 transition-colors hover:bg-secondary/40 border-b border-border/30 ${isActive ? "bg-secondary border-l-2 border-primary" : ""}`}
                           >
                             <div className="relative flex-shrink-0">
-                              <div className="h-10 w-10 rounded-full bg-stone-100 border border-stone-200/60 flex items-center justify-center font-semibold text-stone-500 text-sm shadow-sm">
+                              {avatarSrc ? (
+                                <img
+                                  src={avatarSrc}
+                                  alt={conv.participantName || "avatar"}
+                                  className="h-10 w-10 rounded-full object-cover border border-stone-200/80 shadow-xs"
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                    const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div
+                                className={`h-10 w-10 rounded-full bg-stone-100 border border-stone-200/60 flex items-center justify-center font-semibold text-stone-500 text-sm shadow-xs ${
+                                  avatarSrc ? 'hidden' : ''
+                                }`}
+                              >
                                 {initial}
                               </div>
-                              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-stone-100">
+                              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs border border-stone-100">
                                 {getPlatformIcon(platform)}
                               </div>
                             </div>
@@ -4253,9 +4328,32 @@ export default function Home() {
                         >
                           <ChevronLeft className="h-5 w-5" />
                         </button>
-                        <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                          {(activeChat.participantName || activeChat.contactName || "C").slice(0, 2).toUpperCase()}
-                        </div>
+                        {(() => {
+                          const activeAvatarSrc = activeChat.participantPicture || activeChat.avatarUrl || activeChat.avatar_url || activeChat.picture || activeChat.avatar || activeChat.participant?.avatarUrl || activeChat.participant?.picture;
+                          return (
+                            <div className="relative shrink-0">
+                              {activeAvatarSrc ? (
+                                <img
+                                  src={activeAvatarSrc}
+                                  alt={activeChat.participantName || "avatar"}
+                                  className="h-9 w-9 rounded-full object-cover border border-primary/20 shadow-xs"
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                    const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div
+                                className={`h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0 ${
+                                  activeAvatarSrc ? 'hidden' : ''
+                                }`}
+                              >
+                                {(activeChat.participantName || activeChat.contactName || "C").slice(0, 2).toUpperCase()}
+                              </div>
+                            </div>
+                          );
+                        })()}
                         <div className="min-w-0">
                           <h4 className="font-bold text-sm text-foreground truncate">{activeChat.participantName || activeChat.contactName || "Contato"}</h4>
                           <p className={`text-[11px] flex items-center gap-1 font-medium truncate ${

@@ -40,6 +40,7 @@ export interface CrmContact {
   email?: string;
   phone?: string;
   avatar_url?: string;
+  avatarUrl?: string;
   follower_count?: number;
   tags?: string[];
   platforms?: string[];
@@ -159,17 +160,25 @@ export function CrmLeadDetailModal({
         <div className="p-6 border-b border-border/50 flex items-center justify-between bg-secondary/15">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              {contact.avatar_url ? (
+              {contact.avatar_url || contact.avatarUrl ? (
                 <img
-                  src={contact.avatar_url}
+                  src={contact.avatar_url || contact.avatarUrl}
                   alt={contact.name}
                   className="w-13 h-13 rounded-full object-cover border-2 border-primary/30 shadow-xs"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                    const fallback = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className="w-13 h-13 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-base border-2 border-primary/25">
-                  {initials}
-                </div>
-              )}
+              ) : null}
+              <div
+                className={`w-13 h-13 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-base border-2 border-primary/25 ${
+                  contact.avatar_url || contact.avatarUrl ? 'hidden' : ''
+                }`}
+              >
+                {initials}
+              </div>
               <span className="absolute -bottom-1 -right-1 bg-gradient-to-tr from-amber-500 to-rose-500 text-white p-1 rounded-full text-[10px] shadow-xs">
                 <Instagram className="h-3 w-3" />
               </span>
