@@ -11,8 +11,9 @@ import {
   Send, Plus, Trash2, CheckCircle2, AlertCircle, Clock,
   RefreshCw, Key, Check, HelpCircle, Upload,
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
-  DatabaseZap, Trash, Users, Phone, Tag, ChevronLeft, ChevronRight, CreditCard,
-  Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User, ExternalLink
+  DatabaseZap, Trash, Users, Tag, ChevronLeft, CreditCard,
+  Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User, ExternalLink,
+  Kanban, Columns3
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -33,6 +34,11 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { ConnectSocialModal } from "@/components/channels/ConnectSocialModal";
 import { SelectFacebookPageModal } from "@/components/channels/SelectFacebookPageModal";
 import { SeekAiPromoModal, SEEKAI_PROMO_STORAGE_KEY } from "@/components/settings/SeekAiPromoModal";
+import { CrmKanbanView } from "@/components/crm/CrmKanbanView";
+import { CrmColumnsConfig } from "@/components/crm/CrmColumnsConfig";
+import { CrmTagsConfig } from "@/components/crm/CrmTagsConfig";
+import { CrmLeadDetailModal } from "@/components/crm/CrmLeadDetailModal";
+import type { CrmColumn, CrmTag, CrmContact } from "@/components/crm/CrmLeadDetailModal";
 
 function getEmbedVideoInfo(url?: string | null) {
   if (!url) return null;
@@ -254,17 +260,17 @@ export default function Home() {
   const [cacheStats, setCacheStats] = useState<{ memory: number; session: number }>({ memory: 0, session: 0 });
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
-  // Contacts states
+  // Contacts & CRM states
   const [contacts, setContacts] = useState<any[]>([]);
-  const [contactsPage, setContactsPage] = useState(1);
-  const [contactsTotal, setContactsTotal] = useState(0);
-  const [contactsSearch, setContactsSearch] = useState('');
-  const [contactsTagFilter, setContactsTagFilter] = useState('');
   const [loadingContacts, setLoadingContacts] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<any>(null);
-  const [contactChannels, setContactChannels] = useState<any[]>([]);
-  const [loadingChannels, setLoadingChannels] = useState(false);
-  const CONTACTS_PER_PAGE = 50;
+  const CONTACTS_PER_PAGE = 250;
+
+  // CRM Kanban states
+  const [crmSubTab, setCrmSubTab] = useState<'kanban' | 'columns' | 'tags'>('kanban');
+  const [crmColumns, setCrmColumns] = useState<CrmColumn[]>([]);
+  const [crmTags, setCrmTags] = useState<CrmTag[]>([]);
+  const [crmDetailContact, setCrmDetailContact] = useState<CrmContact | null>(null);
+  const [loadingCrmMeta, setLoadingCrmMeta] = useState(false);
 
   const refreshCacheStats = useCallback(() => {
     setCacheStats(getCacheStats());
@@ -656,8 +662,42 @@ export default function Home() {
   }, [refreshCacheStats]);
 
   // ──────────────────────────────────────────────
-  // Contacts
+  // CRM & Contacts
   // ──────────────────────────────────────────────
+  const fetchCrmMetadata = useCallback(async () => {
+    if (!tenantId) return;
+    setLoadingCrmMeta(true);
+    try {
+      const [colsRes, tagsRes] = await Promise.all([
+        supabase
+          .from('crm_columns' as any)
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('order_index', { ascending: true }),
+        supabase
+          .from('crm_tags' as any)
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('name', { ascending: true })
+      ]);
+      if (colsRes.data) setCrmColumns(colsRes.data as any);
+      if (tagsRes.data) setCrmTags(tagsRes.data as any);
+    } catch (err) {
+      console.error('Error fetching CRM metadata:', err);
+    } finally {
+      setLoadingCrmMeta(false);
+    }
+  }, [tenantId]);
+
+  const handleUpdateContactLocal = useCallback((contactId: string, updates: Partial<CrmContact>) => {
+    setContacts((prev: any[]) =>
+      prev.map((c) => (c.id === contactId || c.zernio_contact_id === contactId ? { ...c, ...updates } : c))
+    );
+    setCrmDetailContact((prev: any) =>
+      prev && (prev.id === contactId || prev.zernio_contact_id === contactId) ? { ...prev, ...updates } : prev
+    );
+  }, []);
+
   const fetchContacts = useCallback(async (page = 1, search = '', tag = '', forceSync = false) => {
     if (!selectedProfileId || !config.integrations || config.integrations.length === 0) {
       toast.error('Sem integração configurada para buscar contatos.');
@@ -685,29 +725,35 @@ export default function Home() {
           .range((page - 1) * CONTACTS_PER_PAGE, page * CONTACTS_PER_PAGE - 1);
 
         if (search) {
-          dbQuery = dbQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+          dbQuery = dbQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`);
         }
 
-        const { data: dbData, count: dbCount, error: dbError } = await dbQuery;
+        const { data: dbData, error: dbError } = await dbQuery;
 
         if (!dbError && dbData && dbData.length > 0) {
           console.log('[Contacts] Loaded from local database:', dbData.length);
           const mapped = dbData.map((d: any) => ({
-            id: d.zernio_contact_id,
+            id: d.id || d.zernio_contact_id,
+            zernio_contact_id: d.zernio_contact_id,
             _id: d.zernio_contact_id,
             name: d.name,
+            username: d.username,
             email: d.email,
             phone: d.phone,
+            avatar_url: d.avatar_url,
             avatarUrl: d.avatar_url,
+            follower_count: d.follower_count,
             tags: d.tags || [],
             platforms: d.platforms || [],
+            crm_column_id: d.crm_column_id,
+            is_automation_enabled: d.is_automation_enabled !== false,
+            notes: d.notes,
+            last_interaction_at: d.last_interaction_at,
             lastInteractionAt: d.last_interaction_at,
             channels: (d.platforms || []).map((p: string) => ({ platform: p })),
             raw_data: d.raw_data
           }));
           setContacts(mapped);
-          setContactsTotal(dbCount || mapped.length);
-          setContactsPage(page);
           setLoadingContacts(false);
           return;
         }
@@ -715,7 +761,6 @@ export default function Home() {
 
       // ── 2. Tenta Zernio contacts API se forceSync ou banco vazio ──
       let list: any[] = [];
-      let total = 0;
       try {
         const res = await zernio.getContacts(selectedProfileId, integration.id, page, search, tag);
         console.log('[Contacts] API raw response:', JSON.stringify(res)?.slice(0, 300));
@@ -731,7 +776,6 @@ export default function Home() {
         } else if (res?.results && Array.isArray(res.results)) {
           list = res.results;
         }
-        total = res?.total ?? res?.meta?.total ?? res?.count ?? list.length;
       } catch (apiErr: any) {
         console.warn('[Contacts] Contacts API failed:', apiErr.message);
       }
@@ -772,12 +816,9 @@ export default function Home() {
             (c.email || '').toLowerCase().includes(q)
           );
         }
-        total = list.length;
       }
 
       setContacts(list);
-      setContactsTotal(total);
-      setContactsPage(page);
 
       if (list.length === 0) {
         if (forceSync) {
@@ -786,7 +827,7 @@ export default function Home() {
         return;
       }
 
-      // ── 4. Persiste no Supabase ──
+      // ── 4. Persiste no Supabase preservando campos CRM ──
       if (!tenantId) {
         console.warn('[Contacts] tenantId is null — skipping upsert');
         return;
@@ -796,16 +837,22 @@ export default function Home() {
         .map((c: any) => {
           const cId = c._id || c.id;
           if (!cId) return null;
+          const existingContact = contacts.find((ex: any) => ex.id === cId || ex.zernio_contact_id === cId);
           return {
             tenant_id: tenantId,
             zernio_contact_id: String(cId),
             profile_id: selectedProfileId,
             integration_id: integration.id,
             name: c.name || c.displayName || null,
+            username: c.username || existingContact?.username || null,
             email: c.email || null,
             phone: c.phone || c.phoneNumber || null,
             avatar_url: c.avatarUrl || c.picture || c.avatar || null,
-            tags: Array.isArray(c.tags) ? c.tags : [],
+            follower_count: c.follower_count || c.followers_count || existingContact?.follower_count || null,
+            crm_column_id: existingContact?.crm_column_id || c.crm_column_id || undefined,
+            is_automation_enabled: existingContact?.is_automation_enabled !== undefined ? existingContact.is_automation_enabled : true,
+            notes: existingContact?.notes || c.notes || null,
+            tags: Array.isArray(c.tags) && c.tags.length > 0 ? c.tags : (existingContact?.tags || []),
             platforms: (c.channels || []).map((ch: any) => ch.platform || ch.type).filter(Boolean),
             last_interaction_at: c.lastInteractionAt || c.updatedAt || null,
             raw_data: c._source === 'conversation' ? undefined : c,
@@ -831,39 +878,23 @@ export default function Home() {
     } finally {
       setLoadingContacts(false);
     }
-  }, [selectedProfileId, config.integrations, tenantId, conversations]);
+  }, [selectedProfileId, config.integrations, tenantId, conversations, contacts]);
 
-  // Carrega contatos automaticamente ao abrir a aba
+  // Carrega contatos e colunas do CRM automaticamente ao abrir a aba
   useEffect(() => {
-    if (activeTab === 'contacts' && selectedProfileId) {
-      fetchContacts(1, contactsSearch, contactsTagFilter, false);
+    if (activeTab === 'contacts') {
+      if (tenantId) fetchCrmMetadata();
+      if (selectedProfileId) {
+        fetchContacts(1, '', '', false);
+      }
     }
-  }, [activeTab, selectedProfileId]);
-
-  const handleOpenContactChannels = async (contact: any) => {
-    setSelectedContact(contact);
-    setLoadingChannels(true);
-    setContactChannels([]);
-    try {
-      if (!config.integrations || config.integrations.length === 0) return;
-      const integration = config.integrations[0];
-      const contactId = contact._id || contact.id;
-      const res = await zernio.getContactChannels(contactId, integration.id);
-      setContactChannels(res?.channels || []);
-    } catch {
-      // Channels may not be available — fall back to raw_data.channels
-      setContactChannels(contact.channels || []);
-    } finally {
-      setLoadingChannels(false);
-    }
-  };
+  }, [activeTab, selectedProfileId, tenantId, fetchCrmMetadata]);
 
   const handleOpenConversationFromContact = async (contact: any) => {
     const contactId = contact._id || contact.id;
     const name = (contact.name || contact.displayName || '').toLowerCase();
     const username = (contact.username || '').toLowerCase();
 
-    setSelectedContact(null);
     setInboxType('dms');
     setActiveTab('inbox');
 
@@ -1936,7 +1967,7 @@ export default function Home() {
                 : "border-border/70 bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Users className="h-3.5 w-3.5" /> Contatos
+            <Kanban className="h-3.5 w-3.5" /> CRM & Contatos
           </button>
           <button
             type="button"
@@ -2148,7 +2179,7 @@ export default function Home() {
             onClick={() => setActiveTab("contacts")}
             disabled={!config.connected}
           >
-            <Users className="h-4 w-4 text-primary" /> Contatos
+            <Kanban className="h-4 w-4 text-primary" /> CRM & Contatos
           </Button>
         </div>
 
@@ -4432,307 +4463,123 @@ export default function Home() {
           );
         })()}
 
-        {/* Contacts Tab */}
+        {/* CRM & Contacts Tab */}
         {activeTab === "contacts" && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between flex-wrap gap-3">
+            {/* CRM Navigation Sub-Tabs matching DirectFlow */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/70 border border-border/80 rounded-2xl p-4 shadow-sm backdrop-blur-md">
+              <div>
+                <div className="flex items-center gap-2.5 text-primary mb-1">
+                  <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                    <Kanban className="h-5 w-5 text-primary" />
+                  </div>
                   <div>
-                    <div className="flex items-center gap-2 text-primary mb-1">
-                      <Users className="h-6 w-6" />
-                      <CardTitle className="text-xl">Contatos</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Gerencie todos os contatos das suas redes sociais. Clique em um contato para ver detalhes ou abrir uma conversa no inbox.
-                    </CardDescription>
+                    <h2 className="text-xl font-bold text-foreground">CRM & Funil de Contatos</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Organize leads em estágios, controle automações individuais e converta conversas em vendas.
+                    </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchContacts(1, contactsSearch, contactsTagFilter, true)}
-                    disabled={loadingContacts}
-                    className="gap-2 h-8 text-xs"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${loadingContacts ? 'animate-spin' : ''}`} />
-                    {loadingContacts ? 'Sincronizando...' : 'Sincronizar'}
-                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Filters bar */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      id="contacts-search"
-                      placeholder="Buscar por nome, email ou username..."
-                      value={contactsSearch}
-                      onChange={e => setContactsSearch(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') fetchContacts(1, contactsSearch, contactsTagFilter, false); }}
-                      className="pl-9 h-9 text-sm"
-                    />
-                  </div>
-                  <Input
-                    id="contacts-tag-filter"
-                    placeholder="Filtrar por tag..."
-                    value={contactsTagFilter}
-                    onChange={e => setContactsTagFilter(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') fetchContacts(1, contactsSearch, contactsTagFilter, false); }}
-                    className="h-9 text-sm sm:w-44"
-                  />
-                  <Button size="sm" onClick={() => fetchContacts(1, contactsSearch, contactsTagFilter, false)} className="h-9 text-xs gap-1.5">
-                    <Search className="h-3.5 w-3.5" /> Buscar
-                  </Button>
-                </div>
+              </div>
 
-                {/* Loading state */}
-                {loadingContacts && contacts.length === 0 && (
-                  <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
-                    <RefreshCw className="h-4 w-4 animate-spin" /> Carregando contatos...
-                  </div>
-                )}
+              {/* Sub-tab pills */}
+              <div className="flex items-center gap-1.5 p-1 bg-secondary/70 border border-border/70 rounded-xl shrink-0 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setCrmSubTab('kanban')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    crmSubTab === 'kanban'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                  }`}
+                >
+                  <Kanban className="h-3.5 w-3.5" />
+                  <span>Visualizar CRM</span>
+                </button>
 
-                {/* Empty state */}
-                {!loadingContacts && contacts.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-8 w-8 text-primary/60" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">Nenhum contato encontrado</p>
-                      <p className="text-xs text-muted-foreground mt-1">Clique em "Sincronizar" para buscar seus contatos da API Zernio.</p>
-                    </div>
-                    <Button onClick={() => fetchContacts(1, '', '', true)} variant="outline" size="sm" className="gap-2">
-                      <RefreshCw className="h-3.5 w-3.5" /> Sincronizar agora
-                    </Button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setCrmSubTab('columns')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    crmSubTab === 'columns'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                  }`}
+                >
+                  <Columns3 className="h-3.5 w-3.5" />
+                  <span>Configurar Colunas</span>
+                </button>
 
-                {/* Contacts grid */}
-                {contacts.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {contacts.map((contact: any, idx: number) => {
-                      const contactId = contact._id || contact.id;
-                      const platforms: string[] = contact.platforms || (contact.channels || []).map((ch: any) => ch.platform || ch.type).filter(Boolean);
-                      const initials = (contact.name || contact.displayName || '?').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
-                      const tags: string[] = contact.tags || [];
-                      return (
-                        <button
-                          key={contactId || idx}
-                          id={`contact-card-${contactId || idx}`}
-                          onClick={() => handleOpenContactChannels(contact)}
-                          className="flex items-start gap-3 p-3.5 rounded-lg border border-border/60 bg-card hover:bg-secondary/30 hover:border-primary/40 text-left transition-all group w-full"
-                        >
-                          {/* Avatar */}
-                          <div className="shrink-0">
-                            {contact.avatarUrl || contact.picture ? (
-                              <img
-                                src={contact.avatarUrl || contact.picture}
-                                alt={contact.name || 'avatar'}
-                                className="w-10 h-10 rounded-full object-cover border border-border/40"
-                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary text-sm font-bold border border-primary/20">
-                                {initials}
-                              </div>
-                            )}
-                          </div>
-                          {/* Info */}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                              {contact.name || contact.displayName || 'Sem nome'}
-                            </p>
-                            {contact.email && (
-                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                                <Mail className="h-3 w-3 shrink-0" />{contact.email}
-                              </p>
-                            )}
-                            {contact.phone && (
-                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                                <Phone className="h-3 w-3 shrink-0" />{contact.phone}
-                              </p>
-                            )}
-                            {/* Platform chips */}
-                            {platforms.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {platforms.slice(0, 3).map((p: string) => (
-                                  <span key={p} className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground uppercase font-medium tracking-wider">
-                                    {p}
-                                  </span>
-                                ))}
-                                {platforms.length > 3 && (
-                                  <span className="text-[9px] text-muted-foreground">+{platforms.length - 3}</span>
-                                )}
-                              </div>
-                            )}
-                            {/* Tags */}
-                            {tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {tags.slice(0, 2).map((t: string) => (
-                                  <span key={t} className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                                    <Tag className="h-2 w-2" />{t}
-                                  </span>
-                                ))}
-                                {tags.length > 2 && <span className="text-[9px] text-muted-foreground">+{tags.length - 2}</span>}
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setCrmSubTab('tags')}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    crmSubTab === 'tags'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                  }`}
+                >
+                  <Tag className="h-3.5 w-3.5" />
+                  <span>Gerenciar Tags</span>
+                </button>
+              </div>
+            </div>
 
-                {/* Pagination */}
-                {contactsTotal > CONTACTS_PER_PAGE && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-border/40">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={contactsPage <= 1 || loadingContacts}
-                      onClick={() => fetchContacts(contactsPage - 1, contactsSearch, contactsTagFilter)}
-                      className="gap-1.5 h-8 text-xs w-full sm:w-auto"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Anterior
-                    </Button>
-                    <span className="text-xs text-muted-foreground text-center">
-                      Página {contactsPage} de {Math.ceil(contactsTotal / CONTACTS_PER_PAGE)} · {contactsTotal} contatos
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={contactsPage >= Math.ceil(contactsTotal / CONTACTS_PER_PAGE) || loadingContacts}
-                      onClick={() => fetchContacts(contactsPage + 1, contactsSearch, contactsTagFilter)}
-                      className="gap-1.5 h-8 text-xs w-full sm:w-auto"
-                    >
-                      Próxima <ChevronRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Sub-tab 1: Visualizar CRM (Kanban & List view) */}
+            {crmSubTab === 'kanban' && (
+              <CrmKanbanView
+                tenantId={tenantId || ''}
+                contacts={contacts}
+                columns={crmColumns}
+                tags={crmTags}
+                loading={loadingContacts || loadingCrmMeta}
+                onRefresh={(forceSync) => {
+                  fetchCrmMetadata();
+                  fetchContacts(1, '', '', !!forceSync);
+                }}
+                onSelectContactForDetails={(contact) => setCrmDetailContact(contact)}
+                onOpenConversation={(contact) => handleOpenConversationFromContact(contact)}
+                onUpdateContactLocal={handleUpdateContactLocal}
+              />
+            )}
+
+            {/* Sub-tab 2: Configurar Colunas */}
+            {crmSubTab === 'columns' && (
+              <CrmColumnsConfig
+                tenantId={tenantId || ''}
+                columns={crmColumns}
+                onReloadColumns={fetchCrmMetadata}
+              />
+            )}
+
+            {/* Sub-tab 3: Gerenciar Tags */}
+            {crmSubTab === 'tags' && (
+              <CrmTagsConfig
+                tenantId={tenantId || ''}
+                tags={crmTags}
+                onReloadTags={fetchCrmMetadata}
+              />
+            )}
           </div>
         )}
 
-        {/* Contact Detail Drawer/Modal */}
-        {selectedContact && (
-          <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-end sm:justify-center bg-black/50 backdrop-blur-sm"
-            onClick={e => { if (e.target === e.currentTarget) setSelectedContact(null); }}
-          >
-            <div className="bg-card border border-border/60 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-300">
-              {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border/40 sticky top-0 bg-card z-10">
-                <h3 className="font-bold text-base">Detalhes do Contato</h3>
-                <button
-                  onClick={() => setSelectedContact(null)}
-                  className="p-1.5 rounded-full hover:bg-secondary/50 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 space-y-5">
-                {/* Avatar + Name */}
-                <div className="flex items-center gap-4">
-                  {selectedContact.avatarUrl || selectedContact.picture ? (
-                    <img
-                      src={selectedContact.avatarUrl || selectedContact.picture}
-                      alt={selectedContact.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-primary/15 border-2 border-primary/20 flex items-center justify-center text-primary text-xl font-bold">
-                      {(selectedContact.name || '?').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{selectedContact.name || selectedContact.displayName || 'Sem nome'}</p>
-                    {selectedContact.username && (
-                      <p className="text-sm text-muted-foreground">@{selectedContact.username}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contact info */}
-                <div className="space-y-2">
-                  {selectedContact.email && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4 shrink-0 text-primary/60" />
-                      <span>{selectedContact.email}</span>
-                    </div>
-                  )}
-                  {selectedContact.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4 shrink-0 text-primary/60" />
-                      <span>{selectedContact.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Tags */}
-                {(selectedContact.tags || []).length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5" /> Tags
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(selectedContact.tags || []).map((t: string) => (
-                        <span key={t} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Channels */}
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Canais Vinculados
-                  </p>
-                  {loadingChannels ? (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Carregando canais...
-                    </div>
-                  ) : contactChannels.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {contactChannels.map((ch: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-secondary/30 border border-border/30">
-                          <div className="shrink-0">{getPlatformIcon(ch.platform || ch.type)}</div>
-                          <div>
-                            <p className="text-xs font-semibold capitalize">{ch.platform || ch.type}</p>
-                            {ch.username && <p className="text-[10px] text-muted-foreground">@{ch.username}</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground py-1">Nenhum canal vinculado encontrado.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="p-5 border-t border-border/40 flex gap-2 sticky bottom-0 bg-card">
-                <Button
-                  id="contact-open-dm-btn"
-                  className="flex-1 gap-2"
-                  onClick={() => handleOpenConversationFromContact(selectedContact)}
-                >
-                  <MessageSquare className="h-4 w-4" /> Abrir DM / Conversa
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedContact(null)}
-                  className="shrink-0"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          </div>
+        {/* CRM Lead Detail Modal */}
+        {crmDetailContact && (
+          <CrmLeadDetailModal
+            contact={crmDetailContact}
+            columns={crmColumns}
+            availableTags={crmTags}
+            open={!!crmDetailContact}
+            onClose={() => setCrmDetailContact(null)}
+            onUpdateContact={(updated) => {
+              handleUpdateContactLocal(updated.id, updated);
+              setCrmDetailContact(null);
+            }}
+            onOpenConversation={(contact) => {
+              setCrmDetailContact(null);
+              handleOpenConversationFromContact(contact);
+            }}
+          />
         )}
 
         {/* Automation Tab */}

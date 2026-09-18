@@ -360,6 +360,37 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
         return { success: true, message: 'Duplicate event skipped' };
       }
     }
+
+    // Loop Guard 4: Check if automation is paused individually for this lead in CRM
+    if (senderUsername || authorId) {
+      try {
+        let contactQuery = supabaseClient
+          .from('zernio_contacts')
+          .select('id, name, is_automation_enabled')
+          .eq('tenant_id', tenantId);
+
+        if (authorId) {
+          contactQuery = contactQuery.or(`zernio_contact_id.eq.${authorId},name.ilike.%${senderUsername}%,username.ilike.%${senderUsername}%`);
+        } else {
+          contactQuery = contactQuery.or(`name.ilike.%${senderUsername}%,username.ilike.%${senderUsername}%`);
+        }
+
+        const { data: matchedContact } = await contactQuery.limit(1).maybeSingle();
+
+        if (matchedContact && matchedContact.is_automation_enabled === false) {
+          await logEarlyExit(
+            'ignored',
+            `Ignorado: Automação pausada manualmente para o lead @${senderUsername} no CRM.`
+          );
+          return {
+            success: true,
+            message: `Ignored: automation disabled for contact @${senderUsername}`
+          };
+        }
+      } catch (crmErr) {
+        console.warn('CRM automation check failed (non-blocking):', crmErr);
+      }
+    }
   }
 
   // 7. Initialize primary log entry
