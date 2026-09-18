@@ -139,8 +139,23 @@ export function SuperAdminClients() {
         },
       });
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || error?.message || "Falha ao gerar acesso de suporte.");
+      if (error) {
+        let errorMsg = error.message;
+        try {
+          if ('context' in error && (error as any).context?.json) {
+            const errBody = await (error as any).context.json();
+            if (errBody?.error) {
+              errorMsg = errBody.error;
+            }
+          }
+        } catch {
+          // ignore
+        }
+        throw new Error(errorMsg || "Falha ao gerar acesso de suporte.");
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Falha ao gerar acesso de suporte.");
       }
 
       toast.success(`Acessando conta de ${client.companyName || client.fullName}...`);
@@ -158,6 +173,7 @@ export function SuperAdminClients() {
           window.location.reload();
           return;
         }
+        console.warn("verifyOtp retornou aviso/erro, tentando fallback via action_link:", otpError);
       }
 
       // Fallback via action_link

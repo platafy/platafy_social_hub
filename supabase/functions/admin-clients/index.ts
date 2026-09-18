@@ -488,6 +488,7 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from('admin_audit_logs').insert({
           admin_email: SUPER_ADMIN_EMAIL,
           target_tenant_id: clientProfile?.tenant_id || body.tenant_id || null,
+          target_user_id: client_user_id || clientProfile?.id || null,
           action: 'admin_impersonate_client',
           details: {
             client_email,
