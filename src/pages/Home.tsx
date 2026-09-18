@@ -547,14 +547,13 @@ export default function Home() {
 
                 const needsUpdate = !existing ||
                   !existing.isActive ||
-                  !['comment.received', 'comment.created', 'message.received', 'message.created'].some((ev: string) => existing.events?.includes(ev));
+                  !['comment.received', 'message.received'].some((ev: string) => existing.events?.includes(ev));
 
                 if (needsUpdate) {
                   const events = [
                     "comment.received",
-                    "comment.created",
                     "message.received",
-                    "message.created",
+                    "message.sent",
                     "post.published",
                     "post.failed",
                     "post.partial"
