@@ -123,7 +123,6 @@ export default function Home() {
     integrations: []
   });
   const [apiKeyInput, setApiKeyInput] = useState("");
-  const [profileIdInput, setProfileIdInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiKeys, setAiKeys] = useState({ gemini: '', openai: '', anthropic: '', mistral: '', groq: '', seekai: '' });
 
@@ -134,6 +133,7 @@ export default function Home() {
   const [editingAccountName, setEditingAccountName] = useState("");
   const [editingProfileId, setEditingProfileId] = useState("");
   const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [showAddAccountForm, setShowAddAccountForm] = useState(false);
 
   // States for general data
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -1352,11 +1352,11 @@ export default function Home() {
     }
     setLoading(true);
     try {
-      await zernio.saveConfig(apiKeyInput, profileIdInput || undefined, undefined, newAccountName || undefined);
+      await zernio.saveConfig(apiKeyInput, undefined, undefined, newAccountName || "Conta Principal");
       toast.success("Conta Zernio conectada com sucesso!");
       setApiKeyInput("");
-      setProfileIdInput("");
       setNewAccountName("");
+      setShowAddAccountForm(false);
       await fetchConfig(true);
     } catch (err: any) {
       toast.error("Erro ao salvar: " + err.message);
@@ -2493,27 +2493,15 @@ export default function Home() {
                     <CardTitle className="text-sm font-bold">Editar Identificação da Conta</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="editNameProf" className="text-xs">Nome da Conta / Identificador</Label>
-                        <Input
-                          id="editNameProf"
-                          value={editingAccountName}
-                          onChange={(e) => setEditingAccountName(e.target.value)}
-                          placeholder="ex: Conta Principal, Cliente X"
-                          className="bg-card"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="editProfileProf" className="text-xs">Profile ID (Opcional)</Label>
-                        <Input
-                          id="editProfileProf"
-                          value={editingProfileId}
-                          onChange={(e) => setEditingProfileId(e.target.value)}
-                          placeholder="ex: profile-xxxxxxxx"
-                          className="bg-card"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="editNameProf" className="text-xs font-semibold">Nome da Conta / Identificador</Label>
+                      <Input
+                        id="editNameProf"
+                        value={editingAccountName}
+                        onChange={(e) => setEditingAccountName(e.target.value)}
+                        placeholder="ex: Conta Principal, Cliente X"
+                        className="bg-card"
+                      />
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
@@ -2527,104 +2515,123 @@ export default function Home() {
                 </Card>
               )}
 
-              {/* Conectar Nova Conta Form */}
-              <Card className={!config.connected ? "border-2 border-primary/30 shadow-md bg-card/95" : ""}>
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5 text-primary" />
-                      {!config.connected ? "Conectar Chave de API do Zernio (Primeiro Acesso)" : "Conectar Nova Conta"}
-                    </CardTitle>
-                    <CardDescription>
-                      {!config.connected
-                        ? "Insira sua Zernio API Key para ativar este workspace e sincronizar seus perfis e canais."
-                        : "Adicione uma nova credencial e chave de API para vincular um novo perfil isolado."}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="newAccountNameProf">Nome Identificador</Label>
-                    <Input
-                      type="text"
-                      id="newAccountNameProf"
-                      placeholder="ex: Conta Agência, Cliente Secundário"
-                      value={newAccountName}
-                      onChange={(e) => setNewAccountName(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid w-full items-center gap-2">
-                    <Label htmlFor="apiKeyProf">Zernio API Key</Label>
-                    <Input
-                      type="password"
-                      id="apiKeyProf"
-                      placeholder="Cole sua Zernio API Key aqui"
-                      value={apiKeyInput}
-                      onChange={(e) => setApiKeyInput(e.target.value)}
-                    />
-                    {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-primary/10 border border-primary/25 mt-1 overflow-hidden">
-                      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                          <Key className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
-                          <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
-                        </div>
-                      </div>
-                      <a
-                        href="https://zernio.com/dashboard/api-keys"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full sm:w-auto shrink-0"
-                      >
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto text-center"
-                        >
-                          <span className="btn-shimmer-sweep" />
-                          <span className="relative z-10 flex items-center justify-center gap-1.5 whitespace-nowrap">
-                            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                            <span>Obtenha sua chave de API Zernio</span>
-                          </span>
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="profileIdProf">Zernio Profile ID (Opcional)</Label>
-                    <Input
-                      type="text"
-                      id="profileIdProf"
-                      placeholder="ex: profile-xxxxxxxx"
-                      value={profileIdInput}
-                      onChange={(e) => setProfileIdInput(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      O ID do perfil padrão de redes sociais configurado nesta conta do Zernio.
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    {config.connected ? (
-                      <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
-                        <Check className="h-4 w-4" /> {config.integrations?.length} Conta(s) Conectada(s)
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-amber-500 font-medium">
-                        <AlertCircle className="h-4 w-4" /> Desconectado
-                      </span>
-                    )}
-                  </div>
-                  <Button onClick={saveConfig} disabled={loading} className="w-full sm:w-auto">
-                    {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                    Conectar Conta
+              {/* Botão discreto para adicionar conta adicional se já estiver conectado */}
+              {config.connected && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddAccountForm(!showAddAccountForm)}
+                    className="text-xs font-semibold gap-2 rounded-xl border-dashed hover:border-primary/50 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {showAddAccountForm ? "Ocultar Formulário" : "Conectar Conta Adicional (Opcional)"}
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              )}
+
+              {/* Conectar Nova Conta Form (exibido apenas no primeiro acesso ou se solicitado explicitamente) */}
+              {(!config.connected || showAddAccountForm) && (
+                <Card className={!config.connected ? "border-2 border-primary/30 shadow-md bg-card/95" : "border border-border/80"}>
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Key className="h-5 w-5 text-primary" />
+                        {!config.connected ? "Conectar Chave de API do Zernio" : "Conectar Conta Adicional"}
+                      </CardTitle>
+                      <CardDescription>
+                        {!config.connected
+                          ? "Insira sua Zernio API Key para ativar este workspace e sincronizar seus perfis e canais."
+                          : "Adicione uma nova credencial e chave de API para vincular um workspace ou cliente secundário."}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {config.connected && (
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="newAccountNameProf">Nome Identificador da Conta Adicional</Label>
+                        <Input
+                          type="text"
+                          id="newAccountNameProf"
+                          placeholder="ex: Conta Agência, Cliente Secundário"
+                          value={newAccountName}
+                          onChange={(e) => setNewAccountName(e.target.value)}
+                        />
+                      </div>
+                    )}
+                    <div className="grid w-full items-center gap-2">
+                      <Label htmlFor="apiKeyProf">Zernio API Key *</Label>
+                      <Input
+                        type="password"
+                        id="apiKeyProf"
+                        placeholder="Cole sua Zernio API Key aqui"
+                        value={apiKeyInput}
+                        onChange={(e) => setApiKeyInput(e.target.value)}
+                      />
+                      {/* Bloco de Destaque Animado com Botão para zernio.com/dashboard/api-keys */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-primary/10 border border-primary/25 mt-1 overflow-hidden">
+                        <div className="flex items-center gap-2.5 text-xs text-foreground font-medium min-w-0">
+                          <div className="w-8 h-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                            <Key className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground">Precisa da sua chave de acesso?</p>
+                            <p className="text-[11px] text-muted-foreground">Gere ou copie diretamente no painel oficial do Zernio</p>
+                          </div>
+                        </div>
+                        <a
+                          href="https://zernio.com/dashboard/api-keys"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full sm:w-auto shrink-0"
+                        >
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="btn-connect-highlight relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold cursor-pointer rounded-xl border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95 px-3.5 py-2 shadow-md shadow-primary/25 w-full sm:w-auto text-center"
+                          >
+                            <span className="btn-shimmer-sweep" />
+                            <span className="relative z-10 flex items-center justify-center gap-1.5 whitespace-nowrap">
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                              <span>Obtenha sua chave de API Zernio</span>
+                            </span>
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      {config.connected ? (
+                        <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
+                          <Check className="h-4 w-4" /> {config.integrations?.length} Conta(s) Conectada(s)
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-amber-500 font-medium">
+                          <AlertCircle className="h-4 w-4" /> Desconectado
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {config.connected && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAddAccountForm(false)}
+                          className="cursor-pointer"
+                        >
+                          Cancelar
+                        </Button>
+                      )}
+                      <Button onClick={saveConfig} disabled={loading || !apiKeyInput.trim()} className="w-full sm:w-auto cursor-pointer">
+                        {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                        {config.connected ? "Conectar Conta Adicional" : "Conectar Conta"}
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              )}
             </div>
           );
         })()}
@@ -2785,32 +2792,21 @@ export default function Home() {
                 </div>
 
                 <CardContent className="p-5 sm:p-6 space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="dashAccountName" className="text-xs font-semibold text-foreground">
-                        Nome Identificador da Conta (Opcional)
-                      </Label>
-                      <Input
-                        id="dashAccountName"
-                        type="text"
-                        placeholder="ex: Meu Workspace Principal"
-                        value={newAccountName}
-                        onChange={(e) => setNewAccountName(e.target.value)}
-                        className="rounded-xl"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="dashApiKey" className="text-xs font-semibold text-foreground">
-                        Chave de API do Zernio *
-                      </Label>
+                  <div className="space-y-2 max-w-2xl">
+                    <Label htmlFor="dashApiKey" className="text-xs font-semibold text-foreground flex items-center justify-between">
+                      <span>Chave de API do Zernio *</span>
+                      <span className="text-[11px] text-muted-foreground font-normal">Gere ou copie no painel oficial do Zernio</span>
+                    </Label>
+                    <div className="relative">
                       <Input
                         id="dashApiKey"
                         type="password"
                         placeholder="Cole sua Zernio API Key aqui"
                         value={apiKeyInput}
                         onChange={(e) => setApiKeyInput(e.target.value)}
-                        className="rounded-xl"
+                        className="rounded-xl h-11 pr-10 text-sm font-mono bg-background/50 border-primary/20 focus:border-primary"
                       />
+                      <Key className="w-4 h-4 text-muted-foreground/60 absolute right-3.5 top-3.5 pointer-events-none" />
                     </div>
                   </div>
 
