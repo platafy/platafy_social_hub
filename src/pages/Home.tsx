@@ -235,7 +235,7 @@ export default function Home() {
   // Automation states
   const [automations, setAutomations] = useState<any[]>([]);
   const [selectedAutomationAccount, setSelectedAutomationAccount] = useState<string>("");
-  const [automationType, setAutomationType] = useState<"comment_reply" | "dm_reply" | "comment_to_dm">("comment_reply");
+  const [automationType, setAutomationType] = useState<"comment_reply" | "dm_reply" | "comment_to_dm" | "story_mention" | "story_reply">("comment_reply");
   const [isAutomationEnabled, setIsAutomationEnabled] = useState<boolean>(true);
   const [automationTriggerType, setAutomationTriggerType] = useState<"all" | "keyword">("all");
   const [automationKeywords, setAutomationKeywords] = useState<string>("");
@@ -252,6 +252,10 @@ export default function Home() {
   const [automationCommentReplyPrompt, setAutomationCommentReplyPrompt] = useState<string>("");
   const [automationTargetPostsType, setAutomationTargetPostsType] = useState<"all" | "specific">("all");
   const [automationTargetPostIds, setAutomationTargetPostIds] = useState<string[]>([]);
+  const [automationTargetScope, setAutomationTargetScope] = useState<"all" | "organic" | "ads">("all");
+  const [automationAutoLike, setAutomationAutoLike] = useState<boolean>(false);
+  const [automationAutoHeart, setAutomationAutoHeart] = useState<boolean>(false);
+  const [automationAutoModerateSpam, setAutomationAutoModerateSpam] = useState<boolean>(false);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
   const [automationPosts, setAutomationPosts] = useState<any[]>([]);
   const [loadingAutomationPosts, setLoadingAutomationPosts] = useState(false);
@@ -1171,7 +1175,11 @@ export default function Home() {
         comment_reply_text: automationType === "comment_to_dm" && automationCommentReplyEnabled ? automationCommentReplyText : null,
         comment_reply_prompt: automationType === "comment_to_dm" && automationCommentReplyEnabled ? automationCommentReplyPrompt : null,
         target_posts_type: automationTargetPostsType,
-        target_post_ids: automationTargetPostIds
+        target_post_ids: automationTargetPostIds,
+        target_scope: automationTargetScope,
+        auto_like_enabled: automationAutoLike,
+        auto_heart_enabled: automationAutoHeart,
+        auto_moderate_spam: automationAutoModerateSpam
       };
 
       let res;
@@ -1253,6 +1261,10 @@ export default function Home() {
       setAutomationCommentReplyPrompt(rule.comment_reply_prompt || "");
       setAutomationTargetPostsType(rule.target_posts_type || "all");
       setAutomationTargetPostIds(rule.target_post_ids || []);
+      setAutomationTargetScope(rule.target_scope || "all");
+      setAutomationAutoLike(rule.auto_like_enabled ?? false);
+      setAutomationAutoHeart(rule.auto_heart_enabled ?? false);
+      setAutomationAutoModerateSpam(rule.auto_moderate_spam ?? false);
     } else {
       setEditingAutomationId(null);
       setIsAutomationEnabled(true);
@@ -1267,6 +1279,10 @@ export default function Home() {
       setAutomationCommentReplyPrompt("");
       setAutomationTargetPostsType("all");
       setAutomationTargetPostIds([]);
+      setAutomationTargetScope("all");
+      setAutomationAutoLike(false);
+      setAutomationAutoHeart(false);
+      setAutomationAutoModerateSpam(false);
     }
   }, [selectedAutomationAccount, automationType, automations]);
 
@@ -4937,7 +4953,7 @@ export default function Home() {
                       const accId = acc._id || acc.id;
                       const isSelected = selectedAutomationAccount === accId;
                       const platformLower = (acc.platform || "").toLowerCase();
-                      const isSupported = platformLower === "instagram" || platformLower === "facebook" || platformLower === "youtube";
+                      const isSupported = platformLower === "instagram" || platformLower === "facebook" || platformLower === "youtube" || platformLower === "tiktok";
                       const isTiktok = platformLower === "tiktok";
 
                       return (
@@ -4947,13 +4963,12 @@ export default function Home() {
                             if (isSupported) {
                               setSelectedAutomationAccount(accId);
                               fetchAutomationPosts(accId);
-                              if (platformLower === "youtube") {
+                              if (platformLower === "youtube" || platformLower === "tiktok") {
                                 setAutomationType("comment_reply");
                               }
                             }
                           }}
                           disabled={!isSupported}
-                          title={isTiktok ? "TikTok não suportado: a API do Zernio não possui endpoint de resposta para comentários TikTok" : undefined}
                           className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${!isSupported
                             ? "opacity-45 cursor-not-allowed border-border/40 bg-secondary/5 text-muted-foreground/60"
                             : isSelected
@@ -4969,9 +4984,14 @@ export default function Home() {
                               <p className="text-xs font-semibold truncate capitalize text-foreground">
                                 {acc.platform}
                               </p>
-                              {(!isSupported || isTiktok) && (
+                              {isTiktok && (
+                                <span className="text-[8px] px-1 py-0.5 bg-primary/10 text-primary rounded uppercase font-semibold scale-90 origin-right">
+                                  Comentários
+                                </span>
+                              )}
+                              {!isSupported && (
                                 <span className="text-[8px] px-1 py-0.5 bg-muted text-muted-foreground/80 rounded uppercase font-semibold scale-90 origin-right">
-                                  {isTiktok ? "Indisponível" : "Manual"}
+                                  Manual
                                 </span>
                               )}
                             </div>
@@ -5001,7 +5021,9 @@ export default function Home() {
                               const typeLabels: Record<string, string> = {
                                 comment_reply: "Responder Comentário",
                                 dm_reply: "Responder DM/Mensagem",
-                                comment_to_dm: "Comentário → DM"
+                                comment_to_dm: "Comentário → DM",
+                                story_mention: "Menção no Story",
+                                story_reply: "Resposta a Story"
                               };
                               const accountObj = accounts.find(a => (a._id || a.id) === rule.social_account_id);
                               return (
@@ -5021,6 +5043,10 @@ export default function Home() {
                                     setAutomationCommentReplyPrompt(rule.comment_reply_prompt || "");
                                     setAutomationTargetPostsType(rule.target_posts_type || "all");
                                     setAutomationTargetPostIds(rule.target_post_ids || []);
+                                    setAutomationTargetScope(rule.target_scope || "all");
+                                    setAutomationAutoLike(rule.auto_like_enabled ?? false);
+                                    setAutomationAutoHeart(rule.auto_heart_enabled ?? false);
+                                    setAutomationAutoModerateSpam(rule.auto_moderate_spam ?? false);
                                   }}
                                   className={`p-3 border rounded-lg cursor-pointer hover:bg-secondary/40 transition-all text-left flex items-start justify-between gap-2.5 ${automationType === rule.automation_type ? 'bg-secondary/30 border-primary' : 'border-border/30 bg-secondary/5'}`}
                                 >
@@ -5088,6 +5114,10 @@ export default function Home() {
                               setAutomationCommentReplyPrompt("");
                               setAutomationTargetPostsType("all");
                               setAutomationTargetPostIds([]);
+                              setAutomationTargetScope("all");
+                              setAutomationAutoLike(false);
+                              setAutomationAutoHeart(false);
+                              setAutomationAutoModerateSpam(false);
                             }}
                             className="text-xs text-primary hover:underline font-semibold"
                           >
@@ -5103,42 +5133,65 @@ export default function Home() {
                           const selectedAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
                           const selectedPlatform = (selectedAcc?.platform || "").toLowerCase();
                           const isCommentsOnly = selectedPlatform === "youtube" || selectedPlatform === "tiktok";
+                          const isInstagram = selectedPlatform === "instagram";
 
                           return (
-                            <div className="flex gap-2 p-1 bg-secondary/50 rounded-md border border-border/20 max-w-md">
-                              <button
-                                type="button"
-                                onClick={() => setAutomationType("comment_reply")}
-                                className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded transition-all ${automationType === "comment_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                              >
-                                Responder Comentário
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isCommentsOnly}
-                                onClick={() => setAutomationType("dm_reply")}
-                                className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "dm_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                                title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
-                              >
-                                Responder DM
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isCommentsOnly}
-                                onClick={() => setAutomationType("comment_to_dm")}
-                                className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "comment_to_dm" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                                title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
-                              >
-                                Comentário → DM
-                              </button>
+                            <div className="space-y-2">
+                              <div className="flex gap-2 p-1 bg-secondary/50 rounded-md border border-border/20 max-w-xl overflow-x-auto">
+                                <button
+                                  type="button"
+                                  onClick={() => setAutomationType("comment_reply")}
+                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "comment_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  Responder Comentário
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isCommentsOnly}
+                                  onClick={() => setAutomationType("dm_reply")}
+                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "dm_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                  title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
+                                >
+                                  Responder DM
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isCommentsOnly}
+                                  onClick={() => setAutomationType("comment_to_dm")}
+                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "comment_to_dm" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                  title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
+                                >
+                                  Comentário → DM
+                                </button>
+                                {isInstagram && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => setAutomationType("story_mention")}
+                                      className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "story_mention" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                    >
+                                      Menção no Story
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setAutomationType("story_reply")}
+                                      className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "story_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                    >
+                                      Resposta a Story
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
+                                {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada no Direct, a automação responderá na conversa direta."}
+                                {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada com seu link/oferta e opcionalmente responderá ao comentário no post."}
+                                {automationType === "story_mention" && "Quando um seguidor marcar o seu perfil (@) em um Story, a automação disparará uma DM privada automática de agradecimento ou cupom."}
+                                {automationType === "story_reply" && "Quando um seguidor responder ao seu Story ou reagir com emoji, a automação enviará a resposta configurada diretamente na DM."}
+                              </p>
                             </div>
                           );
                         })()}
-                        <p className="text-[10px] text-muted-foreground">
-                          {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
-                          {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada no Direct, a automação responderá na conversa direta."}
-                          {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada com seu link/oferta e opcionalmente responderá ao comentário no post."}
-                        </p>
                       </div>
 
                       {/* Enable Toggle */}
@@ -5550,6 +5603,88 @@ export default function Home() {
                           )}
                         </div>
                       )}
+
+                      {/* Escopo da Automação (Meta Ads Dark Posts vs Orgânicos) */}
+                      {automationType !== "story_mention" && automationType !== "story_reply" && (
+                        <div className="space-y-1.5 pt-2 border-t border-border/40">
+                          <Label htmlFor="autoTargetScope" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
+                            Escopo da Publicação (Meta Ads / Dark Posts)
+                          </Label>
+                          <select
+                            id="autoTargetScope"
+                            value={automationTargetScope}
+                            onChange={(e) => setAutomationTargetScope(e.target.value as any)}
+                            className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                          >
+                            <option value="all">Todas as Publicações (Orgânicas e Anúncios Pagos)</option>
+                            <option value="organic">Apenas Postagens Orgânicas (Feed / Reels normais)</option>
+                            <option value="ads">Apenas Anúncios Patrocinados (Meta Ads / Dark Posts)</option>
+                          </select>
+                          <p className="text-[10px] text-muted-foreground">
+                            {automationTargetScope === "all" && "A automação responderá tanto em posts normais do feed quanto em anúncios de tráfego pago."}
+                            {automationTargetScope === "organic" && "Ignora comentários vindos de campanhas de anúncios e foca apenas no feed público."}
+                            {automationTargetScope === "ads" && "Exclusivo para responder pessoas que comentarem nos seus anúncios pagos no Facebook/Instagram Ads."}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Ações Complementares: Auto-Like, YouTube Heart, Moderação com IA */}
+                      <div className="bg-secondary/15 border border-border/40 rounded-xl p-4 space-y-3">
+                        <Label className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
+                          Engajamento & Moderação Automática
+                        </Label>
+                        <div className="space-y-2.5">
+                          {/* Auto-Like */}
+                          <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={automationAutoLike}
+                              onChange={(e) => setAutomationAutoLike(e.target.checked)}
+                              className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                            />
+                            <div>
+                              <span className="font-semibold block">Curtir comentário automaticamente (Auto-Like)</span>
+                              <span className="text-[10px] text-muted-foreground">Dá o like oficial da conta no comentário do usuário assim que ele comenta, aquecendo o algoritmo.</span>
+                            </div>
+                          </label>
+
+                          {/* Auto-Heart YouTube */}
+                          {(() => {
+                            const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                            if ((selAcc?.platform || "").toLowerCase() === "youtube") {
+                              return (
+                                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
+                                  <input
+                                    type="checkbox"
+                                    checked={automationAutoHeart}
+                                    onChange={(e) => setAutomationAutoHeart(e.target.checked)}
+                                    className="rounded border-border text-red-500 focus:ring-red-500 h-4 w-4 cursor-pointer"
+                                  />
+                                  <div>
+                                    <span className="font-semibold block text-red-600 dark:text-red-400">Dar Coração oficial do Canal (YouTube Heart) ❤️</span>
+                                    <span className="text-[10px] text-muted-foreground">Aplica o selo de coração oficial do criador no comentário. O YouTube envia notificação push no celular do inscrito!</span>
+                                  </div>
+                                </label>
+                              );
+                            }
+                            return null;
+                          })()}
+
+                          {/* Auto-Moderação / Anti-Spam */}
+                          <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
+                            <input
+                              type="checkbox"
+                              checked={automationAutoModerateSpam}
+                              onChange={(e) => setAutomationAutoModerateSpam(e.target.checked)}
+                              className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4 cursor-pointer"
+                            />
+                            <div>
+                              <span className="font-semibold block">Moderação Inteligente Anti-Spam (Auto-Ocultar) 🛡️</span>
+                              <span className="text-[10px] text-muted-foreground">Detecta comentários com links de golpes, spam ou termos maliciosos e oculta automaticamente sem responder.</span>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
 
                       {/* Actions bar */}
                       <div className="flex justify-end pt-2">

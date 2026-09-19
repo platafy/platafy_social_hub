@@ -50,18 +50,18 @@ const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
     icon: <SiYoutube className="w-8 h-8 text-red-600" />,
     colorClass: "hover:border-red-600/50 hover:bg-red-600/5 hover:shadow-red-500/10",
   },
-];
-
-// Redes temporariamente desativadas (TikTok, Threads, Pinterest, LinkedIn, X/Twitter, WhatsApp, Bluesky).
-// Para reativar qualquer uma delas no futuro, basta mover o objeto para o array SUPPORTED_PLATFORMS acima.
-export const _INACTIVE_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "tiktok",
     name: "TikTok",
-    description: "TikTok for Business & Pessoal",
-    icon: <SiTiktok className="w-5 h-5 text-foreground" />,
-    colorClass: "hover:border-foreground/40 hover:bg-foreground/5",
+    description: "TikTok for Business & Criadores",
+    icon: <SiTiktok className="w-8 h-8 text-foreground" />,
+    colorClass: "hover:border-foreground/50 hover:bg-foreground/5 hover:shadow-foreground/10",
   },
+];
+
+// Redes temporariamente desativadas (Threads, Pinterest, LinkedIn, X/Twitter, WhatsApp, Bluesky).
+// Para reativar qualquer uma delas no futuro, basta mover o objeto para o array SUPPORTED_PLATFORMS acima.
+export const _INACTIVE_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "threads",
     name: "Threads",

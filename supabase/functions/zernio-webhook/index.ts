@@ -361,12 +361,12 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       }
     }
 
-    // Loop Guard 4: Check if automation is paused individually for this lead in CRM
+    // Loop Guard 4: Check if automation is paused individually for this lead in CRM & Auto-Upsert lead into CRM Kanban
     if (senderUsername || authorId) {
       try {
         let contactQuery = supabaseClient
           .from('zernio_contacts')
-          .select('id, name, is_automation_enabled')
+          .select('id, name, username, avatar_url, is_automation_enabled, crm_column_id')
           .eq('tenant_id', tenantId);
 
         if (authorId) {
@@ -387,8 +387,66 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
             message: `Ignored: automation disabled for contact @${senderUsername}`
           };
         }
+
+        // Auto-Upsert lead into CRM Kanban (Module 6)
+        const contactAvatar = String(
+          commentObj.author?.avatarUrl ||
+          commentObj.author?.picture ||
+          commentObj.author?.profile_picture_url ||
+          commentObj.from?.picture ||
+          msgObj.sender?.avatarUrl ||
+          msgObj.sender?.picture ||
+          payload.participantPicture ||
+          payload.senderAvatar ||
+          ''
+        ).trim();
+
+        const contactDisplayName = String(
+          commentObj.author?.name ||
+          commentObj.author?.displayName ||
+          commentObj.from?.name ||
+          msgObj.sender?.name ||
+          msgObj.sender?.displayName ||
+          senderUsername ||
+          'Lead Social'
+        ).trim();
+
+        if (!matchedContact) {
+          const { data: firstCol } = await supabaseClient
+            .from('crm_columns')
+            .select('id')
+            .eq('tenant_id', tenantId)
+            .eq('is_active', true)
+            .order('order_index', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          const platformTag = `#${platform || 'social'}`;
+          await supabaseClient
+            .from('zernio_contacts')
+            .insert({
+              tenant_id: tenantId,
+              zernio_contact_id: authorId || senderUsername || `user_${Date.now()}`,
+              name: contactDisplayName,
+              username: senderUsername,
+              avatar_url: contactAvatar || null,
+              platforms: [platform || 'instagram'],
+              tags: [platformTag, '#novo_lead'],
+              crm_column_id: firstCol?.id || null,
+              is_automation_enabled: true,
+              last_interaction_at: new Date().toISOString()
+            });
+        } else {
+          const updates: any = { last_interaction_at: new Date().toISOString() };
+          if (contactAvatar && !matchedContact.avatar_url) updates.avatar_url = contactAvatar;
+          if (senderUsername && !matchedContact.username) updates.username = senderUsername;
+          await supabaseClient
+            .from('zernio_contacts')
+            .update(updates)
+            .eq('id', matchedContact.id);
+        }
       } catch (crmErr) {
-        console.warn('CRM automation check failed (non-blocking):', crmErr);
+        console.warn('CRM automation check/upsert failed (non-blocking):', crmErr);
       }
     }
   }
@@ -451,12 +509,19 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     return { success: true, message: 'No active automations' };
   }
 
+  const isStoryMention = normEvent.includes('story_mention') || normEvent === 'story_mention';
+  const isStoryReply = normEvent.includes('story_reply') || normEvent === 'story_reply';
   const isAltCommentMessage = isMessageEvent && (platform === 'youtube' || platform === 'tiktok');
-  const targetType = isAltCommentMessage
-    ? ['comment_reply']
-    : isCommentEvent
-      ? ['comment_reply', 'comment_to_dm']
-      : ['dm_reply'];
+
+  const targetType = isStoryMention
+    ? ['story_mention', 'dm_reply']
+    : isStoryReply
+      ? ['story_reply', 'dm_reply']
+      : isAltCommentMessage
+        ? ['comment_reply']
+        : isCommentEvent
+          ? ['comment_reply', 'comment_to_dm']
+          : ['dm_reply'];
 
   const matchedRules = automations.filter((rule: any) => targetType.includes(rule.automation_type));
 
@@ -501,6 +566,55 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
           });
       }
     };
+
+    // Scope validation: Organic vs Ads (Meta Ads Dark Posts)
+    const isAdInteraction = Boolean(
+      payload.adId ||
+      payload.isAd ||
+      commentObj.adId ||
+      commentObj.isAd ||
+      msgObj.adId
+    );
+    if (rule.target_scope === 'organic' && isAdInteraction) {
+      await saveRuleLog('ignored', 'Ignorado: A regra está configurada para postagens orgânicas e este evento é de um anúncio pago (Meta Ads).');
+      isFirstRule = false;
+      continue;
+    }
+    if (rule.target_scope === 'ads' && !isAdInteraction) {
+      await saveRuleLog('ignored', 'Ignorado: A regra está configurada para anúncios pagos (Meta Ads) e este evento é de uma postagem orgânica.');
+      isFirstRule = false;
+      continue;
+    }
+
+    // AI Spam & Toxicity Moderation (Module 3)
+    if (rule.auto_moderate_spam && isCommentEvent) {
+      const normText = (textContent || '').toLowerCase();
+      const spamTerms = [
+        'telegram', 't.me/', 'whatsapp.com', 'wa.me/', 'ganhe dinheiro', 'renda extra facil',
+        'investimento garantido', 'crypto', 'bitcoin gratis', 'pix em dobro', 'urgente clique',
+        'clique no link da bio', 'compre seguidores', 'seguidores gratis'
+      ];
+      const isDetectedSpam = spamTerms.some(term => normText.includes(term));
+
+      if (isDetectedSpam) {
+        try {
+          const hideCommentTargetId = isCommentEvent ? commentId : (msgObj.id || msgObj._id || '');
+          const hideEndpoint = postId
+            ? `https://zernio.com/api/v1/inbox/comments/${postId}/${hideCommentTargetId}/hide`
+            : `https://zernio.com/api/v1/inbox/comments/${hideCommentTargetId}/hide`;
+          await fetch(hideEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+            body: JSON.stringify({ accountId: socialAccountId || rule.social_account_id, commentId: hideCommentTargetId, isHidden: true })
+          });
+        } catch (hideErr: any) {
+          console.warn('Comment auto-hide failed:', hideErr.message);
+        }
+        await saveRuleLog('moderated', 'Comentário ocultado automaticamente pelo filtro de moderação/anti-spam.');
+        isFirstRule = false;
+        continue;
+      }
+    }
 
     // A. Validate target post filtering (if restricted to specific posts)
     if ((isCommentEvent || isAltCommentMessage) && rule.target_posts_type === 'specific') {
@@ -771,6 +885,38 @@ Responda diretamente e de forma concisa.`;
           : replyText;
         await saveRuleLog('success', undefined, logDisplay);
         executedResults.push({ ruleId: rule.id, type: rule.automation_type, replyText });
+
+        // Auto-Like on comment (Module 3)
+        if (rule.auto_like_enabled && (isCommentEvent || isAltCommentMessage) && targetCommentId) {
+          try {
+            const likeEndpoint = postId
+              ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/like`
+              : `https://zernio.com/api/v1/inbox/comments/${targetCommentId}/like`;
+            await fetch(likeEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+              body: JSON.stringify({ accountId: socialAccountId || rule.social_account_id, commentId: targetCommentId })
+            });
+          } catch (likeErr: any) {
+            console.warn('Auto-like error (non-blocking):', likeErr.message);
+          }
+        }
+
+        // Auto-Heart on YouTube comment (Module 3)
+        if (rule.auto_heart_enabled && platform === 'youtube' && targetCommentId) {
+          try {
+            const heartEndpoint = postId
+              ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/heart`
+              : `https://zernio.com/api/v1/inbox/comments/${targetCommentId}/heart`;
+            await fetch(heartEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+              body: JSON.stringify({ accountId: socialAccountId || rule.social_account_id, commentId: targetCommentId })
+            });
+          } catch (heartErr: any) {
+            console.warn('Auto-heart error (non-blocking):', heartErr.message);
+          }
+        }
       }
     } catch (zernioErr: any) {
       await saveRuleLog('failed', `Erro ao conectar com a API do Zernio: ${zernioErr.message}`);

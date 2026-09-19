@@ -434,6 +434,30 @@ export const zernio = {
       body: { accountId, message },
       integrationId
     }),
+  likeComment: (postId: string, commentId: string, accountId: string, integrationId?: string) =>
+    zernioApiCall(`/v1/inbox/comments/${postId || commentId}/like`, {
+      method: 'POST',
+      body: { accountId, commentId },
+      integrationId
+    }),
+  hideComment: (postId: string, commentId: string, accountId: string, isHidden = true, integrationId?: string) =>
+    zernioApiCall(`/v1/inbox/comments/${postId || commentId}/hide`, {
+      method: 'POST',
+      body: { accountId, commentId, isHidden },
+      integrationId
+    }),
+  deleteComment: (postId: string, commentId: string, accountId: string, integrationId?: string) =>
+    zernioApiCall(`/v1/inbox/comments/${postId || commentId}`, {
+      method: 'DELETE',
+      body: { accountId, commentId },
+      integrationId
+    }),
+  heartYoutubeComment: (postId: string, commentId: string, accountId: string, integrationId?: string) =>
+    zernioApiCall(`/v1/inbox/comments/${postId || commentId}/heart`, {
+      method: 'POST',
+      body: { accountId, commentId },
+      integrationId
+    }),
 
   // Analytics
   getAnalytics: (profileId: string, startDate: string, endDate: string) =>
