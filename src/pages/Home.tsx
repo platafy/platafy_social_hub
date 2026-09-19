@@ -253,6 +253,7 @@ export default function Home() {
   const [automationTargetPostsType, setAutomationTargetPostsType] = useState<"all" | "specific">("all");
   const [automationTargetPostIds, setAutomationTargetPostIds] = useState<string[]>([]);
   const [automationTargetScope, setAutomationTargetScope] = useState<"all" | "organic" | "ads">("all");
+  const [automationTargetAdIds, setAutomationTargetAdIds] = useState<string>("");
   const [automationAutoLike, setAutomationAutoLike] = useState<boolean>(false);
   const [automationAutoHeart, setAutomationAutoHeart] = useState<boolean>(false);
   const [automationAutoModerateSpam, setAutomationAutoModerateSpam] = useState<boolean>(false);
@@ -1177,6 +1178,7 @@ export default function Home() {
         target_posts_type: automationTargetPostsType,
         target_post_ids: automationTargetPostIds,
         target_scope: automationTargetScope,
+        target_ad_ids: automationTargetAdIds ? automationTargetAdIds.split(",").map(id => id.trim()).filter(Boolean) : [],
         auto_like_enabled: automationAutoLike,
         auto_heart_enabled: automationAutoHeart,
         auto_moderate_spam: automationAutoModerateSpam
@@ -1262,6 +1264,7 @@ export default function Home() {
       setAutomationTargetPostsType(rule.target_posts_type || "all");
       setAutomationTargetPostIds(rule.target_post_ids || []);
       setAutomationTargetScope(rule.target_scope || "all");
+      setAutomationTargetAdIds(rule.target_ad_ids ? rule.target_ad_ids.join(", ") : "");
       setAutomationAutoLike(rule.auto_like_enabled ?? false);
       setAutomationAutoHeart(rule.auto_heart_enabled ?? false);
       setAutomationAutoModerateSpam(rule.auto_moderate_spam ?? false);
@@ -1280,6 +1283,7 @@ export default function Home() {
       setAutomationTargetPostsType("all");
       setAutomationTargetPostIds([]);
       setAutomationTargetScope("all");
+      setAutomationTargetAdIds("");
       setAutomationAutoLike(false);
       setAutomationAutoHeart(false);
       setAutomationAutoModerateSpam(false);
@@ -5044,6 +5048,7 @@ export default function Home() {
                                     setAutomationTargetPostsType(rule.target_posts_type || "all");
                                     setAutomationTargetPostIds(rule.target_post_ids || []);
                                     setAutomationTargetScope(rule.target_scope || "all");
+                                    setAutomationTargetAdIds(rule.target_ad_ids ? rule.target_ad_ids.join(", ") : "");
                                     setAutomationAutoLike(rule.auto_like_enabled ?? false);
                                     setAutomationAutoHeart(rule.auto_heart_enabled ?? false);
                                     setAutomationAutoModerateSpam(rule.auto_moderate_spam ?? false);
@@ -5115,6 +5120,7 @@ export default function Home() {
                               setAutomationTargetPostsType("all");
                               setAutomationTargetPostIds([]);
                               setAutomationTargetScope("all");
+                              setAutomationTargetAdIds("");
                               setAutomationAutoLike(false);
                               setAutomationAutoHeart(false);
                               setAutomationAutoModerateSpam(false);
@@ -5625,6 +5631,23 @@ export default function Home() {
                             {automationTargetScope === "organic" && "Ignora comentários vindos de campanhas de anúncios e foca apenas no feed público."}
                             {automationTargetScope === "ads" && "Exclusivo para responder pessoas que comentarem nos seus anúncios pagos no Facebook/Instagram Ads."}
                           </p>
+                          {automationTargetScope === "ads" && (
+                            <div className="space-y-1.5 pt-2 border-t border-border/20">
+                              <Label htmlFor="autoTargetAdIds" className="font-semibold text-xs text-foreground block">
+                                IDs de Anúncios Específicos (Opcional)
+                              </Label>
+                              <Input
+                                id="autoTargetAdIds"
+                                placeholder="ex: 2385123456789, 2385987654321 (ou deixe em branco para todos)"
+                                value={automationTargetAdIds}
+                                onChange={(e) => setAutomationTargetAdIds(e.target.value)}
+                                className="bg-card text-xs"
+                              />
+                              <span className="text-[10px] text-muted-foreground block">
+                                Insira os IDs dos anúncios do Gerenciador de Anúncios da Meta separados por vírgula. Se deixar em branco, a automação responderá a todos os anúncios ativos da conta.
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
 

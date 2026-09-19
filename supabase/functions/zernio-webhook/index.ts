@@ -222,6 +222,9 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   if (isCommentEvent) {
     textContent = getWebhookMessageText(commentObj) || getWebhookMessageText(payload) || '';
     postId = String(
+      commentObj.effectiveStoryId ||
+      commentObj.effective_story_id ||
+      payload.effectiveStoryId ||
       commentObj.postId ||
       commentObj.platformPostId ||
       commentObj.mediaId ||
@@ -232,6 +235,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       payload.postId ||
       payload.platformPostId ||
       payload.mediaId ||
+      commentObj.adId ||
+      payload.adId ||
       ''
     ).trim();
 
@@ -568,13 +573,22 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     };
 
     // Scope validation: Organic vs Ads (Meta Ads Dark Posts)
-    const isAdInteraction = Boolean(
+    const adIdCandidate = String(
       payload.adId ||
-      payload.isAd ||
       commentObj.adId ||
+      commentObj.effectiveStoryId ||
+      msgObj.adId ||
+      ''
+    ).trim();
+
+    const isAdInteraction = Boolean(
+      adIdCandidate ||
+      payload.isAd ||
       commentObj.isAd ||
-      msgObj.adId
+      payload.placement ||
+      commentObj.placement
     );
+
     if (rule.target_scope === 'organic' && isAdInteraction) {
       await saveRuleLog('ignored', 'Ignorado: A regra está configurada para postagens orgânicas e este evento é de um anúncio pago (Meta Ads).');
       isFirstRule = false;
@@ -584,6 +598,22 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       await saveRuleLog('ignored', 'Ignorado: A regra está configurada para anúncios pagos (Meta Ads) e este evento é de uma postagem orgânica.');
       isFirstRule = false;
       continue;
+    }
+
+    // Specific Ads Filtering (if rule.target_ad_ids has entries)
+    if (isAdInteraction && Array.isArray(rule.target_ad_ids) && rule.target_ad_ids.length > 0) {
+      const allowedAdIds = rule.target_ad_ids.map((id: any) => String(id).trim()).filter(Boolean);
+      const matchesSpecificAd = allowedAdIds.some((allowedId: string) =>
+        allowedId === adIdCandidate ||
+        (postId && postId.includes(allowedId)) ||
+        (commentId && commentId.includes(allowedId))
+      );
+
+      if (!matchesSpecificAd) {
+        await saveRuleLog('ignored', `Ignorado: O anúncio [${adIdCandidate || 'desconhecido'}] não está na lista de anúncios permitidos nesta regra.`);
+        isFirstRule = false;
+        continue;
+      }
     }
 
     // AI Spam & Toxicity Moderation (Module 3)
