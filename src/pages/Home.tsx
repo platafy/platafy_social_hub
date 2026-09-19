@@ -4988,7 +4988,7 @@ export default function Home() {
                 {/* Account / Channel selector */}
                 <div className="space-y-2">
                   <Label className="font-semibold text-sm">Selecione o Canal Social</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {accounts.map((acc, index) => {
                       const accId = acc._id || acc.id;
                       const isSelected = selectedAutomationAccount === accId;

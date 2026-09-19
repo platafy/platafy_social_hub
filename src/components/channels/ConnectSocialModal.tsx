@@ -275,8 +275,8 @@ export function ConnectSocialModal({
           </div>
         )}
 
-        {/* Lista de Redes Sociais - 3 cards na mesma linha */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 py-1">
+        {/* Lista de Redes Sociais - 2 cards por linha */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-1">
           {SUPPORTED_PLATFORMS.map((platform) => {
             const isThisConnecting = connectingPlatform === platform.id;
             const isTikTokLocked = platform.id === "tiktok" && !canUseTikTok;
