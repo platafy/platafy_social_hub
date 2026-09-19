@@ -5182,32 +5182,51 @@ export default function Home() {
                           const isInstagram = selectedPlatform === "instagram";
 
                           return (
-                            <div className="space-y-2">
-                              <div className="flex gap-2 p-1 bg-secondary/50 rounded-md border border-border/20 max-w-xl overflow-x-auto">
+                            <div className="space-y-3 w-full">
+                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"} p-1.5 bg-secondary/35 rounded-xl border border-border/40`}>
                                 <button
                                   type="button"
                                   onClick={() => setAutomationType("comment_reply")}
-                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "comment_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                    automationType === "comment_reply"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
+                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                  }`}
                                 >
-                                  Responder Comentário
+                                  <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+                                  <span className="truncate">Responder Comentário</span>
                                 </button>
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("dm_reply")}
-                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "dm_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                    isCommentsOnly
+                                      ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
+                                      : automationType === "dm_reply"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
+                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                  }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  Responder DM
+                                  <Send className="w-3.5 h-3.5 text-primary shrink-0" />
+                                  <span className="truncate">Responder DM</span>
                                 </button>
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("comment_to_dm")}
-                                  className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${isCommentsOnly ? "opacity-35 cursor-not-allowed text-muted-foreground/60" : automationType === "comment_to_dm" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                    isCommentsOnly
+                                      ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
+                                      : automationType === "comment_to_dm"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
+                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                  }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  Comentário → DM
+                                  <MessageCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                                  <span className="truncate">Comentário → DM</span>
                                 </button>
                                 {isInstagram && (
                                    <>
@@ -5220,16 +5239,17 @@ export default function Home() {
                                          }
                                          setAutomationType("story_mention");
                                        }}
-                                       className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all flex items-center justify-center gap-1 ${
+                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
                                          !canUseStoriesAutomations
-                                           ? "text-muted-foreground hover:text-foreground opacity-80"
+                                           ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
                                            : automationType === "story_mention"
-                                           ? "bg-card text-foreground shadow-sm font-semibold"
-                                           : "text-muted-foreground hover:text-foreground"
+                                           ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
+                                           : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                        }`}
                                      >
-                                       <span>Menção no Story</span>
-                                       {!canUseStoriesAutomations && <Lock className="w-2.5 h-2.5 text-amber-500" />}
+                                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                       <span className="truncate">Menção no Story</span>
+                                       {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
                                      </button>
                                      <button
                                        type="button"
@@ -5240,27 +5260,31 @@ export default function Home() {
                                          }
                                          setAutomationType("story_reply");
                                        }}
-                                       className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all flex items-center justify-center gap-1 ${
+                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
                                          !canUseStoriesAutomations
-                                           ? "text-muted-foreground hover:text-foreground opacity-80"
+                                           ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
                                            : automationType === "story_reply"
-                                           ? "bg-card text-foreground shadow-sm font-semibold"
-                                           : "text-muted-foreground hover:text-foreground"
+                                           ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
+                                           : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                        }`}
                                      >
-                                       <span>Resposta a Story</span>
-                                       {!canUseStoriesAutomations && <Lock className="w-2.5 h-2.5 text-amber-500" />}
+                                       <Bookmark className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                       <span className="truncate">Resposta a Story</span>
+                                       {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
                                      </button>
                                    </>
                                  )}
                               </div>
-                              <p className="text-[10px] text-muted-foreground">
-                                {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
-                                {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada no Direct, a automação responderá na conversa direta."}
-                                {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada com seu link/oferta e opcionalmente responderá ao comentário no post."}
-                                {automationType === "story_mention" && "Quando um seguidor marcar o seu perfil (@) em um Story, a automação disparará uma DM privada automática de agradecimento ou cupom."}
-                                {automationType === "story_reply" && "Quando um seguidor responder ao seu Story ou reagir com emoji, a automação enviará a resposta configurada diretamente na DM."}
-                              </p>
+                              <div className="p-3 rounded-xl bg-secondary/30 border border-border/40 text-xs text-muted-foreground leading-relaxed flex items-center gap-2.5">
+                                <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                                <span>
+                                  {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
+                                  {automationType === "dm_reply" && "Quando um usuário enviar uma DM privada no Direct, a automação responderá na conversa direta."}
+                                  {automationType === "comment_to_dm" && "Quando um usuário comentar, a automação enviará uma DM privada com seu link/oferta e opcionalmente responderá ao comentário no post."}
+                                  {automationType === "story_mention" && "Quando um seguidor marcar o seu perfil (@) em um Story, a automação disparará uma DM privada automática de agradecimento ou cupom."}
+                                  {automationType === "story_reply" && "Quando um seguidor responder ao seu Story ou reagir com emoji, a automação enviará a resposta configurada diretamente na DM."}
+                                </span>
+                              </div>
                             </div>
                           );
                         })()}
