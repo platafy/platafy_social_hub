@@ -5054,8 +5054,8 @@ export default function Home() {
                   <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
 
                     {/* Left Column: Created Automations list (Sidebar Compacto) */}
-                    <div className="w-full lg:w-72 xl:w-80 shrink-0 space-y-4">
-                      <div className="border border-border/40 rounded-xl p-4 bg-card space-y-3 shadow-2xs">
+                    <div className="w-full lg:w-56 xl:w-60 shrink-0 space-y-4">
+                      <div className="border border-border/40 rounded-xl p-3.5 bg-card space-y-3 shadow-2xs">
                         <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">Automações Criadas</h4>
                         {automations.filter(a => a.social_account_id === selectedAutomationAccount).length === 0 ? (
                           <p className="text-xs text-muted-foreground text-center py-6">Nenhuma automação criada neste canal.</p>
@@ -5136,7 +5136,7 @@ export default function Home() {
                     </div>
 
                     {/* Right Column: Form builder (Expansão Máxima para 100% do espaço útil) */}
-                    <div className="flex-1 min-w-0 w-full border border-border/40 rounded-2xl p-5 sm:p-7 bg-secondary/15 space-y-6 shadow-2xs">
+                    <div className="flex-1 min-w-0 w-full border border-border/40 rounded-2xl p-4 sm:p-6 bg-secondary/15 space-y-6 shadow-2xs">
 
                       <div className="flex items-center justify-between border-b border-border/40 pb-3">
                         <h3 className="font-bold text-sm text-foreground">
@@ -5183,52 +5183,52 @@ export default function Home() {
 
                           return (
                             <div className="space-y-3 w-full">
-                              <div className={`grid gap-2.5 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"}`}>
+                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"}`}>
                                 <button
                                   type="button"
                                   onClick={() => setAutomationType("comment_reply")}
-                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                     automationType === "comment_reply"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
-                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30"
+                                      : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs"
                                   }`}
                                 >
-                                  <MessageSquare className={`w-4 h-4 shrink-0 ${automationType === "comment_reply" ? "text-primary" : "text-muted-foreground"}`} />
-                                  <span className="whitespace-nowrap">Comentários</span>
+                                  <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
+                                  <span className="truncate">Comentários</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("dm_reply")}
-                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none ${
+                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
-                                      ? "opacity-35 cursor-not-allowed bg-secondary/20 text-muted-foreground/50 border-border/30"
+                                      ? "opacity-35 cursor-not-allowed bg-slate-900/20 text-slate-500 border-slate-800"
                                       : automationType === "dm_reply"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20 cursor-pointer"
-                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border cursor-pointer"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30 cursor-pointer"
+                                      : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs cursor-pointer"
                                   }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  <Send className={`w-4 h-4 shrink-0 ${automationType === "dm_reply" ? "text-primary" : "text-muted-foreground"}`} />
-                                  <span className="whitespace-nowrap">DM</span>
+                                  <Send className={`w-3.5 h-3.5 shrink-0 ${automationType === "dm_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
+                                  <span className="truncate">DM</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("comment_to_dm")}
-                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none ${
+                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
-                                      ? "opacity-35 cursor-not-allowed bg-secondary/20 text-muted-foreground/50 border-border/30"
+                                      ? "opacity-35 cursor-not-allowed bg-slate-900/20 text-slate-500 border-slate-800"
                                       : automationType === "comment_to_dm"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20 cursor-pointer"
-                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border cursor-pointer"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30 cursor-pointer"
+                                      : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs cursor-pointer"
                                   }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  <MessageCircle className={`w-4 h-4 shrink-0 ${automationType === "comment_to_dm" ? "text-primary" : "text-muted-foreground"}`} />
-                                  <span className="whitespace-nowrap">Comentários/DM</span>
+                                  <MessageCircle className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_to_dm" ? "text-[#ffaa00]" : "text-slate-400"}`} />
+                                  <span className="truncate">Comentários/DM</span>
                                 </button>
 
                                 {isInstagram && (
@@ -5241,17 +5241,17 @@ export default function Home() {
                                       }
                                       setAutomationType("story_mention");
                                     }}
-                                    className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                    className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                       !canUseStoriesAutomations
-                                        ? "bg-card/30 border-border/50 text-muted-foreground opacity-80 hover:border-amber-500/40"
+                                        ? "border-border/60 dark:border-slate-800 bg-card/40 dark:bg-slate-900/40 text-muted-foreground hover:border-amber-500/50 hover:text-foreground"
                                         : automationType === "story_mention"
-                                        ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
-                                        : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                                        ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30"
+                                        : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs"
                                     }`}
                                   >
-                                    <Sparkles className={`w-4 h-4 shrink-0 ${automationType === "story_mention" ? "text-amber-500" : "text-muted-foreground"}`} />
-                                    <span className="whitespace-nowrap">Menção Story</span>
-                                    {!canUseStoriesAutomations && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-0.5" />}
+                                    <Sparkles className={`w-3.5 h-3.5 shrink-0 ${automationType === "story_mention" ? "text-amber-500" : "text-slate-400"}`} />
+                                    <span className="truncate">Menção Story</span>
+                                    {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0 ml-0.5" />}
                                   </button>
                                 )}
 
@@ -5265,17 +5265,17 @@ export default function Home() {
                                       }
                                       setAutomationType("story_reply");
                                     }}
-                                    className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                    className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                       !canUseStoriesAutomations
-                                        ? "bg-card/30 border-border/50 text-muted-foreground opacity-80 hover:border-amber-500/40"
+                                        ? "border-border/60 dark:border-slate-800 bg-card/40 dark:bg-slate-900/40 text-muted-foreground hover:border-amber-500/50 hover:text-foreground"
                                         : automationType === "story_reply"
-                                        ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
-                                        : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                                        ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30"
+                                        : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs"
                                     }`}
                                   >
-                                    <Bookmark className={`w-4 h-4 shrink-0 ${automationType === "story_reply" ? "text-amber-500" : "text-muted-foreground"}`} />
-                                    <span className="whitespace-nowrap">Responder Story</span>
-                                    {!canUseStoriesAutomations && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-0.5" />}
+                                    <Bookmark className={`w-3.5 h-3.5 shrink-0 ${automationType === "story_reply" ? "text-amber-500" : "text-slate-400"}`} />
+                                    <span className="truncate">Responder Story</span>
+                                    {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0 ml-0.5" />}
                                   </button>
                                 )}
                               </div>
