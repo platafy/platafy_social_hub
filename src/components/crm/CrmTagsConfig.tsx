@@ -3,7 +3,9 @@ import {
   Tag as TagIcon,
   Plus,
   RefreshCw,
-  Check
+  Check,
+  Save,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -253,38 +255,43 @@ export function CrmTagsConfig({
                 </div>
 
                 {/* Actions */}
-                <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-border/40">
+                <div className="space-y-2 pt-3 border-t border-border/40">
                   <Button
                     size="sm"
-                    variant="default"
                     disabled={isSaving}
                     onClick={() => handleUpdateTag(tag.id)}
-                    className="h-7 text-[11px] px-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                    className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs"
                   >
-                    {isSaving ? <RefreshCw className="h-3 w-3 animate-spin" /> : 'Atualizar'}
+                    {isSaving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    <span>Salvar Alterações</span>
                   </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isSaving}
-                    onClick={() => handleToggleActive(tag)}
-                    className={`h-7 text-[11px] px-1 font-semibold ${
-                      tag.is_active ? 'text-amber-500 hover:text-amber-600' : 'text-emerald-500 hover:text-emerald-600'
-                    }`}
-                  >
-                    {tag.is_active ? 'Desativar' : 'Ativar'}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isSaving}
+                      onClick={() => handleToggleActive(tag)}
+                      className={`h-7 text-xs font-semibold px-2 border-border/70 ${
+                        tag.is_active
+                          ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                          : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'
+                      }`}
+                    >
+                      {tag.is_active ? 'Desativar' : 'Ativar'}
+                    </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isSaving}
-                    onClick={() => handleDeleteTag(tag)}
-                    className="h-7 text-[11px] px-1 text-destructive hover:bg-destructive/10 font-semibold"
-                  >
-                    Deletar
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isSaving}
+                      onClick={() => handleDeleteTag(tag)}
+                      className="h-7 text-xs font-semibold px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-border/70 gap-1"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Excluir</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
