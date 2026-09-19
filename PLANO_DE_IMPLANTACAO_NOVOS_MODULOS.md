@@ -6,14 +6,14 @@ Este documento reúne o planejamento técnico detalhado de **todas as automaçõ
 
 ## 📌 Resumo Executivo das Novas Funcionalidades
 
-| Módulo | Plataforma | Tipo de Automação | Objetivo de Negócio |
-| :--- | :--- | :--- | :--- |
-| **Módulo 1** | Instagram / Facebook | **Anúncios Pagos (Meta Ads / Dark Posts)** | Responder dúvidas e enviar DMs para quem comenta em anúncios de tráfego pago, recuperando vendas e reduzindo CPL. |
-| **Módulo 2** | Instagram | **Gatilhos de Stories (`story_mention` & `story_reply`)** | Disparar cupom/brinde na DM para quem marcar a marca no Story ou responder enquetes/reações. |
-| **Módulo 3** | Instagram / Facebook / YouTube | **Auto-Engajamento & Moderação com IA** | Dar Auto-Like nos comentários, Auto-Coração (Heart) nos comentários do YouTube e Auto-Ocultar ofensas/spam com IA. |
-| **Módulo 4** | YouTube / Facebook | **Auto-Pin de Comentário (Fixado no Topo)** | Publicar e fixar automaticamente o primeiro comentário com link de vendas/checkout em vídeos novos e posts. |
-| **Módulo 5** | TikTok | **Conexão, Publicação & Resposta a Comentários** | Habilitar conexão do TikTok, agendamento de vídeos e respostas automáticas a comentários via IA no feed. |
-| **Módulo 6** | Platafy Social Hub | **Auto-Captura no CRM Kanban & Transbordo** | Inserir novos comentaristas e remetentes de DM diretamente no Kanban ("Novos Leads"), com tags de IA e transbordo WhatsApp. |
+| Módulo | Plataforma | Tipo de Automação | Objetivo de Negócio | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| **Módulo 1** | Instagram / Facebook | **Anúncios Pagos (Meta Ads / Dark Posts)** | Responder dúvidas e enviar DMs para quem comenta em anúncios de tráfego pago, recuperando vendas e reduzindo CPL. | ✅ **Implementado** |
+| **Módulo 2** | Instagram | **Gatilhos de Stories (`story_mention` & `story_reply`)** | Disparar cupom/brinde na DM para quem marcar a marca no Story ou responder enquetes/reações. | ✅ **Implementado** |
+| **Módulo 3** | Instagram / Facebook / YouTube | **Auto-Engajamento & Moderação com IA** | Dar Auto-Like nos comentários, Auto-Coração (Heart) nos comentários do YouTube e Auto-Ocultar ofensas/spam com IA. | ✅ **Implementado** |
+| **Módulo 4** | YouTube / Facebook | **Auto-Pin de Comentário (Fixado no Topo)** | Publicar e fixar automaticamente o primeiro comentário com link de vendas/checkout em vídeos novos e posts. | ✅ **Implementado** |
+| **Módulo 5** | TikTok | **Conexão, Publicação & Resposta a Comentários** | Habilitar conexão do TikTok, agendamento de vídeos e respostas automáticas a comentários via IA no feed. | ✅ **Implementado** |
+| **Módulo 6** | Platafy Social Hub | **Auto-Captura no CRM Kanban & Transbordo** | Inserir novos comentaristas e remetentes de DM diretamente no Kanban ("Novos Leads"), com tags de IA e transbordo WhatsApp. | ⏳ **Aguardando** |
 
 ---
 

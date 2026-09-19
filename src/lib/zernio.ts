@@ -458,6 +458,12 @@ export const zernio = {
       body: { accountId, commentId },
       integrationId
     }),
+  pinComment: (postId: string, commentId: string, accountId: string, isPinned = true, integrationId?: string) =>
+    zernioApiCall(`/v1/inbox/comments/${postId || commentId}/pin`, {
+      method: 'POST',
+      body: { accountId, commentId, isPinned },
+      integrationId
+    }),
 
   // Analytics
   getAnalytics: (profileId: string, startDate: string, endDate: string) =>

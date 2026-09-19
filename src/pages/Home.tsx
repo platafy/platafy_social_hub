@@ -127,7 +127,7 @@ export default function Home() {
     canUseStoriesAutomations,
     canUseAutoEngagement,
     canUseAutoModeration,
-    canUseAutoPin: _canUseAutoPin,
+    canUseAutoPin,
     canUseTikTok,
   } = useSubscription();
   const tutorialVideoUrl = branding.tutorial_video_url || "/criar-conta.mp4";
@@ -216,6 +216,7 @@ export default function Home() {
   const [firstComment, setFirstComment] = useState("");
   const [youtubeTitle, setYoutubeTitle] = useState("");
   const [isYoutubeShort, setIsYoutubeShort] = useState(false);
+  const [isPinFirstComment, setIsPinFirstComment] = useState(false);
 
   // Inbox interactive states
   const [activeChat, setActiveChat] = useState<any>(null);
@@ -267,6 +268,7 @@ export default function Home() {
   const [automationAutoLike, setAutomationAutoLike] = useState<boolean>(false);
   const [automationAutoHeart, setAutomationAutoHeart] = useState<boolean>(false);
   const [automationAutoModerateSpam, setAutomationAutoModerateSpam] = useState<boolean>(false);
+  const [automationAutoPinComment, setAutomationAutoPinComment] = useState<boolean>(false);
   const [editingAutomationId, setEditingAutomationId] = useState<string | null>(null);
   const [automationPosts, setAutomationPosts] = useState<any[]>([]);
   const [loadingAutomationPosts, setLoadingAutomationPosts] = useState(false);
@@ -1191,6 +1193,10 @@ export default function Home() {
         toast.error("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
         return;
       }
+      if (automationAutoPinComment && !canUseAutoPin) {
+        toast.error("A fixação automática de comentários (Auto-Pin) é exclusiva dos planos Pro e Agência.");
+        return;
+      }
       if (automationAiProvider !== "static" && !canUseAiAutomations) {
         toast.error("Respostas com Inteligência Artificial requerem o plano Pro ou Agência.");
         return;
@@ -1217,7 +1223,8 @@ export default function Home() {
         target_ad_ids: automationTargetAdIds ? automationTargetAdIds.split(",").map(id => id.trim()).filter(Boolean) : [],
         auto_like_enabled: automationAutoLike,
         auto_heart_enabled: automationAutoHeart,
-        auto_moderate_spam: automationAutoModerateSpam
+        auto_moderate_spam: automationAutoModerateSpam,
+        auto_pin_comment: automationAutoPinComment
       };
 
       let res;
@@ -1781,6 +1788,19 @@ export default function Home() {
       }
     }
 
+    const hasTiktokSelected = selectedAccounts.some(accId => accounts.find(a => (a._id || a.id) === accId)?.platform?.toLowerCase() === 'tiktok');
+    if (hasTiktokSelected) {
+      if (!mediaUrl) {
+        toast.error("O TikTok requer o envio de um arquivo de vídeo para publicação.");
+        return;
+      }
+      const isVideo = mediaUrl.toLowerCase().endsWith('.mp4') || mediaUrl.toLowerCase().endsWith('.mov') || mediaUrl.toLowerCase().includes('video');
+      if (!isVideo) {
+        toast.error("O formato selecionado não é suportado pelo TikTok. Envie um vídeo MP4 ou MOV.");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       // Group selected accounts by integrationId
@@ -1842,6 +1862,18 @@ export default function Home() {
           };
         }
 
+        if (hasTiktokSelected) {
+          payload.overrides = {
+            ...(payload.overrides || {}),
+            tiktok: {
+              privacy_level: 'PUBLIC_TO_EVERYONE',
+              disable_comment: false,
+              disable_duet: false,
+              disable_stitch: false
+            }
+          };
+        }
+
         if (mediaUrl) {
           payload.mediaItems = [
             {
@@ -1860,6 +1892,9 @@ export default function Home() {
 
         if (firstComment) {
           payload.firstComment = firstComment;
+          if (isPinFirstComment && canUseAutoPin) {
+            payload.pinFirstComment = true;
+          }
         }
 
         await zernio.createPost(payload, integrationId);
@@ -1873,6 +1908,7 @@ export default function Home() {
       setSelectedAccounts([]);
       setScheduleDate("");
       setFirstComment("");
+      setIsPinFirstComment(false);
       setYoutubeTitle("");
       setIsYoutubeShort(false);
 
@@ -3792,6 +3828,22 @@ export default function Home() {
                   </div>
                 )}
 
+                {/* TikTok Settings */}
+                {selectedAccounts.some(accId => accounts.find(a => (a._id || a.id) === accId)?.platform?.toLowerCase() === "tiktok") && (
+                  <div className="p-4 border rounded-xl bg-secondary/35 border-border/80 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      {getPlatformIcon("tiktok")} Configurações do TikTok
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>• O TikTok aceita exclusivamente upload de arquivos de <strong>vídeo</strong> (formato vertical 9:16 recomendado, MP4 ou MOV).</p>
+                      <p>• A legenda configurada acima será publicada como descrição oficial do vídeo no TikTok.</p>
+                    </div>
+                    {!mediaUrl && (
+                      <p className="text-xs text-amber-500 font-medium">⚠️ O TikTok requer o upload de um arquivo de vídeo para publicação.</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Text */}
                 <div className="space-y-1.5">
                   <Label htmlFor="postText">Legenda / Texto</Label>
@@ -3871,6 +3923,34 @@ export default function Home() {
                       value={firstComment}
                       onChange={(e) => setFirstComment(e.target.value)}
                     />
+                    {selectedAccounts.some(accId => {
+                      const p = (accounts.find(a => (a._id || a.id) === accId)?.platform || "").toLowerCase();
+                      return p === "youtube" || p === "facebook";
+                    }) && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="checkbox"
+                          id="isPinFirstComment"
+                          checked={isPinFirstComment}
+                          onChange={(e) => {
+                            if (!canUseAutoPin) {
+                              toast.info("A fixação de comentário no topo (Auto-Pin) está inclusa nos planos Pro e Agência.");
+                              return;
+                            }
+                            setIsPinFirstComment(e.target.checked);
+                          }}
+                          className="rounded border bg-card shrink-0 accent-primary cursor-pointer h-3.5 w-3.5"
+                        />
+                        <Label htmlFor="isPinFirstComment" className="text-xs cursor-pointer select-none flex items-center gap-1.5 font-medium">
+                          Fixar este comentário no topo da publicação (Auto-Pin) 📌
+                          {!canUseAutoPin && (
+                            <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                              <Lock className="w-2.5 h-2.5" /> Pro
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -5092,6 +5172,7 @@ export default function Home() {
                                     setAutomationAutoLike(rule.auto_like_enabled ?? false);
                                     setAutomationAutoHeart(rule.auto_heart_enabled ?? false);
                                     setAutomationAutoModerateSpam(rule.auto_moderate_spam ?? false);
+                                    setAutomationAutoPinComment(rule.auto_pin_comment ?? false);
                                   }}
                                   className={`p-3 border rounded-lg cursor-pointer hover:bg-secondary/40 transition-all text-left flex items-start justify-between gap-2.5 ${automationType === rule.automation_type ? 'bg-secondary/30 border-primary' : 'border-border/30 bg-secondary/5'}`}
                                 >
@@ -5164,6 +5245,7 @@ export default function Home() {
                               setAutomationAutoLike(false);
                               setAutomationAutoHeart(false);
                               setAutomationAutoModerateSpam(false);
+                              setAutomationAutoPinComment(false);
                             }}
                             className="text-xs text-primary hover:underline font-semibold"
                           >
@@ -5647,6 +5729,44 @@ export default function Home() {
                                         return null;
                                       })()}
 
+                                      {/* Auto-Pin de Comentário Oficial (YouTube & Facebook) */}
+                                      {(() => {
+                                        const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                                        const plat = (selAcc?.platform || "").toLowerCase();
+                                        if (plat === "youtube" || plat === "facebook") {
+                                          return (
+                                            <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
+                                              <input
+                                                type="checkbox"
+                                                checked={automationAutoPinComment}
+                                                onChange={(e) => {
+                                                  if (!canUseAutoPin) {
+                                                    toast.info("A fixação de respostas no topo (Auto-Pin) é exclusiva dos planos Pro e Agência.");
+                                                    return;
+                                                  }
+                                                  setAutomationAutoPinComment(e.target.checked);
+                                                }}
+                                                className="rounded border-border text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                              />
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                  <span className="font-semibold text-xs text-foreground">Fixar resposta no topo (Auto-Pin) 📌</span>
+                                                  {!canUseAutoPin && (
+                                                    <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                      <Lock className="w-2.5 h-2.5" /> Pro
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                                  Fixa automaticamente a resposta oficial da sua página ou canal no topo para máxima visibilidade.
+                                                </span>
+                                              </div>
+                                            </label>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+
                                       {/* Moderação Anti-Spam */}
                                       <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
                                         <input
@@ -5888,6 +6008,44 @@ export default function Home() {
                                             </div>
                                             <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
                                               Aplica o coração oficial do criador no comentário. O YouTube envia notificação push no celular do inscrito!
+                                            </span>
+                                          </div>
+                                        </label>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+
+                                  {/* Auto-Pin de Comentário Oficial (YouTube & Facebook) */}
+                                  {(() => {
+                                    const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                                    const plat = (selAcc?.platform || "").toLowerCase();
+                                    if (plat === "youtube" || plat === "facebook") {
+                                      return (
+                                        <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2.5 border-t border-border/20">
+                                          <input
+                                            type="checkbox"
+                                            checked={automationAutoPinComment}
+                                            onChange={(e) => {
+                                              if (!canUseAutoPin) {
+                                                toast.info("A fixação de respostas no topo (Auto-Pin) é exclusiva dos planos Pro e Agência.");
+                                                return;
+                                              }
+                                              setAutomationAutoPinComment(e.target.checked);
+                                            }}
+                                            className="rounded border-border text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                          />
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <span className="font-semibold text-xs text-foreground">Fixar resposta oficial no topo (Auto-Pin) 📌</span>
+                                              {!canUseAutoPin && (
+                                                <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                  <Lock className="w-2.5 h-2.5" /> Pro
+                                                </span>
+                                              )}
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                              Fixa automaticamente o comentário oficial da sua página ou canal no topo para máxima visibilidade e conversão.
                                             </span>
                                           </div>
                                         </label>

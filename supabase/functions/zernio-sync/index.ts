@@ -269,6 +269,41 @@ serve(async (req) => {
                     reply_sent: replyText 
                   })
                   .eq('id', logId)
+
+                // Complementary automated engagement actions
+                if (rule.auto_like_enabled) {
+                  try {
+                    await fetch(`https://zernio.com/api/v1/inbox/comments/${postId}/${cId}/like`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+                      body: JSON.stringify({ accountId, commentId: cId })
+                    })
+                  } catch (e: any) {
+                    console.warn('Sync auto-like error:', e.message)
+                  }
+                }
+                if (rule.auto_heart_enabled && platform === 'youtube') {
+                  try {
+                    await fetch(`https://zernio.com/api/v1/inbox/comments/${postId}/${cId}/heart`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+                      body: JSON.stringify({ accountId, commentId: cId })
+                    })
+                  } catch (e: any) {
+                    console.warn('Sync auto-heart error:', e.message)
+                  }
+                }
+                if (rule.auto_pin_comment && platform === 'youtube') {
+                  try {
+                    await fetch(`https://zernio.com/api/v1/inbox/comments/${postId}/${cId}/pin`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+                      body: JSON.stringify({ accountId, commentId: cId, isPinned: true })
+                    })
+                  } catch (e: any) {
+                    console.warn('Sync auto-pin error:', e.message)
+                  }
+                }
               }
             } catch (dispErr: any) {
               await supabaseClient

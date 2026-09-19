@@ -994,6 +994,23 @@ Responda diretamente e de forma concisa.`;
             console.warn('Auto-heart error (non-blocking):', heartErr.message);
           }
         }
+
+        // Auto-Pin on YouTube or Facebook comment (Module 4)
+        const allowedAutoPin = planLimits.auto_pin === true || (planSlug !== 'starter' && planLimits.auto_pin !== false);
+        if (rule.auto_pin_comment && (platform === 'youtube' || platform === 'facebook') && targetCommentId && allowedAutoPin) {
+          try {
+            const pinEndpoint = postId
+              ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/pin`
+              : `https://zernio.com/api/v1/inbox/comments/${targetCommentId}/pin`;
+            await fetch(pinEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${zernioApiKey}` },
+              body: JSON.stringify({ accountId: socialAccountId || rule.social_account_id, commentId: targetCommentId, isPinned: true })
+            });
+          } catch (pinErr: any) {
+            console.warn('Auto-pin error (non-blocking):', pinErr.message);
+          }
+        }
       }
     } catch (zernioErr: any) {
       await saveRuleLog('failed', `Erro ao conectar com a API do Zernio: ${zernioErr.message}`);
