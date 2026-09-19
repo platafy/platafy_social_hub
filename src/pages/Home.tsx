@@ -5063,11 +5063,11 @@ export default function Home() {
                           <div className="space-y-2.5">
                             {automations.filter(a => a.social_account_id === selectedAutomationAccount).map((rule, idx) => {
                               const typeLabels: Record<string, string> = {
-                                comment_reply: "Responder Comentário",
-                                dm_reply: "Responder DM/Mensagem",
-                                comment_to_dm: "Comentário → DM",
-                                story_mention: "Menção no Story",
-                                story_reply: "Resposta a Story"
+                                comment_reply: "Comentários",
+                                dm_reply: "DM",
+                                comment_to_dm: "Comentários/DM",
+                                story_mention: "Menção Story",
+                                story_reply: "Responder Story"
                               };
                               const accountObj = accounts.find(a => (a._id || a.id) === rule.social_account_id);
                               return (
@@ -5183,24 +5183,24 @@ export default function Home() {
 
                           return (
                             <div className="space-y-3 w-full">
-                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"} p-1.5 bg-secondary/35 rounded-xl border border-border/40`}>
+                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"} p-1.5 bg-secondary/35 rounded-xl border border-border/40`}>
                                 <button
                                   type="button"
                                   onClick={() => setAutomationType("comment_reply")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
                                     automationType === "comment_reply"
                                       ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
                                       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                   }`}
                                 >
                                   <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span className="truncate">Responder Comentário</span>
+                                  <span>Comentários</span>
                                 </button>
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("dm_reply")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
                                     isCommentsOnly
                                       ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
                                       : automationType === "dm_reply"
@@ -5210,13 +5210,13 @@ export default function Home() {
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
                                   <Send className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span className="truncate">Responder DM</span>
+                                  <span>DM</span>
                                 </button>
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("comment_to_dm")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
                                     isCommentsOnly
                                       ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
                                       : automationType === "comment_to_dm"
@@ -5226,7 +5226,7 @@ export default function Home() {
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
                                   <MessageCircle className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span className="truncate">Comentário → DM</span>
+                                  <span>Comentários/DM</span>
                                 </button>
                                 {isInstagram && (
                                    <>
@@ -5239,7 +5239,7 @@ export default function Home() {
                                          }
                                          setAutomationType("story_mention");
                                        }}
-                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
                                          !canUseStoriesAutomations
                                            ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
                                            : automationType === "story_mention"
@@ -5248,7 +5248,7 @@ export default function Home() {
                                        }`}
                                      >
                                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                       <span className="truncate">Menção no Story</span>
+                                       <span>Menção Story</span>
                                        {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
                                      </button>
                                      <button
@@ -5260,7 +5260,7 @@ export default function Home() {
                                          }
                                          setAutomationType("story_reply");
                                        }}
-                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border ${
+                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
                                          !canUseStoriesAutomations
                                            ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
                                            : automationType === "story_reply"
@@ -5269,7 +5269,7 @@ export default function Home() {
                                        }`}
                                      >
                                        <Bookmark className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                       <span className="truncate">Resposta a Story</span>
+                                       <span>Responder Story</span>
                                        {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
                                      </button>
                                    </>
