@@ -5054,8 +5054,8 @@ export default function Home() {
                   <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
 
                     {/* Left Column: Created Automations list (Sidebar Compacto) */}
-                    <div className="w-full lg:w-56 xl:w-60 shrink-0 space-y-4">
-                      <div className="border border-border/40 rounded-xl p-3.5 bg-card space-y-3 shadow-2xs">
+                    <div className="w-full lg:w-48 xl:w-52 shrink-0 space-y-4">
+                      <div className="border border-border/40 rounded-xl p-3 bg-card space-y-3 shadow-2xs">
                         <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">Automações Criadas</h4>
                         {automations.filter(a => a.social_account_id === selectedAutomationAccount).length === 0 ? (
                           <p className="text-xs text-muted-foreground text-center py-6">Nenhuma automação criada neste canal.</p>
@@ -5183,25 +5183,25 @@ export default function Home() {
 
                           return (
                             <div className="space-y-3 w-full">
-                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"}`}>
+                              <div className={`grid gap-1.5 sm:gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"}`}>
                                 <button
                                   type="button"
                                   onClick={() => setAutomationType("comment_reply")}
-                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                  className={`h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10.5px] 2xl:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                     automationType === "comment_reply"
                                       ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30"
                                       : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs"
                                   }`}
                                 >
                                   <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
-                                  <span className="truncate">Comentários</span>
+                                  <span className="whitespace-nowrap">Comentários</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("dm_reply")}
-                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none ${
+                                  className={`h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10.5px] 2xl:text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
                                       ? "opacity-35 cursor-not-allowed bg-slate-900/20 text-slate-500 border-slate-800"
                                       : automationType === "dm_reply"
@@ -5211,14 +5211,14 @@ export default function Home() {
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
                                   <Send className={`w-3.5 h-3.5 shrink-0 ${automationType === "dm_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
-                                  <span className="truncate">DM</span>
+                                  <span className="whitespace-nowrap">DM</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("comment_to_dm")}
-                                  className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none ${
+                                  className={`h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10.5px] 2xl:text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
                                       ? "opacity-35 cursor-not-allowed bg-slate-900/20 text-slate-500 border-slate-800"
                                       : automationType === "comment_to_dm"
@@ -5228,7 +5228,7 @@ export default function Home() {
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
                                   <MessageCircle className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_to_dm" ? "text-[#ffaa00]" : "text-slate-400"}`} />
-                                  <span className="truncate">Comentários/DM</span>
+                                  <span className="whitespace-nowrap">Comentários/DM</span>
                                 </button>
 
                                 {isInstagram && (
@@ -5241,7 +5241,7 @@ export default function Home() {
                                       }
                                       setAutomationType("story_mention");
                                     }}
-                                    className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                    className={`h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10.5px] 2xl:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                       !canUseStoriesAutomations
                                         ? "border-border/60 dark:border-slate-800 bg-card/40 dark:bg-slate-900/40 text-muted-foreground hover:border-amber-500/50 hover:text-foreground"
                                         : automationType === "story_mention"
@@ -5250,7 +5250,7 @@ export default function Home() {
                                     }`}
                                   >
                                     <Sparkles className={`w-3.5 h-3.5 shrink-0 ${automationType === "story_mention" ? "text-amber-500" : "text-slate-400"}`} />
-                                    <span className="truncate">Menção Story</span>
+                                    <span className="whitespace-nowrap">Menção Story</span>
                                     {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0 ml-0.5" />}
                                   </button>
                                 )}
@@ -5265,7 +5265,7 @@ export default function Home() {
                                       }
                                       setAutomationType("story_reply");
                                     }}
-                                    className={`h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                    className={`h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10px] sm:text-[10.5px] 2xl:text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                       !canUseStoriesAutomations
                                         ? "border-border/60 dark:border-slate-800 bg-card/40 dark:bg-slate-900/40 text-muted-foreground hover:border-amber-500/50 hover:text-foreground"
                                         : automationType === "story_reply"
@@ -5274,7 +5274,7 @@ export default function Home() {
                                     }`}
                                   >
                                     <Bookmark className={`w-3.5 h-3.5 shrink-0 ${automationType === "story_reply" ? "text-amber-500" : "text-slate-400"}`} />
-                                    <span className="truncate">Responder Story</span>
+                                    <span className="whitespace-nowrap">Responder Story</span>
                                     {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0 ml-0.5" />}
                                   </button>
                                 )}
