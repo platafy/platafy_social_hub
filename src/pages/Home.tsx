@@ -5051,11 +5051,11 @@ export default function Home() {
 
 
                 {selectedAutomationAccount ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
 
-                    {/* Left Column: Created Automations list */}
-                    <div className="lg:col-span-1 space-y-4">
-                      <div className="border border-border/40 rounded-lg p-4 bg-card space-y-3">
+                    {/* Left Column: Created Automations list (Sidebar Compacto) */}
+                    <div className="w-full lg:w-72 xl:w-80 shrink-0 space-y-4">
+                      <div className="border border-border/40 rounded-xl p-4 bg-card space-y-3 shadow-2xs">
                         <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">Automações Criadas</h4>
                         {automations.filter(a => a.social_account_id === selectedAutomationAccount).length === 0 ? (
                           <p className="text-xs text-muted-foreground text-center py-6">Nenhuma automação criada neste canal.</p>
@@ -5135,8 +5135,8 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Right Column: Form builder */}
-                    <div className="lg:col-span-2 border border-border/40 rounded-lg p-5 bg-secondary/15 space-y-6">
+                    {/* Right Column: Form builder (Expansão Máxima para 100% do espaço útil) */}
+                    <div className="flex-1 min-w-0 w-full border border-border/40 rounded-2xl p-5 sm:p-7 bg-secondary/15 space-y-6 shadow-2xs">
 
                       <div className="flex items-center justify-between border-b border-border/40 pb-3">
                         <h3 className="font-bold text-sm text-foreground">
