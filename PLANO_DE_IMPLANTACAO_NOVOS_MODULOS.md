@@ -14,6 +14,7 @@ Este documento reúne o planejamento técnico detalhado de **todas as automaçõ
 | **Módulo 4** | YouTube / Facebook | **Auto-Pin de Comentário (Fixado no Topo)** | Publicar e fixar automaticamente o primeiro comentário com link de vendas/checkout em vídeos novos e posts. | ✅ **Implementado** |
 | **Módulo 5** | TikTok | **Conexão, Publicação & Resposta a Comentários** | Habilitar conexão do TikTok, agendamento de vídeos e respostas automáticas a comentários via IA no feed. | ✅ **Implementado** |
 | **Módulo 6** | Platafy Social Hub | **Auto-Captura no CRM Kanban & Transbordo** | Inserir novos comentaristas e remetentes de DM diretamente no Kanban ("Novos Leads"), com tags de IA e transbordo WhatsApp. | ⏳ **Aguardando** |
+| **Fase 1 (GBP)** | Google Business Profile | **Conexão, CTA em Posts e Avaliações (Reviews ⭐)** | Agendamento com Botões de Ação (CTA) e automação de respostas a avaliações com filtro de estrelas (1-5★) e IA. | ✅ **Implementado** |
 
 ---
 
@@ -179,6 +180,7 @@ Todas as funcionalidades acima são disponibilizadas aos clientes rigorosamente 
 | **Módulo 3: Auto-Like, YouTube Heart & Moderação IA**| 🔒 Bloqueado | ✅ Incluso | ✅ Incluso |
 | **Módulo 4: Fixação no Topo (Auto-Pin)** | 🔒 Bloqueado | ✅ Incluso | ✅ Incluso |
 | **Módulo 5: Canal TikTok (Upload e Comentários)** | 🔒 Bloqueado | ✅ Incluso | ✅ Incluso |
+| **Fase 1: Google Business Profile (Posts, CTA & Reviews)** | 🔒 Bloqueado | ✅ Incluso | ✅ Incluso |
 | **Módulo 6: CRM Kanban & Enriquecimento de Leads**| 100 contatos (Básico) | 1.000 contatos (Completo) | Ilimitado |
 | **White Label (Marca Própria, Logo, Domínio)** | 🔒 Bloqueado | 🔒 Bloqueado | ✅ Incluso |
 

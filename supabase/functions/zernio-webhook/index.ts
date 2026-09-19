@@ -12,13 +12,14 @@ function getWebhookMessageText(msg: any): string {
   if (typeof msg === "string") return msg;
   if (typeof msg.text === "string" && msg.text) return msg.text;
   if (typeof msg.message === "string" && msg.message) return msg.message;
+  if (typeof msg.review === "string" && msg.review) return msg.review;
+  if (typeof msg.comment === "string" && msg.comment) return msg.comment;
   if (msg.message && typeof msg.message === "object") {
     if (typeof msg.message.text === "string") return msg.message.text;
     if (typeof msg.message.caption === "string") return msg.message.caption;
   }
   if (typeof msg.content === "string" && msg.content) return msg.content;
   if (typeof msg.body === "string" && msg.body) return msg.body;
-  if (typeof msg.comment === "string" && msg.comment) return msg.comment;
   if (typeof msg.caption === "string" && msg.caption) return msg.caption;
   return "";
 }
@@ -35,16 +36,22 @@ function normalizeText(str: string): string {
 async function processWebhookEvent(supabaseClient: any, payload: any, event: string, isRetry = false, existingLogId?: string) {
   const normEvent = String(event || '').toLowerCase().trim();
   const accountObj = payload.account || {};
-  const commentObj = payload.comment || {};
+  const commentObj = payload.comment || payload.review || {};
   const msgObj = payload.message || {};
 
-  // 1. Identify event category (comment vs message)
+  // 1. Identify event category (comment/review vs message)
+  const isReviewEvent =
+    normEvent.startsWith('review.') ||
+    normEvent.includes('review') ||
+    Boolean(payload.review);
+
   const isCommentEvent =
     normEvent.startsWith('comment.') ||
     normEvent.includes('comment') ||
     normEvent === 'comment_reply' ||
     normEvent === 'comment_to_dm' ||
-    Boolean(payload.comment);
+    Boolean(payload.comment) ||
+    isReviewEvent;
 
   const isMessageEvent = !isCommentEvent && (
     normEvent.startsWith('message.') ||
@@ -221,6 +228,21 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
 
   if (isCommentEvent) {
     textContent = getWebhookMessageText(commentObj) || getWebhookMessageText(payload) || '';
+    
+    // If text is empty but star rating is provided (Google Business reviews can be stars-only)
+    const starRating = Number(
+      commentObj.rating ||
+      commentObj.starRating ||
+      commentObj.stars ||
+      payload.rating ||
+      payload.review?.rating ||
+      payload.comment?.rating ||
+      0
+    );
+    if (!textContent && starRating > 0) {
+      textContent = `Avaliação de ${starRating} estrela${starRating > 1 ? 's' : ''}`;
+    }
+
     postId = String(
       commentObj.effectiveStoryId ||
       commentObj.effective_story_id ||
@@ -245,30 +267,39 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       commentObj._id ||
       commentObj.commentId ||
       commentObj.comment_id ||
+      commentObj.reviewId ||
+      commentObj.review_id ||
       commentObj.platformCommentId ||
       payload.commentId ||
       payload.comment_id ||
+      payload.reviewId ||
+      payload.review_id ||
       ''
     ).trim();
 
     senderUsername = String(
       commentObj.author?.username ||
       commentObj.author?.name ||
+      commentObj.author?.displayName ||
+      commentObj.reviewer?.displayName ||
       commentObj.from?.username ||
       commentObj.from?.name ||
       commentObj.sender?.username ||
       commentObj.sender?.name ||
       commentObj.username ||
       payload.senderUsername ||
+      payload.review?.reviewer?.displayName ||
       ''
     ).trim();
 
     authorId = String(
       commentObj.author?.id ||
       commentObj.author?._id ||
+      commentObj.reviewer?.name ||
       commentObj.from?.id ||
       commentObj.from?._id ||
       commentObj.sender?.id ||
+      payload.review?.reviewer?.name ||
       ''
     ).trim();
   } else {
@@ -516,7 +547,7 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
 
   const isStoryMention = normEvent.includes('story_mention') || normEvent === 'story_mention';
   const isStoryReply = normEvent.includes('story_reply') || normEvent === 'story_reply';
-  const isAltCommentMessage = isMessageEvent && (platform === 'youtube' || platform === 'tiktok');
+  const isAltCommentMessage = isMessageEvent && (platform === 'youtube' || platform === 'tiktok' || platform === 'googlebusiness');
 
   const targetType = isStoryMention
     ? ['story_mention', 'dm_reply']
@@ -600,57 +631,93 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       }
     }
 
-    // Scope validation: Organic vs Ads (Meta Ads Dark Posts)
-    const adIdCandidate = String(
-      payload.adId ||
-      commentObj.adId ||
-      commentObj.effectiveStoryId ||
-      msgObj.adId ||
-      ''
-    ).trim();
-
-    const isAdInteraction = Boolean(
-      adIdCandidate ||
-      payload.isAd ||
-      commentObj.isAd ||
-      payload.placement ||
-      commentObj.placement
-    );
-
-    // Entitlement Check: Meta Ads Automation (Module 1)
-    if (isAdInteraction || rule.target_scope === 'ads') {
-      const allowedAds = planLimits.ads_automations === true || (planSlug !== 'starter' && planLimits.ads_automations !== false);
-      if (!allowedAds) {
-        await saveRuleLog('ignored', 'Ignorado: O plano atual do cliente (Starter) não inclui automações para anúncios pagos (Meta Ads).');
+    // Entitlement Check: Google Business Profile (Fase 1)
+    if (platform === 'googlebusiness') {
+      const allowedGoogle = planLimits.google_business === true || (planSlug !== 'starter' && planLimits.google_business !== false);
+      if (!allowedGoogle) {
+        await saveRuleLog('ignored', 'Ignorado: O plano atual do cliente (Starter) não inclui automações para Google Business Profile.');
         isFirstRule = false;
         continue;
       }
     }
 
-    if (rule.target_scope === 'organic' && isAdInteraction) {
-      await saveRuleLog('ignored', 'Ignorado: A regra está configurada para postagens orgânicas e este evento é de um anúncio pago (Meta Ads).');
-      isFirstRule = false;
-      continue;
-    }
-    if (rule.target_scope === 'ads' && !isAdInteraction) {
-      await saveRuleLog('ignored', 'Ignorado: A regra está configurada para anúncios pagos (Meta Ads) e este evento é de uma postagem orgânica.');
-      isFirstRule = false;
-      continue;
-    }
-
-    // Specific Ads Filtering (if rule.target_ad_ids has entries)
-    if (isAdInteraction && Array.isArray(rule.target_ad_ids) && rule.target_ad_ids.length > 0) {
-      const allowedAdIds = rule.target_ad_ids.map((id: any) => String(id).trim()).filter(Boolean);
-      const matchesSpecificAd = allowedAdIds.some((allowedId: string) =>
-        allowedId === adIdCandidate ||
-        (postId && postId.includes(allowedId)) ||
-        (commentId && commentId.includes(allowedId))
+    // Scope validation: Google Business Star Ratings vs Meta Ads Dark Posts
+    if (platform === 'googlebusiness') {
+      const rating = Number(
+        commentObj.rating ||
+        commentObj.starRating ||
+        commentObj.stars ||
+        payload.rating ||
+        payload.review?.rating ||
+        payload.comment?.rating ||
+        0
       );
 
-      if (!matchesSpecificAd) {
-        await saveRuleLog('ignored', `Ignorado: O anúncio [${adIdCandidate || 'desconhecido'}] não está na lista de anúncios permitidos nesta regra.`);
+      if (rating > 0) {
+        if (rule.target_scope === 'organic' && rating < 4) {
+          await saveRuleLog('ignored', `Ignorado: Regra configurada apenas para avaliações positivas (4-5 estrelas) e esta avaliação recebeu ${rating} estrela(s).`);
+          isFirstRule = false;
+          continue;
+        }
+        if (rule.target_scope === 'ads' && rating >= 4) {
+          await saveRuleLog('ignored', `Ignorado: Regra configurada apenas para avaliações críticas (1-3 estrelas) e esta avaliação recebeu ${rating} estrela(s).`);
+          isFirstRule = false;
+          continue;
+        }
+      }
+    } else {
+      // Scope validation: Organic vs Ads (Meta Ads Dark Posts)
+      const adIdCandidate = String(
+        payload.adId ||
+        commentObj.adId ||
+        commentObj.effectiveStoryId ||
+        msgObj.adId ||
+        ''
+      ).trim();
+
+      const isAdInteraction = Boolean(
+        adIdCandidate ||
+        payload.isAd ||
+        commentObj.isAd ||
+        payload.placement ||
+        commentObj.placement
+      );
+
+      // Entitlement Check: Meta Ads Automation (Module 1)
+      if (isAdInteraction || rule.target_scope === 'ads') {
+        const allowedAds = planLimits.ads_automations === true || (planSlug !== 'starter' && planLimits.ads_automations !== false);
+        if (!allowedAds) {
+          await saveRuleLog('ignored', 'Ignorado: O plano atual do cliente (Starter) não inclui automações para anúncios pagos (Meta Ads).');
+          isFirstRule = false;
+          continue;
+        }
+      }
+
+      if (rule.target_scope === 'organic' && isAdInteraction) {
+        await saveRuleLog('ignored', 'Ignorado: A regra está configurada para postagens orgânicas e este evento é de um anúncio pago (Meta Ads).');
         isFirstRule = false;
         continue;
+      }
+      if (rule.target_scope === 'ads' && !isAdInteraction) {
+        await saveRuleLog('ignored', 'Ignorado: A regra está configurada para anúncios pagos (Meta Ads) e este evento é de uma postagem orgânica.');
+        isFirstRule = false;
+        continue;
+      }
+
+      // Specific Ads Filtering (if rule.target_ad_ids has entries)
+      if (isAdInteraction && Array.isArray(rule.target_ad_ids) && rule.target_ad_ids.length > 0) {
+        const allowedAdIds = rule.target_ad_ids.map((id: any) => String(id).trim()).filter(Boolean);
+        const matchesSpecificAd = allowedAdIds.some((allowedId: string) =>
+          allowedId === adIdCandidate ||
+          (postId && postId.includes(allowedId)) ||
+          (commentId && commentId.includes(allowedId))
+        );
+
+        if (!matchesSpecificAd) {
+          await saveRuleLog('ignored', `Ignorado: O anúncio [${adIdCandidate || 'desconhecido'}] não está na lista de anúncios permitidos nesta regra.`);
+          isFirstRule = false;
+          continue;
+        }
       }
     }
 
@@ -843,10 +910,13 @@ Responda diretamente e de forma concisa.`;
     };
 
     // Generate primary response (DM or Comment Reply)
-    const isCommentToDm = rule.automation_type === 'comment_to_dm' && isCommentEvent;
-    const primaryContextDesc = isCommentToDm
-      ? 'Mensagem direta (Direct privado para o usuário que comentou no post)'
-      : (isCommentEvent || isAltCommentMessage ? 'Comentário' : 'Mensagem direta');
+    const isGoogleReview = platform === 'googlebusiness' || isReviewEvent;
+    const isCommentToDm = rule.automation_type === 'comment_to_dm' && isCommentEvent && !isGoogleReview;
+    const primaryContextDesc = isGoogleReview
+      ? 'Avaliação de cliente no perfil da empresa no Google Meu Negócio (Google Business Profile)'
+      : isCommentToDm
+        ? 'Mensagem direta (Direct privado para o usuário que comentou no post)'
+        : (isCommentEvent || isAltCommentMessage ? 'Comentário' : 'Mensagem direta');
 
     let replyText = await generateReplyText(
       rule.ai_provider,
@@ -875,11 +945,11 @@ Responda diretamente e de forma concisa.`;
     // D. Dispatch response via Zernio API
     let endpoint = '';
     let requestBody: any = {};
-    const isYoutubeOrTiktok = platform === 'youtube' || platform === 'tiktok';
+    const isAltCommentPlatform = platform === 'youtube' || platform === 'tiktok' || platform === 'googlebusiness';
 
     const targetCommentId = isCommentEvent ? commentId : (msgObj.id || msgObj._id || '');
 
-    if (isCommentEvent || (isMessageEvent && isYoutubeOrTiktok)) {
+    if (isCommentEvent || (isMessageEvent && isAltCommentPlatform)) {
       if (isCommentToDm) {
         // 1. Private reply to comment (Instagram DM)
         endpoint = postId
@@ -1171,11 +1241,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, type: 'post_status_updated' }), { status: 200, headers: corsHeaders });
     }
 
-    // Handle Comments and Direct Messages (comment.*, message.*, inbox.*)
+    // Handle Comments, Reviews and Direct Messages (comment.*, review.*, message.*, inbox.*)
     const isComment =
       normEvent.startsWith('comment.') ||
       normEvent.includes('comment') ||
-      Boolean(payload.comment);
+      normEvent.startsWith('review.') ||
+      normEvent.includes('review') ||
+      Boolean(payload.comment) ||
+      Boolean(payload.review);
 
     const isMessage = !isComment && (
       normEvent.startsWith('message.') ||

@@ -53,6 +53,7 @@ interface SubscriptionContextType {
   canUseAutoModeration: boolean;
   canUseAutoPin: boolean;
   canUseTikTok: boolean;
+  canUseGoogleBusiness: boolean;
   maxProfiles: number;
   maxChannels: number;
   maxPosts: number;
@@ -90,6 +91,7 @@ export const DEFAULT_PLANS: Plan[] = [
       auto_engagement: false,
       auto_pin: false,
       tiktok_channel: false,
+      google_business: false,
       white_label: false
     },
     is_popular: false
@@ -112,6 +114,7 @@ export const DEFAULT_PLANS: Plan[] = [
       "Moderação inteligente anti-spam com IA",
       "Fixação automática de comentários (Auto-Pin)",
       "Canal TikTok incluso (Publicação e Comentários)",
+      "Google Meu Negócio incluso (Posts e Reviews com IA)",
       "CRM Kanban de Leads & Transbordo",
       "Suporte prioritário"
     ],
@@ -127,6 +130,7 @@ export const DEFAULT_PLANS: Plan[] = [
       auto_engagement: true,
       auto_pin: true,
       tiktok_channel: true,
+      google_business: true,
       white_label: false
     },
     is_popular: true
@@ -144,7 +148,7 @@ export const DEFAULT_PLANS: Plan[] = [
       "Contas sociais e agendamentos ilimitados",
       "Todas as automações avançadas (Meta Ads, Stories, IA)",
       "Auto-Engajamento, Moderação e Auto-Pin ilimitados",
-      "Suporte completo ao TikTok e todas as redes",
+      "Suporte completo ao TikTok e Google Meu Negócio",
       "CRM Kanban sem limite de contatos",
       "Personalização White Label completa (SaaS próprio)",
       "Múltiplas integrações Zernio",
@@ -162,6 +166,7 @@ export const DEFAULT_PLANS: Plan[] = [
       auto_engagement: true,
       auto_pin: true,
       tiktok_channel: true,
+      google_business: true,
       white_label: true
     },
     is_popular: false
@@ -355,6 +360,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     (isPlanProOrAgency && subscription?.plan?.limits?.tiktok_channel !== false)
   );
 
+  const canUseGoogleBusiness = Boolean(
+    isSuperAdmin ||
+    hasFeature("google_business") ||
+    (subscription?.plan?.limits?.google_business === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.google_business !== false)
+  );
+
   const rawMaxProfiles = getLimit("max_profiles", -999);
   const maxChannels = getLimit("max_channels", 2);
   const maxProfiles = rawMaxProfiles !== -999
@@ -415,6 +427,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         canUseAutoModeration,
         canUseAutoPin,
         canUseTikTok,
+        canUseGoogleBusiness,
         maxProfiles,
         maxChannels,
         maxPosts,

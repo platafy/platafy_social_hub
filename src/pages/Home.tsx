@@ -129,6 +129,7 @@ export default function Home() {
     canUseAutoModeration,
     canUseAutoPin,
     canUseTikTok,
+    canUseGoogleBusiness,
   } = useSubscription();
   const tutorialVideoUrl = branding.tutorial_video_url || "/criar-conta.mp4";
   const [activeTab, setActiveTab] = useState<TabType>(() => (sessionStorage.getItem("zernio_active_tab") as TabType) || "dashboard");
@@ -217,6 +218,8 @@ export default function Home() {
   const [youtubeTitle, setYoutubeTitle] = useState("");
   const [isYoutubeShort, setIsYoutubeShort] = useState(false);
   const [isPinFirstComment, setIsPinFirstComment] = useState(false);
+  const [googleCtaType, setGoogleCtaType] = useState("NONE");
+  const [googleCtaUrl, setGoogleCtaUrl] = useState("");
 
   // Inbox interactive states
   const [activeChat, setActiveChat] = useState<any>(null);
@@ -1201,6 +1204,11 @@ export default function Home() {
         toast.error("Respostas com Inteligência Artificial requerem o plano Pro ou Agência.");
         return;
       }
+      const isGoogleAccount = platform?.toLowerCase() === "googlebusiness" || platform?.toLowerCase() === "google";
+      if (isGoogleAccount && !canUseGoogleBusiness) {
+        toast.error("A automação para o Google Meu Negócio é exclusiva dos planos Pro e Agência.");
+        return;
+      }
 
       const payload = {
         tenant_id: activeTenantId,
@@ -1801,6 +1809,15 @@ export default function Home() {
       }
     }
 
+    const hasGoogleSelected = selectedAccounts.some(accId => {
+      const p = (accounts.find(a => (a._id || a.id) === accId)?.platform || "").toLowerCase();
+      return p === "googlebusiness" || p === "google";
+    });
+    if (hasGoogleSelected && !canUseGoogleBusiness) {
+      toast.error("A publicação no Google Meu Negócio é exclusiva dos planos Pro e Agência.");
+      return;
+    }
+
     setLoading(true);
     try {
       // Group selected accounts by integrationId
@@ -1874,6 +1891,20 @@ export default function Home() {
           };
         }
 
+        if (hasGoogleSelected && googleCtaType && googleCtaType !== "NONE") {
+          const ctaPayload: any = { actionType: googleCtaType };
+          if (googleCtaUrl) {
+            ctaPayload.url = googleCtaUrl;
+          }
+          payload.callToAction = ctaPayload;
+          payload.overrides = {
+            ...(payload.overrides || {}),
+            googlebusiness: {
+              callToAction: ctaPayload
+            }
+          };
+        }
+
         if (mediaUrl) {
           payload.mediaItems = [
             {
@@ -1911,6 +1942,8 @@ export default function Home() {
       setIsPinFirstComment(false);
       setYoutubeTitle("");
       setIsYoutubeShort(false);
+      setGoogleCtaType("NONE");
+      setGoogleCtaUrl("");
 
       // Refresh posts list
       await fetchConfig(false);
@@ -3844,6 +3877,55 @@ export default function Home() {
                   </div>
                 )}
 
+                {/* Google Business Profile Settings */}
+                {selectedAccounts.some(accId => {
+                  const plat = (accounts.find(a => (a._id || a.id) === accId)?.platform || "").toLowerCase();
+                  return plat === "googlebusiness" || plat === "google";
+                }) && (
+                  <div className="p-4 border rounded-xl bg-secondary/35 border-border/80 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      {getPlatformIcon("googlebusiness")} Configurações do Google Meu Negócio
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>• Esta publicação será exibida na ficha da sua empresa no <strong>Google Maps</strong> e na Busca do Google.</p>
+                      <p>• Adicione um botão oficial de chamada para ação para direcionar clientes para agendamentos, pedidos ou ligações.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <Label htmlFor="googleCtaType" className="text-xs font-semibold">Botão de Ação (CTA)</Label>
+                        <select
+                          id="googleCtaType"
+                          value={googleCtaType}
+                          onChange={(e) => setGoogleCtaType(e.target.value)}
+                          className="w-full rounded border bg-card p-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="NONE">Sem botão (Apenas texto/foto)</option>
+                          <option value="LEARN_MORE">Saiba Mais</option>
+                          <option value="BOOK">Agendar</option>
+                          <option value="ORDER">Fazer Pedido</option>
+                          <option value="SHOP">Comprar</option>
+                          <option value="SIGN_UP">Cadastrar-se</option>
+                          <option value="CALL">Ligar Agora</option>
+                        </select>
+                      </div>
+                      {googleCtaType !== "NONE" && (
+                        <div className="space-y-1">
+                          <Label htmlFor="googleCtaUrl" className="text-xs font-semibold">
+                            {googleCtaType === "CALL" ? "Número de Telefone (com DDD)" : "URL de Destino do Botão"}
+                          </Label>
+                          <Input
+                            id="googleCtaUrl"
+                            placeholder={googleCtaType === "CALL" ? "ex: +5534999998888" : "ex: https://seusite.com/oferta"}
+                            value={googleCtaUrl}
+                            onChange={(e) => setGoogleCtaUrl(e.target.value)}
+                            className="bg-card text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Text */}
                 <div className="space-y-1.5">
                   <Label htmlFor="postText">Legenda / Texto</Label>
@@ -5073,7 +5155,8 @@ export default function Home() {
                       const accId = acc._id || acc.id;
                       const isSelected = selectedAutomationAccount === accId;
                       const platformLower = (acc.platform || "").toLowerCase();
-                      const isSupported = platformLower === "instagram" || platformLower === "facebook" || platformLower === "youtube" || platformLower === "tiktok";
+                      const isGoogle = platformLower === "googlebusiness" || platformLower === "google";
+                      const isSupported = platformLower === "instagram" || platformLower === "facebook" || platformLower === "youtube" || platformLower === "tiktok" || isGoogle;
                       const isTiktok = platformLower === "tiktok";
 
                       return (
@@ -5084,10 +5167,14 @@ export default function Home() {
                               toast.info("A automação para o TikTok está inclusa nos planos Pro e Agência. Conheça nossos planos para desbloquear!");
                               return;
                             }
+                            if (isGoogle && !canUseGoogleBusiness) {
+                              toast.info("A automação para o Google Meu Negócio está inclusa nos planos Pro e Agência. Conheça nossos planos para desbloquear!");
+                              return;
+                            }
                             if (isSupported) {
                               setSelectedAutomationAccount(accId);
                               fetchAutomationPosts(accId);
-                              if (platformLower === "youtube" || platformLower === "tiktok") {
+                              if (platformLower === "youtube" || platformLower === "tiktok" || isGoogle) {
                                 setAutomationType("comment_reply");
                               }
                             }
@@ -5111,6 +5198,11 @@ export default function Home() {
                               {isTiktok && (
                                 <span className="text-[8px] px-1 py-0.5 bg-primary/10 text-primary rounded uppercase font-semibold scale-90 origin-right">
                                   Comentários
+                                </span>
+                              )}
+                              {isGoogle && (
+                                <span className="text-[8px] px-1 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase font-semibold scale-90 origin-right">
+                                  Reviews ⭐
                                 </span>
                               )}
                               {!isSupported && (
@@ -5260,7 +5352,8 @@ export default function Home() {
                         {(() => {
                           const selectedAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
                           const selectedPlatform = (selectedAcc?.platform || "").toLowerCase();
-                          const isCommentsOnly = selectedPlatform === "youtube" || selectedPlatform === "tiktok";
+                          const isGoogle = selectedPlatform === "googlebusiness" || selectedPlatform === "google";
+                          const isCommentsOnly = selectedPlatform === "youtube" || selectedPlatform === "tiktok" || isGoogle;
                           const isInstagram = selectedPlatform === "instagram";
 
                           return (
@@ -5276,7 +5369,7 @@ export default function Home() {
                                   }`}
                                 >
                                   <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
-                                  <span className="whitespace-nowrap">Comentários</span>
+                                  <span className="whitespace-nowrap">{isGoogle ? "Avaliações (Reviews)" : "Comentários"}</span>
                                 </button>
 
                                 <button
@@ -5290,7 +5383,7 @@ export default function Home() {
                                       ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30 cursor-pointer"
                                       : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs cursor-pointer"
                                   }`}
-                                  title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
+                                  title={isCommentsOnly ? (isGoogle ? "Não aplicável para Google Meu Negócio" : "Não suportado para YouTube/TikTok") : ""}
                                 >
                                   <Send className={`w-3.5 h-3.5 shrink-0 ${automationType === "dm_reply" ? "text-[#ffaa00]" : "text-slate-400"}`} />
                                   <span className="whitespace-nowrap">DM</span>
@@ -5307,7 +5400,7 @@ export default function Home() {
                                       ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 text-foreground font-bold shadow-sm ring-1 ring-[#ffaa00]/30 cursor-pointer"
                                       : "border border-border/80 dark:border-slate-700/90 bg-card/90 dark:bg-slate-900/70 hover:bg-card hover:border-slate-400 dark:hover:border-slate-500 text-foreground/85 dark:text-slate-200 hover:text-foreground dark:hover:text-white shadow-2xs cursor-pointer"
                                   }`}
-                                  title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
+                                  title={isCommentsOnly ? (isGoogle ? "Não aplicável para Google Meu Negócio" : "Não suportado para YouTube/TikTok") : ""}
                                 >
                                   <MessageCircle className={`w-3.5 h-3.5 shrink-0 ${automationType === "comment_to_dm" ? "text-[#ffaa00]" : "text-slate-400"}`} />
                                   <span className="whitespace-nowrap">Comentários/DM</span>
@@ -5376,145 +5469,232 @@ export default function Home() {
                         })()}
                       </div>
 
-                      {/* Escopo da Publicação (Meta Ads Dark Posts vs Orgânicos) */}
-                      {automationType !== "story_mention" && automationType !== "story_reply" && (
-                        <div className="space-y-2.5 pb-4 border-b border-border/40">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                            <div>
-                              <Label className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
-                                <Globe className="w-4 h-4 text-primary" />
-                                Escopo da Publicação
-                                <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-1">
-                                  Meta Ads & Orgânico
-                                </span>
-                              </Label>
-                              <span className="text-xs text-muted-foreground">
-                                Escolha onde a automação deve monitorar e responder comentários.
-                              </span>
+                      {/* Escopo da Publicação (Meta Ads) OU Filtro de Avaliações (Google Reviews) */}
+                      {(() => {
+                        const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                        const plat = (selAcc?.platform || "").toLowerCase();
+                        const isGoogle = plat === "googlebusiness" || plat === "google";
+                        const isMeta = plat === "instagram" || plat === "facebook";
+
+                        if (isGoogle) {
+                          return (
+                            <div className="space-y-2.5 pb-4 border-b border-border/40">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                <div>
+                                  <Label className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                                    <Sparkles className="w-4 h-4 text-amber-500" />
+                                    Filtro de Avaliações (Google Reviews)
+                                    <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 border border-blue-500/25 px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-1">
+                                      Google Meu Negócio
+                                    </span>
+                                  </Label>
+                                  <span className="text-xs text-muted-foreground">
+                                    Defina quais notas de estrelas devem receber resposta automatizada inteligente.
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setAutomationTargetScope("all")}
+                                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                    automationTargetScope === "all"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                      : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-semibold text-xs text-foreground">Todas as Avaliações</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">1 a 5 ⭐</span>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground leading-tight">
+                                    Responde a todas as novas avaliações recebidas na ficha da empresa.
+                                  </p>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setAutomationTargetScope("organic")}
+                                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                    automationTargetScope === "organic"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                      : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-semibold text-xs text-emerald-600 dark:text-emerald-400">Apenas Elogios</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-medium">4 e 5 ⭐</span>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground leading-tight">
+                                    Agradece elogios e cita termos locais para reforçar o SEO no Google Maps.
+                                  </p>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setAutomationTargetScope("ads")}
+                                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                    automationTargetScope === "ads"
+                                      ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                      : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-semibold text-xs text-amber-600 dark:text-amber-400">Apenas Críticas</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">1 a 3 ⭐</span>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground leading-tight">
+                                    Responde de forma empática e direciona o cliente para o WhatsApp de suporte.
+                                  </p>
+                                </button>
+                              </div>
                             </div>
-                          </div>
+                          );
+                        }
 
-                          {/* 3 Interactive Cards / Buttons */}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            {/* 1. Todas as Publicações */}
-                            <button
-                              type="button"
-                              onClick={() => setAutomationTargetScope("all")}
-                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                automationTargetScope === "all"
-                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
-                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Globe className={`w-4 h-4 ${automationTargetScope === "all" ? "text-amber-500" : "text-muted-foreground"}`} />
-                                  <span className="font-semibold text-xs text-foreground">Todas</span>
-                                </div>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed + Ads</span>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground leading-tight">
-                                Responde tanto em posts normais do feed quanto em anúncios de tráfego pago.
-                              </p>
-                            </button>
+                        if (!isMeta || automationType === "story_mention" || automationType === "story_reply") return null;
 
-                            {/* 2. Apenas Feed Orgânico */}
-                            <button
-                              type="button"
-                              onClick={() => setAutomationTargetScope("organic")}
-                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                automationTargetScope === "organic"
-                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
-                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Layers className={`w-4 h-4 ${automationTargetScope === "organic" ? "text-amber-500" : "text-muted-foreground"}`} />
-                                  <span className="font-semibold text-xs text-foreground">Apenas Orgânico</span>
-                                </div>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed / Reels</span>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground leading-tight">
-                                Foca estritamente em postagens públicas e ignora campanhas pagas.
-                              </p>
-                            </button>
-
-                            {/* 3. Apenas Anúncios Patrocinados (Meta Ads / Dark Posts) */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!canUseAdsAutomations) {
-                                  toast.info("A automação em anúncios pagos do Meta Ads está inclusa nos planos Pro e Agência.");
-                                }
-                                setAutomationTargetScope("ads");
-                              }}
-                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 relative ${
-                                automationTargetScope === "ads"
-                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
-                                  : !canUseAdsAutomations
-                                  ? "border-border/60 bg-card/40 text-muted-foreground hover:border-amber-500/50"
-                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Megaphone className={`w-4 h-4 ${automationTargetScope === "ads" ? "text-amber-500" : "text-muted-foreground"}`} />
-                                  <span className="font-semibold text-xs text-foreground">Anúncios Pagos</span>
-                                </div>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                                  {!canUseAdsAutomations && <Lock className="w-2.5 h-2.5" />}
-                                  Meta Ads
+                        return (
+                          <div className="space-y-2.5 pb-4 border-b border-border/40">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                              <div>
+                                <Label className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                                  <Globe className="w-4 h-4 text-primary" />
+                                  Escopo da Publicação
+                                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-1">
+                                    Meta Ads & Orgânico
+                                  </span>
+                                </Label>
+                                <span className="text-xs text-muted-foreground">
+                                  Escolha onde a automação deve monitorar e responder comentários.
                                 </span>
                               </div>
-                              <p className="text-[11px] text-muted-foreground leading-tight">
-                                Exclusivo para comentários em campanhas de tráfego pago (Dark Posts).
-                              </p>
-                            </button>
-                          </div>
+                            </div>
 
-                          {/* Upsell Banner for Free/Starter when Ads is selected */}
-                          {automationTargetScope === "ads" && !canUseAdsAutomations && (
-                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
-                              <div className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
-                                <span className="font-bold flex items-center gap-1.5">
-                                  <Lock className="h-4 w-4" /> Recurso Exclusivo dos Planos Pro & Agência
-                                </span>
-                                <p className="text-[11.5px] text-muted-foreground">
-                                  Automatize e responda dúvidas de compradores diretamente nos seus anúncios de tráfego pago da Meta.
-                                </p>
-                              </div>
-                              <Button
+                            {/* 3 Interactive Cards / Buttons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                              {/* 1. Todas as Publicações */}
+                              <button
                                 type="button"
-                                size="sm"
-                                className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shrink-0 shadow-sm cursor-pointer"
-                                onClick={() => navigate("/planos")}
+                                onClick={() => setAutomationTargetScope("all")}
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                  automationTargetScope === "all"
+                                    ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                    : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                }`}
                               >
-                                Fazer Upgrade Agora
-                              </Button>
-                            </div>
-                          )}
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Globe className={`w-4 h-4 ${automationTargetScope === "all" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                    <span className="font-semibold text-xs text-foreground">Todas</span>
+                                  </div>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed + Ads</span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground leading-tight">
+                                  Responde tanto em posts normais do feed quanto em anúncios de tráfego pago.
+                                </p>
+                              </button>
 
-                          {/* Optional: Target Ad IDs if Pro user selects ads */}
-                          {automationTargetScope === "ads" && canUseAdsAutomations && (
-                            <div className="space-y-1.5 pt-2 border-t border-border/20 animate-in fade-in duration-200">
-                              <Label htmlFor="autoTargetAdIds" className="font-semibold text-xs text-foreground block">
-                                IDs de Anúncios Específicos (Opcional)
-                              </Label>
-                              <Input
-                                id="autoTargetAdIds"
-                                placeholder="ex: 2385123456789, 2385987654321 (ou deixe em branco para responder em todos os anúncios)"
-                                value={automationTargetAdIds}
-                                onChange={(e) => setAutomationTargetAdIds(e.target.value)}
-                                className="bg-card text-xs"
-                              />
-                              <span className="text-[10px] text-muted-foreground block">
-                                Insira os IDs dos anúncios do Gerenciador de Anúncios da Meta separados por vírgula. Se deixar em branco, a automação responderá a todos os anúncios ativos da conta.
-                              </span>
+                              {/* 2. Apenas Feed Orgânico */}
+                              <button
+                                type="button"
+                                onClick={() => setAutomationTargetScope("organic")}
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                  automationTargetScope === "organic"
+                                    ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                    : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Layers className={`w-4 h-4 ${automationTargetScope === "organic" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                    <span className="font-semibold text-xs text-foreground">Apenas Orgânico</span>
+                                  </div>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed / Reels</span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground leading-tight">
+                                  Foca estritamente em postagens públicas e ignora campanhas pagas.
+                                </p>
+                              </button>
+
+                              {/* 3. Apenas Anúncios Patrocinados (Meta Ads / Dark Posts) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!canUseAdsAutomations) {
+                                    toast.info("A automação em anúncios pagos do Meta Ads está inclusa nos planos Pro e Agência.");
+                                    return;
+                                  }
+                                  setAutomationTargetScope("ads");
+                                }}
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 relative ${
+                                  automationTargetScope === "ads"
+                                    ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                    : !canUseAdsAutomations
+                                    ? "border-border/60 bg-card/40 text-muted-foreground hover:border-amber-500/50"
+                                    : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2">
+                                    <Megaphone className={`w-4 h-4 ${automationTargetScope === "ads" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                    <span className="font-semibold text-xs text-foreground">Anúncios Pagos</span>
+                                  </div>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                                    {!canUseAdsAutomations && <Lock className="w-2.5 h-2.5" />}
+                                    Meta Ads
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground leading-tight">
+                                  Exclusivo para comentários em campanhas de tráfego pago (Dark Posts).
+                                </p>
+                              </button>
                             </div>
-                          )}
-                        </div>
-                      )}
+
+                            {/* Upsell Banner for Free/Starter when Ads is selected */}
+                            {automationTargetScope === "ads" && !canUseAdsAutomations && (
+                              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                                <div className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
+                                  <span className="font-bold flex items-center gap-1.5">
+                                    <Lock className="h-4 w-4" /> Recurso Exclusivo dos Planos Pro & Agência
+                                  </span>
+                                  <p className="text-[11.5px] text-muted-foreground">
+                                    Automatize e responda dúvidas de compradores diretamente nos seus anúncios de tráfego pago da Meta.
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shrink-0 shadow-sm cursor-pointer"
+                                  onClick={() => navigate("/planos")}
+                                >
+                                  Fazer Upgrade Agora
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Optional: Target Ad IDs if Pro user selects ads */}
+                            {automationTargetScope === "ads" && canUseAdsAutomations && (
+                              <div className="space-y-1.5 pt-2 border-t border-border/20 animate-in fade-in duration-200">
+                                <Label htmlFor="autoTargetAdIds" className="font-semibold text-xs text-foreground block">
+                                  IDs de Anúncios Específicos (Opcional)
+                                </Label>
+                                <Input
+                                  id="autoTargetAdIds"
+                                  placeholder="ex: 2385123456789, 2385987654321 (ou deixe em branco para responder em todos os anúncios)"
+                                  value={automationTargetAdIds}
+                                  onChange={(e) => setAutomationTargetAdIds(e.target.value)}
+                                  className="bg-card text-xs"
+                                />
+                                <span className="text-[10px] text-muted-foreground block">
+                                  Insira os IDs dos anúncios do Gerenciador de Anúncios da Meta separados por vírgula. Se deixar em branco, a automação responderá a todos os anúncios ativos da conta.
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Enable Toggle */}
                       <div className="flex items-center justify-between border-b border-border/40 pb-4">

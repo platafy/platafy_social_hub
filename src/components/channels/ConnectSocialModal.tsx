@@ -7,6 +7,7 @@ import {
   SiFacebook,
   SiYoutube,
   SiTiktok,
+  SiGoogle,
   SiWhatsapp,
   SiThreads,
   SiPinterest,
@@ -26,7 +27,7 @@ export interface SocialPlatformConfig {
   options?: any;
 }
 
-// Redes sociais ativas disponíveis para conexão pelo cliente (Facebook, Instagram e YouTube)
+// Redes sociais ativas disponíveis para conexão pelo cliente (Facebook, Instagram, YouTube, TikTok, Google Business)
 const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: "facebook",
@@ -57,6 +58,13 @@ const SUPPORTED_PLATFORMS: SocialPlatformConfig[] = [
     description: "TikTok for Business & Criadores",
     icon: <SiTiktok className="w-8 h-8 text-foreground" />,
     colorClass: "hover:border-foreground/50 hover:bg-foreground/5 hover:shadow-foreground/10",
+  },
+  {
+    id: "googlebusiness",
+    name: "Google Meu Negócio",
+    description: "Perfil de Empresa & Google Maps",
+    icon: <SiGoogle className="w-8 h-8 text-[#4285F4]" />,
+    colorClass: "hover:border-[#4285F4]/50 hover:bg-[#4285F4]/5 hover:shadow-blue-500/10",
   },
 ];
 
@@ -129,7 +137,7 @@ export function ConnectSocialModal({
   onAccountConnected,
   onOpenFacebookSelect,
 }: ConnectSocialModalProps) {
-  const { canUseTikTok } = useSubscription();
+  const { canUseTikTok, canUseGoogleBusiness } = useSubscription();
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
   const handleOAuthMessage = useCallback(
@@ -177,6 +185,10 @@ export function ConnectSocialModal({
   const handleConnect = async (platform: SocialPlatformConfig) => {
     if (platform.id === "tiktok" && !canUseTikTok) {
       toast.info("A conexão do canal TikTok está disponível nos planos Pro e Agência. Conheça nossos planos para conectar o TikTok!");
+      return;
+    }
+    if (platform.id === "googlebusiness" && !canUseGoogleBusiness) {
+      toast.info("A conexão do Google Meu Negócio está disponível nos planos Pro e Agência. Conheça nossos planos para conectar o Google Business!");
       return;
     }
 
@@ -277,9 +289,10 @@ export function ConnectSocialModal({
 
         {/* Lista de Redes Sociais - 2 cards por linha */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-0.5">
-          {SUPPORTED_PLATFORMS.map((platform) => {
+          {SUPPORTED_PLATFORMS.map((platform, index) => {
             const isThisConnecting = connectingPlatform === platform.id;
-            const isTikTokLocked = platform.id === "tiktok" && !canUseTikTok;
+            const isLocked = (platform.id === "tiktok" && !canUseTikTok) || (platform.id === "googlebusiness" && !canUseGoogleBusiness);
+            const isLastOdd = index === SUPPORTED_PLATFORMS.length - 1 && SUPPORTED_PLATFORMS.length % 2 !== 0;
 
             return (
               <button
@@ -288,6 +301,8 @@ export function ConnectSocialModal({
                 disabled={isLimitReached || connectingPlatform !== null}
                 onClick={() => handleConnect(platform)}
                 className={`group relative p-3 sm:p-3.5 rounded-xl border text-center flex flex-col items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                  isLastOdd ? "sm:col-span-2 sm:max-w-[calc(50%-0.375rem)] sm:mx-auto w-full" : ""
+                } ${
                   platform.colorClass
                 } ${
                   isLimitReached
@@ -295,7 +310,7 @@ export function ConnectSocialModal({
                     : "border-border/70 bg-card/70 hover:shadow-xl hover:-translate-y-0.5 hover:border-primary/50"
                 }`}
               >
-                {isTikTokLocked && (
+                {isLocked && (
                   <div className="absolute top-2 right-2 flex items-center gap-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-amber-500/20">
                     <Lock className="w-2.5 h-2.5" /> Pro
                   </div>
@@ -313,7 +328,7 @@ export function ConnectSocialModal({
                 </div>
                 <div className="w-full pt-0.5">
                   <span className={`w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all shadow-2xs ${
-                    isTikTokLocked
+                    isLocked
                       ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                       : "bg-secondary/60 group-hover:bg-primary group-hover:text-primary-foreground text-foreground"
                   }`}>
@@ -322,7 +337,7 @@ export function ConnectSocialModal({
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         <span>Conectando...</span>
                       </>
-                    ) : isTikTokLocked ? (
+                    ) : isLocked ? (
                       <>
                         <Lock className="w-3 h-3" />
                         <span>Liberar no Pro</span>

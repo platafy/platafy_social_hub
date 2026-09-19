@@ -19,16 +19,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Fetch active YouTube and TikTok automations
+    // 1. Fetch active YouTube, TikTok and Google Business automations
     const { data: automations, error: autError } = await supabaseClient
       .from('zernio_automations')
       .select('*')
-      .in('platform', ['youtube', 'tiktok'])
+      .in('platform', ['youtube', 'tiktok', 'googlebusiness'])
       .eq('is_enabled', true)
 
     if (autError) throw autError
     if (!automations || automations.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No active YT/TT automations found' }), {
+      return new Response(JSON.stringify({ success: true, message: 'No active YT/TT/GBP automations found' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -76,7 +76,7 @@ serve(async (req) => {
           const postId = post.id || post._id
           const accountId = post.accountId || post.socialAccountId || ''
           const platform = (post.platform || '').toLowerCase()
-          if (platform !== 'youtube' && platform !== 'tiktok') continue
+          if (platform !== 'youtube' && platform !== 'tiktok' && platform !== 'googlebusiness') continue
 
           // Fetch the actual comments for this specific post
           const commentsRes = await fetch(`https://zernio.com/api/v1/inbox/comments/${postId}?accountId=${accountId}`, {
@@ -130,7 +130,17 @@ serve(async (req) => {
             const rule = automations.find(a => a.social_account_id === accountId)
             if (!rule) continue
 
-            const textContent = comment.message || comment.text || comment.content || ''
+            let textContent = comment.message || comment.text || comment.content || comment.review || ''
+            const rating = Number(comment.rating || comment.starRating || comment.stars || 0)
+            if (!textContent && rating > 0) {
+              textContent = `Avaliação de ${rating} estrela${rating > 1 ? 's' : ''}`
+            }
+
+            // Scope filter for Google Business rating (organic: 4-5 stars, ads: 1-3 stars)
+            if (platform === 'googlebusiness' && rating > 0) {
+              if (rule.target_scope === 'organic' && rating < 4) continue
+              if (rule.target_scope === 'ads' && rating >= 4) continue
+            }
             
             // Execute Rule: Check keywords if trigger type is keyword
             if (rule.trigger_type === 'keyword' && rule.keywords && rule.keywords.length > 0) {
@@ -149,7 +159,7 @@ serve(async (req) => {
                 platform,
                 event_type: 'comment.received',
                 external_id: cId,
-                sender_username: comment.author?.username || comment.from?.username || 'anônimo',
+                sender_username: comment.author?.username || comment.author?.name || comment.author?.displayName || comment.reviewer?.displayName || comment.from?.username || 'anônimo',
                 content: textContent || null,
                 status: 'no_automation',
                 raw_payload: comment
@@ -169,7 +179,10 @@ serve(async (req) => {
             if (rule.ai_provider && rule.ai_provider !== 'static') {
               const provider = rule.ai_provider
               const apiKey = integration[`ai_${provider}_key` as keyof typeof integration] || Deno.env.get(`${provider.toUpperCase()}_API_KEY`) || ''
-              const promptContext = `Comentário do Usuário: "${textContent}"\nInstrução: ${rule.ai_prompt}`
+              const isGbp = platform === 'googlebusiness'
+              const promptContext = isGbp
+                ? `Avaliação do Cliente no Google Meu Negócio: "${textContent}"\nInstrução: ${rule.ai_prompt}`
+                : `Comentário do Usuário: "${textContent}"\nInstrução: ${rule.ai_prompt}`
 
               if (apiKey) {
                 try {
@@ -237,9 +250,11 @@ serve(async (req) => {
               continue
             }
 
-            // Reply to YouTube/TikTok comment
-            const endpoint = `https://zernio.com/api/v1/inbox/comments/${postId}`
-            const requestBody = { accountId, text: replyText, message: replyText, commentId: cId }
+            // Reply to YouTube/TikTok comment or Google Business Review
+            const endpoint = postId
+              ? `https://zernio.com/api/v1/inbox/comments/${postId}`
+              : `https://zernio.com/api/v1/inbox/comments/${cId}/reply`
+            const requestBody = { accountId, text: replyText, message: replyText, commentId: cId, replyToId: cId }
 
             try {
               const zernioRes = await fetch(endpoint, {
