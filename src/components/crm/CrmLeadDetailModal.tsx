@@ -226,10 +226,10 @@ export function CrmLeadDetailModal({
               <select
                 value={selectedColumnId}
                 onChange={(e) => setSelectedColumnId(e.target.value)}
-                className="w-full text-sm bg-card border border-border/70 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-primary font-medium"
+                className="w-full text-sm bg-card text-foreground border border-border/70 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-primary font-medium [&>option]:bg-card [&>option]:text-card-foreground dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
               >
                 {columns.map((col) => (
-                  <option key={col.id} value={col.id}>
+                  <option key={col.id} value={col.id} className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
                     {col.name}
                   </option>
                 ))}

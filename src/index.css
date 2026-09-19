@@ -29,6 +29,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: #f8f7f4;
     --foreground: #1c1917;
     --card: #ffffff;
@@ -50,6 +51,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: #090d16;
     --foreground: #f8fafc;
     --card: #0f172a;
@@ -90,6 +92,27 @@
   }
   img, video, canvas, svg {
     max-width: 100%;
+  }
+
+  /* Consistent styling for native select and options across themes */
+  select {
+    color-scheme: light;
+  }
+
+  .dark select,
+  [data-theme="dark"] select {
+    color-scheme: dark;
+  }
+
+  select option {
+    background-color: #ffffff;
+    color: #1c1917;
+  }
+
+  .dark select option,
+  [data-theme="dark"] select option {
+    background-color: #0f172a;
+    color: #f8fafc;
   }
 }
 

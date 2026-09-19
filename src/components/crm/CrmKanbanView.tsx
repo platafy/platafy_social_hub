@@ -253,11 +253,13 @@ export function CrmKanbanView({
                 value={selectedTagFilter}
                 onChange={(e) => setSelectedTagFilter(e.target.value)}
                 aria-label="Filtrar contatos por tag"
-                className="bg-transparent text-foreground border-none outline-hidden cursor-pointer font-medium text-xs pr-2"
+                className="bg-transparent text-foreground border-none outline-hidden cursor-pointer font-medium text-xs pr-2 [&>option]:bg-card [&>option]:text-card-foreground dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
               >
-                <option value="all">Todas as Tags</option>
+                <option value="all" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
+                  Todas as Tags
+                </option>
                 {tags.map((t) => (
-                  <option key={t.id} value={t.name}>
+                  <option key={t.id} value={t.name} className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
                     {t.name}
                   </option>
                 ))}
@@ -271,11 +273,17 @@ export function CrmKanbanView({
                 value={automationFilter}
                 onChange={(e) => setAutomationFilter(e.target.value as any)}
                 aria-label="Filtrar por status de automação"
-                className="bg-transparent text-foreground border-none outline-hidden cursor-pointer font-medium text-xs pr-2"
+                className="bg-transparent text-foreground border-none outline-hidden cursor-pointer font-medium text-xs pr-2 [&>option]:bg-card [&>option]:text-card-foreground dark:[&>option]:bg-slate-900 dark:[&>option]:text-slate-100"
               >
-                <option value="all">Todas Automações</option>
-                <option value="enabled">🟢 Automação Ativa</option>
-                <option value="paused">⏸️ Automação Pausada</option>
+                <option value="all" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
+                  Todas Automações
+                </option>
+                <option value="enabled" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
+                  🟢 Automação Ativa
+                </option>
+                <option value="paused" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100">
+                  ⏸️ Automação Pausada
+                </option>
               </select>
             </div>
 
