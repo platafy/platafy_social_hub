@@ -47,6 +47,12 @@ interface SubscriptionContextType {
   getLimit: (limitKey: string, defaultValue?: number) => number;
   canUseAiAutomations: boolean;
   canUseWhiteLabel: boolean;
+  canUseAdsAutomations: boolean;
+  canUseStoriesAutomations: boolean;
+  canUseAutoEngagement: boolean;
+  canUseAutoModeration: boolean;
+  canUseAutoPin: boolean;
+  canUseTikTok: boolean;
   maxProfiles: number;
   maxChannels: number;
   maxPosts: number;
@@ -68,10 +74,24 @@ export const DEFAULT_PLANS: Plan[] = [
       "1 Perfil Ativo (até 2 contas sociais)",
       "50 posts agendados por mês",
       "Inbox e DMs unificados",
-      "Gestão de até 100 contatos",
+      "Automação básica (comentários e DMs orgânicas)",
+      "Gestão de até 100 contatos no CRM",
       "Suporte por e-mail"
     ],
-    limits: { max_profiles: 1, max_channels: 2, max_posts: 50, max_contacts: 100, ai_automations: false },
+    limits: {
+      max_profiles: 1,
+      max_channels: 2,
+      max_posts: 50,
+      max_contacts: 100,
+      ai_automations: false,
+      ads_automations: false,
+      stories_automations: false,
+      auto_moderation: false,
+      auto_engagement: false,
+      auto_pin: false,
+      tiktok_channel: false,
+      white_label: false
+    },
     is_popular: false
   },
   {
@@ -85,12 +105,30 @@ export const DEFAULT_PLANS: Plan[] = [
     features: [
       "Até 5 Perfis Ativos (até 10 contas sociais)",
       "Publicações e agendamentos ilimitados",
+      "Automação em Anúncios Pagos (Meta Ads / Dark Posts)",
+      "Gatilhos de Stories (Menções e Respostas no Instagram)",
       "Automação com IA (Gemini, OpenAI, Claude)",
-      "Moderação inteligente de comentários",
-      "CRM completo de contatos",
+      "Auto-Engajamento (Auto-Like & Coração YouTube)",
+      "Moderação inteligente anti-spam com IA",
+      "Fixação automática de comentários (Auto-Pin)",
+      "Canal TikTok incluso (Publicação e Comentários)",
+      "CRM Kanban de Leads & Transbordo",
       "Suporte prioritário"
     ],
-    limits: { max_profiles: 5, max_channels: 10, max_posts: -1, max_contacts: 1000, ai_automations: true },
+    limits: {
+      max_profiles: 5,
+      max_channels: 10,
+      max_posts: -1,
+      max_contacts: 1000,
+      ai_automations: true,
+      ads_automations: true,
+      stories_automations: true,
+      auto_moderation: true,
+      auto_engagement: true,
+      auto_pin: true,
+      tiktok_channel: true,
+      white_label: false
+    },
     is_popular: true
   },
   {
@@ -103,19 +141,35 @@ export const DEFAULT_PLANS: Plan[] = [
     interval: "monthly",
     features: [
       "Perfis Ativos ilimitados",
-      "Múltiplas contas Zernio integradas",
-      "Automação com IA com todas as LLMs",
-      "Personalização White Label completa",
-      "Acesso prioritário a novos recursos",
-      "Gerente de conta dedicado"
+      "Contas sociais e agendamentos ilimitados",
+      "Todas as automações avançadas (Meta Ads, Stories, IA)",
+      "Auto-Engajamento, Moderação e Auto-Pin ilimitados",
+      "Suporte completo ao TikTok e todas as redes",
+      "CRM Kanban sem limite de contatos",
+      "Personalização White Label completa (SaaS próprio)",
+      "Múltiplas integrações Zernio",
+      "Gerente de conta dedicado e suporte VIP"
     ],
-    limits: { max_profiles: -1, max_channels: -1, max_posts: -1, max_contacts: -1, ai_automations: true, white_label: true },
+    limits: {
+      max_profiles: -1,
+      max_channels: -1,
+      max_posts: -1,
+      max_contacts: -1,
+      ai_automations: true,
+      ads_automations: true,
+      stories_automations: true,
+      auto_moderation: true,
+      auto_engagement: true,
+      auto_pin: true,
+      tiktok_channel: true,
+      white_label: true
+    },
     is_popular: false
   }
 ];
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { tenantId, session } = useAuth();
+  const { tenantId, session, isSuperAdmin } = useAuth();
   const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -243,8 +297,64 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return limits[limitKey] !== undefined ? limits[limitKey] : defaultValue;
   }, [subscription]);
 
-  const canUseAiAutomations = hasFeature("ai_automations") || (subscription?.plan?.limits?.ai_automations === true);
-  const canUseWhiteLabel = hasFeature("white_label") || (subscription?.plan?.limits?.white_label === true);
+  const isPlanProOrAgency = subscription?.plan?.slug === "pro" || subscription?.plan?.slug === "agency";
+
+  const canUseAiAutomations = Boolean(
+    isSuperAdmin ||
+    hasFeature("ai_automations") ||
+    (subscription?.plan?.limits?.ai_automations === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.ai_automations !== false)
+  );
+
+  const canUseWhiteLabel = Boolean(
+    isSuperAdmin ||
+    hasFeature("white_label") ||
+    (subscription?.plan?.limits?.white_label === true) ||
+    (subscription?.plan?.slug === "agency" && subscription?.plan?.limits?.white_label !== false)
+  );
+
+  const canUseAdsAutomations = Boolean(
+    isSuperAdmin ||
+    hasFeature("ads_automations") ||
+    (subscription?.plan?.limits?.ads_automations === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.ads_automations !== false)
+  );
+
+  const canUseStoriesAutomations = Boolean(
+    isSuperAdmin ||
+    hasFeature("stories_automations") ||
+    (subscription?.plan?.limits?.stories_automations === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.stories_automations !== false)
+  );
+
+  const canUseAutoEngagement = Boolean(
+    isSuperAdmin ||
+    hasFeature("auto_engagement") ||
+    (subscription?.plan?.limits?.auto_engagement === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.auto_engagement !== false)
+  );
+
+  const canUseAutoModeration = Boolean(
+    isSuperAdmin ||
+    hasFeature("auto_moderation") ||
+    (subscription?.plan?.limits?.auto_moderation === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.auto_moderation !== false)
+  );
+
+  const canUseAutoPin = Boolean(
+    isSuperAdmin ||
+    hasFeature("auto_pin") ||
+    (subscription?.plan?.limits?.auto_pin === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.auto_pin !== false)
+  );
+
+  const canUseTikTok = Boolean(
+    isSuperAdmin ||
+    hasFeature("tiktok_channel") ||
+    (subscription?.plan?.limits?.tiktok_channel === true) ||
+    (isPlanProOrAgency && subscription?.plan?.limits?.tiktok_channel !== false)
+  );
+
   const rawMaxProfiles = getLimit("max_profiles", -999);
   const maxChannels = getLimit("max_channels", 2);
   const maxProfiles = rawMaxProfiles !== -999
@@ -299,6 +409,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         getLimit,
         canUseAiAutomations,
         canUseWhiteLabel,
+        canUseAdsAutomations,
+        canUseStoriesAutomations,
+        canUseAutoEngagement,
+        canUseAutoModeration,
+        canUseAutoPin,
+        canUseTikTok,
         maxProfiles,
         maxChannels,
         maxPosts,

@@ -42,6 +42,12 @@ interface PlanFormState {
     max_contacts?: number;
     ai_automations?: boolean;
     white_label?: boolean;
+    ads_automations?: boolean;
+    stories_automations?: boolean;
+    auto_engagement?: boolean;
+    auto_moderation?: boolean;
+    auto_pin?: boolean;
+    tiktok_channel?: boolean;
     [key: string]: any;
   };
   is_popular: boolean;
@@ -678,6 +684,66 @@ export function SuperAdminPlans() {
                           className="rounded border-border text-primary h-3.5 w-3.5"
                         />
                         <span className="font-semibold text-foreground">White Label</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.ads_automations)}
+                          onChange={e => handleUpdateLimit(plan.id, "ads_automations", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Meta Ads (Anúncios)</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.stories_automations)}
+                          onChange={e => handleUpdateLimit(plan.id, "stories_automations", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Gatilhos Stories</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.auto_engagement)}
+                          onChange={e => handleUpdateLimit(plan.id, "auto_engagement", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Auto-Engajamento</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.auto_moderation)}
+                          onChange={e => handleUpdateLimit(plan.id, "auto_moderation", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Moderação IA</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.auto_pin)}
+                          onChange={e => handleUpdateLimit(plan.id, "auto_pin", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Auto-Pin Comentário</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-border/70 bg-muted/20 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.limits?.tiktok_channel)}
+                          onChange={e => handleUpdateLimit(plan.id, "tiktok_channel", e.target.checked)}
+                          className="rounded border-border text-primary h-3.5 w-3.5"
+                        />
+                        <span className="font-semibold text-foreground">Canal TikTok</span>
                       </label>
                     </div>
                   </div>

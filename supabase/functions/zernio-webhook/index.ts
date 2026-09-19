@@ -538,6 +538,24 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
   const executedResults: any[] = [];
   let isFirstRule = true;
 
+  // 8.1. Check Tenant Subscription and Plan Entitlements
+  let planLimits: Record<string, any> = {};
+  let planSlug = 'pro';
+  try {
+    const { data: subData } = await supabaseClient
+      .from('subscriptions')
+      .select('status, plan:plans(slug, limits)')
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (subData && subData.plan) {
+      planSlug = subData.plan.slug || 'starter';
+      planLimits = (subData.plan.limits as Record<string, any>) || {};
+    }
+  } catch (errSub) {
+    console.warn('[Webhook] Erro ao consultar plano do tenant:', errSub);
+  }
+
   // 9. Execute all matching rules (e.g. comment_reply AND comment_to_dm)
   for (const rule of matchedRules) {
     const saveRuleLog = async (status: string, errorMsg?: string, replySent?: string) => {
@@ -572,6 +590,16 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       }
     };
 
+    // Entitlement Check: Stories Automation (Module 2)
+    if (rule.automation_type === 'story_mention' || rule.automation_type === 'story_reply') {
+      const allowedStories = planLimits.stories_automations === true || (planSlug !== 'starter' && planLimits.stories_automations !== false);
+      if (!allowedStories) {
+        await saveRuleLog('ignored', 'Ignorado: O plano atual do cliente (Starter) não inclui gatilhos de Stories (Menções ou Respostas).');
+        isFirstRule = false;
+        continue;
+      }
+    }
+
     // Scope validation: Organic vs Ads (Meta Ads Dark Posts)
     const adIdCandidate = String(
       payload.adId ||
@@ -588,6 +616,16 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
       payload.placement ||
       commentObj.placement
     );
+
+    // Entitlement Check: Meta Ads Automation (Module 1)
+    if (isAdInteraction || rule.target_scope === 'ads') {
+      const allowedAds = planLimits.ads_automations === true || (planSlug !== 'starter' && planLimits.ads_automations !== false);
+      if (!allowedAds) {
+        await saveRuleLog('ignored', 'Ignorado: O plano atual do cliente (Starter) não inclui automações para anúncios pagos (Meta Ads).');
+        isFirstRule = false;
+        continue;
+      }
+    }
 
     if (rule.target_scope === 'organic' && isAdInteraction) {
       await saveRuleLog('ignored', 'Ignorado: A regra está configurada para postagens orgânicas e este evento é de um anúncio pago (Meta Ads).');
@@ -617,7 +655,8 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     }
 
     // AI Spam & Toxicity Moderation (Module 3)
-    if (rule.auto_moderate_spam && isCommentEvent) {
+    const allowedModeration = planLimits.auto_moderation === true || (planSlug !== 'starter' && planLimits.auto_moderation !== false);
+    if (rule.auto_moderate_spam && isCommentEvent && allowedModeration) {
       const normText = (textContent || '').toLowerCase();
       const spamTerms = [
         'telegram', 't.me/', 'whatsapp.com', 'wa.me/', 'ganhe dinheiro', 'renda extra facil',
@@ -718,6 +757,13 @@ async function processWebhookEvent(supabaseClient: any, payload: any, event: str
     ): Promise<string> => {
       const normProvider = provider || 'static';
       if (normProvider === 'static') {
+        return (staticFallback || '').trim();
+      }
+
+      // Check AI Entitlement
+      const allowedAi = planLimits.ai_automations === true || (planSlug !== 'starter' && planLimits.ai_automations !== false);
+      if (!allowedAi) {
+        console.warn(`[Webhook AI Gated] Tenant no plano ${planSlug} sem permissão para IA. Usando resposta estática como fallback.`);
         return (staticFallback || '').trim();
       }
 
@@ -917,7 +963,8 @@ Responda diretamente e de forma concisa.`;
         executedResults.push({ ruleId: rule.id, type: rule.automation_type, replyText });
 
         // Auto-Like on comment (Module 3)
-        if (rule.auto_like_enabled && (isCommentEvent || isAltCommentMessage) && targetCommentId) {
+        const allowedEngagement = planLimits.auto_engagement === true || (planSlug !== 'starter' && planLimits.auto_engagement !== false);
+        if (rule.auto_like_enabled && (isCommentEvent || isAltCommentMessage) && targetCommentId && allowedEngagement) {
           try {
             const likeEndpoint = postId
               ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/like`
@@ -933,7 +980,7 @@ Responda diretamente e de forma concisa.`;
         }
 
         // Auto-Heart on YouTube comment (Module 3)
-        if (rule.auto_heart_enabled && platform === 'youtube' && targetCommentId) {
+        if (rule.auto_heart_enabled && platform === 'youtube' && targetCommentId && allowedEngagement) {
           try {
             const heartEndpoint = postId
               ? `https://zernio.com/api/v1/inbox/comments/${postId}/${targetCommentId}/heart`

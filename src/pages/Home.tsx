@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { zernio, zernioApiCall, clearZernioCache, getCacheStats, sanitizeMediaUrls } from "@/lib/zernio";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,9 +117,19 @@ const getConversationLastMessage = (conv: any): string => {
 type TabType = "dashboard" | "profiles" | "composer" | "channels" | "inbox" | "contacts" | "settings" | "automation" | "guide" | "clients" | "saas_mercadopago" | "saas_whitelabel" | "saas_plans";
 
 export default function Home() {
+  const navigate = useNavigate();
   const { tenantId, isSuperAdmin } = useAuth();
   const { branding } = useBranding();
-  const { maxProfiles } = useSubscription();
+  const {
+    maxProfiles,
+    canUseAiAutomations,
+    canUseAdsAutomations,
+    canUseStoriesAutomations,
+    canUseAutoEngagement,
+    canUseAutoModeration,
+    canUseAutoPin: _canUseAutoPin,
+    canUseTikTok,
+  } = useSubscription();
   const tutorialVideoUrl = branding.tutorial_video_url || "/criar-conta.mp4";
   const [activeTab, setActiveTab] = useState<TabType>(() => (sessionStorage.getItem("zernio_active_tab") as TabType) || "dashboard");
   const [config, setConfig] = useState<{ connected: boolean; profileId: string | null; hasKey: boolean; integrations?: any[] }>({
@@ -1159,6 +1169,32 @@ export default function Home() {
 
       const acc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
       const platform = acc?.platform || "instagram";
+
+      // Validações de Limites e Permissões por Plano
+      if (automationTargetScope === "ads" && !canUseAdsAutomations) {
+        toast.error("A automação para anúncios do Meta Ads é exclusiva dos planos Pro e Agência. Faça upgrade do seu plano para salvar esta regra.");
+        return;
+      }
+      if ((automationType === "story_mention" || automationType === "story_reply") && !canUseStoriesAutomations) {
+        toast.error("Gatilhos de Stories são exclusivos dos planos Pro e Agência. Faça upgrade do seu plano para salvar esta regra.");
+        return;
+      }
+      if (automationAutoLike && !canUseAutoEngagement) {
+        toast.error("O recurso de Auto-Like é exclusivo dos planos Pro e Agência.");
+        return;
+      }
+      if (automationAutoHeart && !canUseAutoEngagement) {
+        toast.error("O recurso de Coração no YouTube é exclusivo dos planos Pro e Agência.");
+        return;
+      }
+      if (automationAutoModerateSpam && !canUseAutoModeration) {
+        toast.error("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
+        return;
+      }
+      if (automationAiProvider !== "static" && !canUseAiAutomations) {
+        toast.error("Respostas com Inteligência Artificial requerem o plano Pro ou Agência.");
+        return;
+      }
 
       const payload = {
         tenant_id: activeTenantId,
@@ -4964,6 +5000,10 @@ export default function Home() {
                         <button
                           key={accId || index}
                           onClick={() => {
+                            if (isTiktok && !canUseTikTok) {
+                              toast.info("A automação para o TikTok está inclusa nos planos Pro e Agência. Conheça nossos planos para desbloquear!");
+                              return;
+                            }
                             if (isSupported) {
                               setSelectedAutomationAccount(accId);
                               fetchAutomationPosts(accId);
@@ -5170,23 +5210,49 @@ export default function Home() {
                                   Comentário → DM
                                 </button>
                                 {isInstagram && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => setAutomationType("story_mention")}
-                                      className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "story_mention" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                                    >
-                                      Menção no Story
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setAutomationType("story_reply")}
-                                      className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all ${automationType === "story_reply" ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                                    >
-                                      Resposta a Story
-                                    </button>
-                                  </>
-                                )}
+                                   <>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!canUseStoriesAutomations) {
+                                           toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
+                                           return;
+                                         }
+                                         setAutomationType("story_mention");
+                                       }}
+                                       className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all flex items-center justify-center gap-1 ${
+                                         !canUseStoriesAutomations
+                                           ? "text-muted-foreground hover:text-foreground opacity-80"
+                                           : automationType === "story_mention"
+                                           ? "bg-card text-foreground shadow-sm font-semibold"
+                                           : "text-muted-foreground hover:text-foreground"
+                                       }`}
+                                     >
+                                       <span>Menção no Story</span>
+                                       {!canUseStoriesAutomations && <Lock className="w-2.5 h-2.5 text-amber-500" />}
+                                     </button>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!canUseStoriesAutomations) {
+                                           toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
+                                           return;
+                                         }
+                                         setAutomationType("story_reply");
+                                       }}
+                                       className={`flex-1 text-[11px] font-medium py-1.5 px-3 rounded whitespace-nowrap transition-all flex items-center justify-center gap-1 ${
+                                         !canUseStoriesAutomations
+                                           ? "text-muted-foreground hover:text-foreground opacity-80"
+                                           : automationType === "story_reply"
+                                           ? "bg-card text-foreground shadow-sm font-semibold"
+                                           : "text-muted-foreground hover:text-foreground"
+                                       }`}
+                                     >
+                                       <span>Resposta a Story</span>
+                                       {!canUseStoriesAutomations && <Lock className="w-2.5 h-2.5 text-amber-500" />}
+                                     </button>
+                                   </>
+                                 )}
                               </div>
                               <p className="text-[10px] text-muted-foreground">
                                 {automationType === "comment_reply" && "Quando um usuário comentar no post, a IA ou resposta estática responderá exclusivamente no mesmo comentário."}
@@ -5619,13 +5685,38 @@ export default function Home() {
                           <select
                             id="autoTargetScope"
                             value={automationTargetScope}
-                            onChange={(e) => setAutomationTargetScope(e.target.value as any)}
+                            onChange={(e) => {
+                              const val = e.target.value as any;
+                              if (val === "ads" && !canUseAdsAutomations) {
+                                toast.info("A automação em anúncios pagos do Meta Ads está inclusa nos planos Pro e Agência.");
+                              }
+                              setAutomationTargetScope(val);
+                            }}
                             className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
                           >
                             <option value="all">Todas as Publicações (Orgânicas e Anúncios Pagos)</option>
                             <option value="organic">Apenas Postagens Orgânicas (Feed / Reels normais)</option>
-                            <option value="ads">Apenas Anúncios Patrocinados (Meta Ads / Dark Posts)</option>
+                            <option value="ads">
+                              Apenas Anúncios Patrocinados (Meta Ads / Dark Posts) {!canUseAdsAutomations ? "🔒 [Exclusivo Pro]" : ""}
+                            </option>
                           </select>
+                          {automationTargetScope === "ads" && !canUseAdsAutomations && (
+                            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 my-2">
+                              <div className="text-xs text-amber-700 dark:text-amber-400">
+                                <span className="font-bold flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Recurso Exclusivo do Plano Pro</span>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">A automação em anúncios de tráfego pago requer o plano Pro ou Agência.</p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold shrink-0 cursor-pointer"
+                                onClick={() => navigate("/planos")}
+                              >
+                                Conhecer Planos
+                              </Button>
+                            </div>
+                          )}
                           <p className="text-[10px] text-muted-foreground">
                             {automationTargetScope === "all" && "A automação responderá tanto em posts normais do feed quanto em anúncios de tráfego pago."}
                             {automationTargetScope === "organic" && "Ignora comentários vindos de campanhas de anúncios e foca apenas no feed público."}
@@ -5662,11 +5753,24 @@ export default function Home() {
                             <input
                               type="checkbox"
                               checked={automationAutoLike}
-                              onChange={(e) => setAutomationAutoLike(e.target.checked)}
+                              onChange={(e) => {
+                                if (!canUseAutoEngagement) {
+                                  toast.info("O recurso de Auto-Like é exclusivo dos planos Pro e Agência.");
+                                  return;
+                                }
+                                setAutomationAutoLike(e.target.checked);
+                              }}
                               className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                             />
-                            <div>
-                              <span className="font-semibold block">Curtir comentário automaticamente (Auto-Like)</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold block">Curtir comentário automaticamente (Auto-Like)</span>
+                                {!canUseAutoEngagement && (
+                                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                    <Lock className="w-2.5 h-2.5" /> Pro
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] text-muted-foreground">Dá o like oficial da conta no comentário do usuário assim que ele comenta, aquecendo o algoritmo.</span>
                             </div>
                           </label>
@@ -5680,11 +5784,24 @@ export default function Home() {
                                   <input
                                     type="checkbox"
                                     checked={automationAutoHeart}
-                                    onChange={(e) => setAutomationAutoHeart(e.target.checked)}
+                                    onChange={(e) => {
+                                      if (!canUseAutoEngagement) {
+                                        toast.info("O recurso de Coração no YouTube é exclusivo dos planos Pro e Agência.");
+                                        return;
+                                      }
+                                      setAutomationAutoHeart(e.target.checked);
+                                    }}
                                     className="rounded border-border text-red-500 focus:ring-red-500 h-4 w-4 cursor-pointer"
                                   />
-                                  <div>
-                                    <span className="font-semibold block text-red-600 dark:text-red-400">Dar Coração oficial do Canal (YouTube Heart) ❤️</span>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-semibold block text-red-600 dark:text-red-400">Dar Coração oficial do Canal (YouTube Heart) ❤️</span>
+                                      {!canUseAutoEngagement && (
+                                        <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                          <Lock className="w-2.5 h-2.5" /> Pro
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-[10px] text-muted-foreground">Aplica o selo de coração oficial do criador no comentário. O YouTube envia notificação push no celular do inscrito!</span>
                                   </div>
                                 </label>
@@ -5698,11 +5815,24 @@ export default function Home() {
                             <input
                               type="checkbox"
                               checked={automationAutoModerateSpam}
-                              onChange={(e) => setAutomationAutoModerateSpam(e.target.checked)}
+                              onChange={(e) => {
+                                if (!canUseAutoModeration) {
+                                  toast.info("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
+                                  return;
+                                }
+                                setAutomationAutoModerateSpam(e.target.checked);
+                              }}
                               className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4 cursor-pointer"
                             />
-                            <div>
-                              <span className="font-semibold block">Moderação Inteligente Anti-Spam (Auto-Ocultar) 🛡️</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold block">Moderação Inteligente Anti-Spam (Auto-Ocultar) 🛡️</span>
+                                {!canUseAutoModeration && (
+                                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                    <Lock className="w-2.5 h-2.5" /> Pro
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] text-muted-foreground">Detecta comentários com links de golpes, spam ou termos maliciosos e oculta automaticamente sem responder.</span>
                             </div>
                           </label>
