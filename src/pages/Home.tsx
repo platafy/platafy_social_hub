@@ -5183,97 +5183,101 @@ export default function Home() {
 
                           return (
                             <div className="space-y-3 w-full">
-                              <div className={`grid gap-2 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"} p-1.5 bg-secondary/35 rounded-xl border border-border/40`}>
+                              <div className={`grid gap-2.5 w-full ${isInstagram ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : "grid-cols-1 sm:grid-cols-3"}`}>
                                 <button
                                   type="button"
                                   onClick={() => setAutomationType("comment_reply")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
+                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
                                     automationType === "comment_reply"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
-                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
+                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
                                   }`}
                                 >
-                                  <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span>Comentários</span>
+                                  <MessageSquare className={`w-4 h-4 shrink-0 ${automationType === "comment_reply" ? "text-primary" : "text-muted-foreground"}`} />
+                                  <span className="whitespace-nowrap">Comentários</span>
                                 </button>
+
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("dm_reply")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
+                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
-                                      ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
+                                      ? "opacity-35 cursor-not-allowed bg-secondary/20 text-muted-foreground/50 border-border/30"
                                       : automationType === "dm_reply"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
-                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20 cursor-pointer"
+                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border cursor-pointer"
                                   }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  <Send className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span>DM</span>
+                                  <Send className={`w-4 h-4 shrink-0 ${automationType === "dm_reply" ? "text-primary" : "text-muted-foreground"}`} />
+                                  <span className="whitespace-nowrap">DM</span>
                                 </button>
+
                                 <button
                                   type="button"
                                   disabled={isCommentsOnly}
                                   onClick={() => setAutomationType("comment_to_dm")}
-                                  className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
+                                  className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none ${
                                     isCommentsOnly
-                                      ? "opacity-35 cursor-not-allowed text-muted-foreground/60 border-transparent"
+                                      ? "opacity-35 cursor-not-allowed bg-secondary/20 text-muted-foreground/50 border-border/30"
                                       : automationType === "comment_to_dm"
-                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
-                                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                      ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20 cursor-pointer"
+                                      : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border cursor-pointer"
                                   }`}
                                   title={isCommentsOnly ? "Não suportado para YouTube/TikTok" : ""}
                                 >
-                                  <MessageCircle className="w-3.5 h-3.5 text-primary shrink-0" />
-                                  <span>Comentários/DM</span>
+                                  <MessageCircle className={`w-4 h-4 shrink-0 ${automationType === "comment_to_dm" ? "text-primary" : "text-muted-foreground"}`} />
+                                  <span className="whitespace-nowrap">Comentários/DM</span>
                                 </button>
+
                                 {isInstagram && (
-                                   <>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!canUseStoriesAutomations) {
-                                           toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
-                                           return;
-                                         }
-                                         setAutomationType("story_mention");
-                                       }}
-                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
-                                         !canUseStoriesAutomations
-                                           ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
-                                           : automationType === "story_mention"
-                                           ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
-                                           : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                       }`}
-                                     >
-                                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                       <span>Menção Story</span>
-                                       {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
-                                     </button>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!canUseStoriesAutomations) {
-                                           toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
-                                           return;
-                                         }
-                                         setAutomationType("story_reply");
-                                       }}
-                                       className={`flex items-center justify-center gap-1.5 text-xs font-semibold py-2 px-2.5 rounded-lg transition-all text-center border whitespace-nowrap ${
-                                         !canUseStoriesAutomations
-                                           ? "border-transparent text-muted-foreground hover:text-foreground opacity-80"
-                                           : automationType === "story_reply"
-                                           ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-1 ring-primary/25"
-                                           : "border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                       }`}
-                                     >
-                                       <Bookmark className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                       <span>Responder Story</span>
-                                       {!canUseStoriesAutomations && <Lock className="w-3 h-3 text-amber-500 shrink-0" />}
-                                     </button>
-                                   </>
-                                 )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!canUseStoriesAutomations) {
+                                        toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
+                                        return;
+                                      }
+                                      setAutomationType("story_mention");
+                                    }}
+                                    className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                      !canUseStoriesAutomations
+                                        ? "bg-card/30 border-border/50 text-muted-foreground opacity-80 hover:border-amber-500/40"
+                                        : automationType === "story_mention"
+                                        ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
+                                        : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                                    }`}
+                                  >
+                                    <Sparkles className={`w-4 h-4 shrink-0 ${automationType === "story_mention" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                    <span className="whitespace-nowrap">Menção Story</span>
+                                    {!canUseStoriesAutomations && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-0.5" />}
+                                  </button>
+                                )}
+
+                                {isInstagram && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!canUseStoriesAutomations) {
+                                        toast.info("Gatilhos de Stories (Menções e Respostas) estão inclusos a partir do plano Pro. Conheça nossos planos para desbloquear!");
+                                        return;
+                                      }
+                                      setAutomationType("story_reply");
+                                    }}
+                                    className={`h-11 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold transition-all border w-full select-none cursor-pointer ${
+                                      !canUseStoriesAutomations
+                                        ? "bg-card/30 border-border/50 text-muted-foreground opacity-80 hover:border-amber-500/40"
+                                        : automationType === "story_reply"
+                                        ? "bg-card text-foreground shadow-xs border-[#ffaa00] dark:border-primary font-bold ring-2 ring-primary/20"
+                                        : "bg-card/40 hover:bg-card text-muted-foreground hover:text-foreground border-border/70 hover:border-border"
+                                    }`}
+                                  >
+                                    <Bookmark className={`w-4 h-4 shrink-0 ${automationType === "story_reply" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                    <span className="whitespace-nowrap">Responder Story</span>
+                                    {!canUseStoriesAutomations && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-0.5" />}
+                                  </button>
+                                )}
                               </div>
                               <div className="p-3 rounded-xl bg-secondary/30 border border-border/40 text-xs text-muted-foreground leading-relaxed flex items-center gap-2.5">
                                 <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
