@@ -1,4 +1,4 @@
-const CACHE_NAME = "platafy-pwa-v5";
+const CACHE_NAME = "platafy-pwa-v6";
 const PRECACHE_ASSETS = [
   "/manifest.webmanifest",
   "/logo.png",

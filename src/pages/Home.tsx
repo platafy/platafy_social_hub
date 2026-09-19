@@ -13,7 +13,7 @@ import {
   CornerUpLeft, Mail, X, Search, LayoutGrid, List, Minus, Calendar, Bot, Sparkles,
   DatabaseZap, Trash, Users, Tag, ChevronLeft, CreditCard,
   Heart, MessageCircle, Bookmark, ShieldCheck, Lock, User, ExternalLink,
-  Kanban, Columns3
+  Kanban, Columns3, Globe, Layers, Megaphone
 } from "lucide-react";
 import {
   SiInstagram, SiFacebook, SiYoutube, SiTiktok, SiWhatsapp,
@@ -5294,6 +5294,146 @@ export default function Home() {
                         })()}
                       </div>
 
+                      {/* Escopo da Publicação (Meta Ads Dark Posts vs Orgânicos) */}
+                      {automationType !== "story_mention" && automationType !== "story_reply" && (
+                        <div className="space-y-2.5 pb-4 border-b border-border/40">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div>
+                              <Label className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                                <Globe className="w-4 h-4 text-primary" />
+                                Escopo da Publicação
+                                <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-1">
+                                  Meta Ads & Orgânico
+                                </span>
+                              </Label>
+                              <span className="text-xs text-muted-foreground">
+                                Escolha onde a automação deve monitorar e responder comentários.
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 3 Interactive Cards / Buttons */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            {/* 1. Todas as Publicações */}
+                            <button
+                              type="button"
+                              onClick={() => setAutomationTargetScope("all")}
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                automationTargetScope === "all"
+                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Globe className={`w-4 h-4 ${automationTargetScope === "all" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                  <span className="font-semibold text-xs text-foreground">Todas</span>
+                                </div>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed + Ads</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground leading-tight">
+                                Responde tanto em posts normais do feed quanto em anúncios de tráfego pago.
+                              </p>
+                            </button>
+
+                            {/* 2. Apenas Feed Orgânico */}
+                            <button
+                              type="button"
+                              onClick={() => setAutomationTargetScope("organic")}
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                automationTargetScope === "organic"
+                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Layers className={`w-4 h-4 ${automationTargetScope === "organic" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                  <span className="font-semibold text-xs text-foreground">Apenas Orgânico</span>
+                                </div>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-medium">Feed / Reels</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground leading-tight">
+                                Foca estritamente em postagens públicas e ignora campanhas pagas.
+                              </p>
+                            </button>
+
+                            {/* 3. Apenas Anúncios Patrocinados (Meta Ads / Dark Posts) */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!canUseAdsAutomations) {
+                                  toast.info("A automação em anúncios pagos do Meta Ads está inclusa nos planos Pro e Agência.");
+                                }
+                                setAutomationTargetScope("ads");
+                              }}
+                              className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 relative ${
+                                automationTargetScope === "ads"
+                                  ? "border-2 border-[#ffaa00] bg-[#ffaa00]/10 dark:bg-[#ffaa00]/15 shadow-sm ring-1 ring-[#ffaa00]/30"
+                                  : !canUseAdsAutomations
+                                  ? "border-border/60 bg-card/40 text-muted-foreground hover:border-amber-500/50"
+                                  : "border-border/70 dark:border-slate-800 bg-card/70 hover:bg-card hover:border-slate-400 text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Megaphone className={`w-4 h-4 ${automationTargetScope === "ads" ? "text-amber-500" : "text-muted-foreground"}`} />
+                                  <span className="font-semibold text-xs text-foreground">Anúncios Pagos</span>
+                                </div>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                                  {!canUseAdsAutomations && <Lock className="w-2.5 h-2.5" />}
+                                  Meta Ads
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground leading-tight">
+                                Exclusivo para comentários em campanhas de tráfego pago (Dark Posts).
+                              </p>
+                            </button>
+                          </div>
+
+                          {/* Upsell Banner for Free/Starter when Ads is selected */}
+                          {automationTargetScope === "ads" && !canUseAdsAutomations && (
+                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                              <div className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5">
+                                <span className="font-bold flex items-center gap-1.5">
+                                  <Lock className="h-4 w-4" /> Recurso Exclusivo dos Planos Pro & Agência
+                                </span>
+                                <p className="text-[11.5px] text-muted-foreground">
+                                  Automatize e responda dúvidas de compradores diretamente nos seus anúncios de tráfego pago da Meta.
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shrink-0 shadow-sm cursor-pointer"
+                                onClick={() => navigate("/planos")}
+                              >
+                                Fazer Upgrade Agora
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Optional: Target Ad IDs if Pro user selects ads */}
+                          {automationTargetScope === "ads" && canUseAdsAutomations && (
+                            <div className="space-y-1.5 pt-2 border-t border-border/20 animate-in fade-in duration-200">
+                              <Label htmlFor="autoTargetAdIds" className="font-semibold text-xs text-foreground block">
+                                IDs de Anúncios Específicos (Opcional)
+                              </Label>
+                              <Input
+                                id="autoTargetAdIds"
+                                placeholder="ex: 2385123456789, 2385987654321 (ou deixe em branco para responder em todos os anúncios)"
+                                value={automationTargetAdIds}
+                                onChange={(e) => setAutomationTargetAdIds(e.target.value)}
+                                className="bg-card text-xs"
+                              />
+                              <span className="text-[10px] text-muted-foreground block">
+                                Insira os IDs dos anúncios do Gerenciador de Anúncios da Meta separados por vírgula. Se deixar em branco, a automação responderá a todos os anúncios ativos da conta.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Enable Toggle */}
                       <div className="flex items-center justify-between border-b border-border/40 pb-4">
                         <div>
@@ -5944,72 +6084,6 @@ export default function Home() {
                                   );
                                 })
                               )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Escopo da Automação (Meta Ads Dark Posts vs Orgânicos) */}
-                      {automationType !== "story_mention" && automationType !== "story_reply" && (
-                        <div className="space-y-1.5 pt-2 border-t border-border/40">
-                          <Label htmlFor="autoTargetScope" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
-                            Escopo da Publicação (Meta Ads / Dark Posts)
-                          </Label>
-                          <select
-                            id="autoTargetScope"
-                            value={automationTargetScope}
-                            onChange={(e) => {
-                              const val = e.target.value as any;
-                              if (val === "ads" && !canUseAdsAutomations) {
-                                toast.info("A automação em anúncios pagos do Meta Ads está inclusa nos planos Pro e Agência.");
-                              }
-                              setAutomationTargetScope(val);
-                            }}
-                            className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
-                          >
-                            <option value="all">Todas as Publicações (Orgânicas e Anúncios Pagos)</option>
-                            <option value="organic">Apenas Postagens Orgânicas (Feed / Reels normais)</option>
-                            <option value="ads">
-                              Apenas Anúncios Patrocinados (Meta Ads / Dark Posts) {!canUseAdsAutomations ? "🔒 [Exclusivo Pro]" : ""}
-                            </option>
-                          </select>
-                          {automationTargetScope === "ads" && !canUseAdsAutomations && (
-                            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 my-2">
-                              <div className="text-xs text-amber-700 dark:text-amber-400">
-                                <span className="font-bold flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Recurso Exclusivo do Plano Pro</span>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">A automação em anúncios de tráfego pago requer o plano Pro ou Agência.</p>
-                              </div>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs border-amber-500/30 text-amber-700 dark:text-amber-300 font-bold shrink-0 cursor-pointer"
-                                onClick={() => navigate("/planos")}
-                              >
-                                Conhecer Planos
-                              </Button>
-                            </div>
-                          )}
-                          <p className="text-[10px] text-muted-foreground">
-                            {automationTargetScope === "all" && "A automação responderá tanto em posts normais do feed quanto em anúncios de tráfego pago."}
-                            {automationTargetScope === "organic" && "Ignora comentários vindos de campanhas de anúncios e foca apenas no feed público."}
-                            {automationTargetScope === "ads" && "Exclusivo para responder pessoas que comentarem nos seus anúncios pagos no Facebook/Instagram Ads."}
-                          </p>
-                          {automationTargetScope === "ads" && (
-                            <div className="space-y-1.5 pt-2 border-t border-border/20">
-                              <Label htmlFor="autoTargetAdIds" className="font-semibold text-xs text-foreground block">
-                                IDs de Anúncios Específicos (Opcional)
-                              </Label>
-                              <Input
-                                id="autoTargetAdIds"
-                                placeholder="ex: 2385123456789, 2385987654321 (ou deixe em branco para todos)"
-                                value={automationTargetAdIds}
-                                onChange={(e) => setAutomationTargetAdIds(e.target.value)}
-                                className="bg-card text-xs"
-                              />
-                              <span className="text-[10px] text-muted-foreground block">
-                                Insira os IDs dos anúncios do Gerenciador de Anúncios da Meta separados por vírgula. Se deixar em branco, a automação responderá a todos os anúncios ativos da conta.
-                              </span>
                             </div>
                           )}
                         </div>
