@@ -2062,7 +2062,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 min-h-[75vh] w-full max-w-7xl mx-auto">
+    <div className="flex flex-col lg:flex-row gap-6 min-h-[75vh] w-full">
       {/* Mobile/Tablet Navigation Tabs (Horizontal Scrollable Strip + Profile Bar) */}
       <div className="flex lg:hidden flex-col gap-2.5 w-full">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar w-full scroll-smooth">

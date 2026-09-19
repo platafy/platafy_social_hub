@@ -80,7 +80,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <SupabaseConfigAlert />
       <SubscriptionBanner />
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-md transition-all">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 gap-2">
+        <nav className="flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 gap-2">
           <Link to="/" className="hover:opacity-90 transition-opacity flex items-center min-w-0">
             <BrandLogo size="md" />
           </Link>
@@ -148,7 +148,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
       </header>
-      <main className="flex-1 mx-auto w-full max-w-7xl px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 min-w-0">{children}</main>
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 min-w-0">{children}</main>
       <InstallPwaPrompt />
     </div>
   );

@@ -93,7 +93,7 @@ export function ImpersonationBanner() {
       aria-label="Barra de Modo Suporte do Super Admin"
       className="sticky top-0 z-[100] w-full bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-lg border-b border-amber-400/40"
     >
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
             <ShieldAlert className="w-4 h-4 text-white animate-pulse" />
