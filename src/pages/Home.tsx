@@ -1583,6 +1583,65 @@ export default function Home() {
     });
   };
 
+  const handleDeleteProfile = (profile: any) => {
+    const pId = profile._id || profile.id;
+    if (profiles.length <= 1) {
+      toast.error("Você precisa ter pelo menos um perfil ativo no workspace.");
+      return;
+    }
+
+    setConfirmModal({
+      open: true,
+      title: "Excluir Perfil",
+      message: `Tem certeza que deseja excluir o perfil "${profile.name}"? Todos os canais sociais e agendamentos deste perfil serão removidos do Zernio.`,
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setLoading(true);
+        try {
+          await zernio.deleteProfile(pId, profile.integrationId);
+          toast.success(`Perfil "${profile.name}" excluído com sucesso!`);
+          clearZernioCache();
+          if (selectedProfileId === pId) {
+            const remaining = profiles.filter((p) => (p._id || p.id) !== pId);
+            if (remaining.length > 0) {
+              const nextId = remaining[0]._id || remaining[0].id;
+              setSelectedProfileId(nextId);
+              await zernio.saveConfig("", nextId, remaining[0].integrationId);
+            }
+          }
+          if (config.integrations && config.integrations.length > 0) {
+            await fetchMultiAccountData(config.integrations);
+          } else {
+            await fetchConfig(false);
+          }
+        } catch (err: any) {
+          console.error("Erro ao excluir perfil:", err);
+          toast.error("Erro ao excluir perfil: " + (err.message || "Tente novamente."));
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleActivateProfile = async (profile: any) => {
+    const pId = profile._id || profile.id;
+    if (selectedProfileId === pId) return;
+    setSelectedProfileId(pId);
+    try {
+      await zernio.saveConfig("", pId, profile.integrationId);
+      toast.success(`Perfil "${profile.name}" ativado no sistema!`);
+      clearZernioCache();
+      if (config.integrations && config.integrations.length > 0) {
+        await fetchMultiAccountData(config.integrations);
+      }
+    } catch (err: any) {
+      console.error("Failed to activate profile:", err);
+      toast.error("Erro ao ativar perfil: " + err.message);
+    }
+  };
+
   const handleDisconnectAccount = (acc: any) => {
     const accId = acc._id || acc.id;
     const accName = acc.displayName || acc.name || acc.username || "este canal";
@@ -2541,54 +2600,215 @@ export default function Home() {
                 </CardHeader>
               </Card>
 
-              {/* Lista de Contas / Credenciais Conectadas */}
+              {/* Lista de Perfis Conectados */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" /> Perfis Conectados ({profiles.length})
+                      </CardTitle>
+                      <CardDescription>
+                        Todos os perfis deste workspace. Alterne entre eles para gerenciar publicações, inbox e automações.
+                      </CardDescription>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => openNewProfileModal()}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-xs cursor-pointer rounded-xl gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Novo Perfil
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {profiles.length > 0 ? (
+                    <div className="divide-y divide-border/40">
+                      {profiles.map((p) => {
+                        const pId = p._id || p.id;
+                        const isSelected = selectedProfileId === pId;
+                        const pAccs = accounts.filter((a) => a.profileId === pId);
+
+                        return (
+                          <div key={pId} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0">
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-bold text-foreground">
+                                  {p.name}
+                                </p>
+                                {isSelected ? (
+                                  <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Perfil Ativo no Sistema
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] bg-secondary/80 text-muted-foreground border border-border/60 px-2 py-0.5 rounded-full font-medium">
+                                    Disponível
+                                  </span>
+                                )}
+                                {p.integrationName && (
+                                  <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-medium">
+                                    Conta: {p.integrationName}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                                <span className="font-mono text-[11px]">
+                                  ID: {pId}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1.5">
+                                  <Share2 className="h-3.5 w-3.5 text-primary" />
+                                  <strong>{pAccs.length}</strong> / 2 canais gratuitos conectados
+                                </span>
+                              </div>
+
+                              {/* Badges dos canais conectados neste perfil */}
+                              {pAccs.length > 0 && (
+                                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                                  {pAccs.map((acc: any) => (
+                                    <span
+                                      key={acc._id || acc.id}
+                                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-card border border-border/70 text-[11px] font-medium text-foreground shadow-2xs"
+                                    >
+                                      {getPlatformIcon(acc.platform)}
+                                      <span>@{acc.username || acc.displayName || acc.name}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Ações do Perfil */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {!isSelected ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleActivateProfile(p)}
+                                  className="text-xs font-semibold h-8 rounded-xl hover:border-primary/50 hover:text-primary"
+                                >
+                                  <Check className="w-3.5 h-3.5 mr-1 text-emerald-500" />
+                                  Ativar Perfil
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  disabled
+                                  className="text-xs font-semibold h-8 rounded-xl opacity-80"
+                                >
+                                  Ativo Agora
+                                </Button>
+                              )}
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedProfileId(pId);
+                                  setActiveTab("channels");
+                                }}
+                                className="text-xs font-medium h-8 rounded-xl"
+                                title="Ver ou conectar canais deste perfil"
+                              >
+                                <Share2 className="w-3.5 h-3.5 mr-1" />
+                                Canais
+                              </Button>
+
+                              {profiles.length > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0 rounded-xl"
+                                  onClick={() => handleDeleteProfile(p)}
+                                  title="Excluir perfil"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic py-2">Nenhum perfil encontrado.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Lista de Contas / Credenciais Zernio Conectadas */}
               {config.integrations && config.integrations.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DatabaseZap className="h-5 w-5 text-primary" /> Contas & Perfis Conectados
-                    </CardTitle>
-                    <CardDescription>
-                      Gerencie suas credenciais e perfis conectados a este workspace.
-                    </CardDescription>
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <DatabaseZap className="h-5 w-5 text-primary" /> Credenciais Zernio (Chaves de API)
+                        </CardTitle>
+                        <CardDescription>
+                          Gerencie as contas de API Zernio vinculadas a este workspace.
+                        </CardDescription>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openNewProfileModal("new_key")}
+                        className="text-xs font-semibold gap-1.5 rounded-xl border-dashed hover:border-primary/50 cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Conectar Conta Adicional
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="divide-y divide-border/40">
-                      {config.integrations.map((integration) => (
-                        <div key={integration.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0">
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold flex items-center gap-2">
-                              {integration.name}
-                              <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-medium">Ativo</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                              ID do Perfil: {integration.profileId || "Não definido"}
-                            </p>
+                      {config.integrations.map((integration) => {
+                        const integProfiles = profiles.filter((p) => p.integrationId === integration.id);
+                        const integAccounts = accounts.filter((a) => a.integrationId === integration.id);
+
+                        return (
+                          <div key={integration.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold flex items-center gap-2">
+                                {integration.name}
+                                <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-medium">Ativo</span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {integProfiles.length} {integProfiles.length === 1 ? "perfil associado" : "perfis associados"} • {integAccounts.length}/2 canais sociais utilizados
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingIntegrationId(integration.id);
+                                  setEditingAccountName(integration.name);
+                                  setEditingProfileId(integration.profileId || "");
+                                  setIsEditingAccount(true);
+                                }}
+                              >
+                                Editar Identificação
+                              </Button>
+                              {config.integrations && config.integrations.length > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteConfig(integration.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingIntegrationId(integration.id);
-                                setEditingAccountName(integration.name);
-                                setEditingProfileId(integration.profileId || "");
-                                setIsEditingAccount(true);
-                              }}
-                            >
-                              Editar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteConfig(integration.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
