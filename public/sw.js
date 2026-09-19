@@ -1,7 +1,5 @@
-const CACHE_NAME = "platafy-pwa-v1";
+const CACHE_NAME = "platafy-pwa-v2";
 const PRECACHE_ASSETS = [
-  "/",
-  "/index.html",
   "/manifest.webmanifest",
   "/logo.png",
   "/pwa-192x192.png",
@@ -11,12 +9,13 @@ const PRECACHE_ASSETS = [
 
 // Instalação do Service Worker e pre-cache dos recursos estáticos essenciais
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS).catch((err) => {
         console.warn("[PWA SW] Precache warning:", err);
       });
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -84,5 +83,11 @@ self.addEventListener("fetch", (event) => {
       })
     );
     return;
+  }
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
 });
