@@ -5368,64 +5368,176 @@ export default function Home() {
                             </div>
 
                             {automationCommentReplyEnabled && (
-                              <div className="space-y-3 pt-1 border-t border-border/30">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <Label htmlFor="commentReplyProvider" className="font-semibold text-xs">Provedor de Resposta no Comentário</Label>
-                                    <select
-                                      id="commentReplyProvider"
-                                      value={automationCommentReplyProvider}
-                                      onChange={(e) => setAutomationCommentReplyProvider(e.target.value as any)}
-                                      className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
-                                    >
-                                      <option value="static">Texto Estático (Personalizado)</option>
-                                      <option value="gemini">Google Gemini AI</option>
-                                      <option value="openai">OpenAI (GPT-4o)</option>
-                                      <option value="anthropic">Anthropic (Claude)</option>
-                                      <option value="seekai">SeekAI (Multi-modelo)</option>
-                                      <option value="mistral">Mistral AI</option>
-                                      <option value="groq">Groq Cloud (Llama)</option>
-                                    </select>
+                              <div className="pt-2 border-t border-border/30">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                                  {/* Left Column: Comment Reply Provider & Message */}
+                                  <div className="space-y-3">
+                                    <div className="space-y-1.5">
+                                      <Label htmlFor="commentReplyProvider" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Provedor de Resposta no Comentário</Label>
+                                      <select
+                                        id="commentReplyProvider"
+                                        value={automationCommentReplyProvider}
+                                        onChange={(e) => setAutomationCommentReplyProvider(e.target.value as any)}
+                                        className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                                      >
+                                        <option value="static">Texto Estático (Personalizado)</option>
+                                        <option value="gemini">Google Gemini AI</option>
+                                        <option value="openai">OpenAI (GPT-4o)</option>
+                                        <option value="anthropic">Anthropic (Claude)</option>
+                                        <option value="seekai">SeekAI (Multi-modelo)</option>
+                                        <option value="mistral">Mistral AI</option>
+                                        <option value="groq">Groq Cloud (Llama)</option>
+                                      </select>
+                                    </div>
+
+                                    {automationCommentReplyProvider === "static" ? (
+                                      <div className="space-y-1.5">
+                                        <Label htmlFor="commentReplyText" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Mensagem Estática no Comentário</Label>
+                                        <textarea
+                                          id="commentReplyText"
+                                          rows={3}
+                                          placeholder="ex: Acabei de te enviar todos os detalhes no direct! Dá uma olhadinha lá 📩🚀"
+                                          value={automationCommentReplyText}
+                                          onChange={(e) => setAutomationCommentReplyText(e.target.value)}
+                                          className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <span className="text-[10px] text-muted-foreground block">
+                                          Esta resposta será publicada diretamente embaixo do comentário do usuário no post avisando que a DM foi enviada.
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="bg-secondary/40 border border-primary/10 rounded-md p-2 text-[11px] text-muted-foreground flex gap-2 items-start">
+                                          <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                          <span>Chaves de IA em <strong>Configurações → Provedores de IA</strong>.</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                          <Label htmlFor="commentReplyPrompt" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Instrução / Prompt para Comentário</Label>
+                                          <textarea
+                                            id="commentReplyPrompt"
+                                            rows={3}
+                                            placeholder="ex: Responda ao comentário no post de forma amigável e descontraída, avisando que o link ou oferta exclusiva acabou de ser enviado no direct dele!"
+                                            value={automationCommentReplyPrompt}
+                                            onChange={(e) => setAutomationCommentReplyPrompt(e.target.value)}
+                                            className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Right Column: Engajamento & Moderação Automática */}
+                                  <div className="bg-card border border-border/70 dark:border-slate-800 rounded-xl p-3.5 space-y-3 shadow-2xs">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-border/30">
+                                      <div className="p-1 rounded bg-primary/10 text-primary">
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                      </div>
+                                      <div>
+                                        <Label className="font-bold text-xs uppercase tracking-wider block text-foreground">
+                                          Engajamento & Moderação
+                                        </Label>
+                                        <span className="text-[10px] text-muted-foreground block">Ações automáticas simultâneas no post</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                      {/* Auto-Like */}
+                                      <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                                        <input
+                                          type="checkbox"
+                                          checked={automationAutoLike}
+                                          onChange={(e) => {
+                                            if (!canUseAutoEngagement) {
+                                              toast.info("O recurso de Auto-Like é exclusivo dos planos Pro e Agência.");
+                                              return;
+                                            }
+                                            setAutomationAutoLike(e.target.checked);
+                                          }}
+                                          className="rounded border-border text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="font-semibold text-xs text-foreground">Curtir comentário (Auto-Like)</span>
+                                            {!canUseAutoEngagement && (
+                                              <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                <Lock className="w-2.5 h-2.5" /> Pro
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                            Dá o like oficial da conta no comentário assim que o seguidor comenta, aquecendo o algoritmo.
+                                          </span>
+                                        </div>
+                                      </label>
+
+                                      {/* YouTube Heart */}
+                                      {(() => {
+                                        const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                                        if ((selAcc?.platform || "").toLowerCase() === "youtube") {
+                                          return (
+                                            <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
+                                              <input
+                                                type="checkbox"
+                                                checked={automationAutoHeart}
+                                                onChange={(e) => {
+                                                  if (!canUseAutoEngagement) {
+                                                    toast.info("O recurso de Coração no YouTube é exclusivo dos planos Pro e Agência.");
+                                                    return;
+                                                  }
+                                                  setAutomationAutoHeart(e.target.checked);
+                                                }}
+                                                className="rounded border-border text-red-500 focus:ring-red-500 h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                              />
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                  <span className="font-semibold text-xs text-red-600 dark:text-red-400">Coração Oficial (YouTube Heart) ❤️</span>
+                                                  {!canUseAutoEngagement && (
+                                                    <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                      <Lock className="w-2.5 h-2.5" /> Pro
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                                  Aplica o coração oficial do criador no comentário.
+                                                </span>
+                                              </div>
+                                            </label>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
+
+                                      {/* Moderação Anti-Spam */}
+                                      <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
+                                        <input
+                                          type="checkbox"
+                                          checked={automationAutoModerateSpam}
+                                          onChange={(e) => {
+                                            if (!canUseAutoModeration) {
+                                              toast.info("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
+                                              return;
+                                            }
+                                            setAutomationAutoModerateSpam(e.target.checked);
+                                          }}
+                                          className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="font-semibold text-xs text-foreground">Moderação Anti-Spam (Auto-Ocultar) 🛡️</span>
+                                            {!canUseAutoModeration && (
+                                              <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                <Lock className="w-2.5 h-2.5" /> Pro
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                            Detecta links de golpes, spam ou ofensas via IA e oculta automaticamente sem responder.
+                                          </span>
+                                        </div>
+                                      </label>
+                                    </div>
                                   </div>
                                 </div>
-
-                                {automationCommentReplyProvider === "static" ? (
-                                  <div className="space-y-1.5">
-                                    <Label htmlFor="commentReplyText" className="font-semibold text-xs">Mensagem Estática no Comentário</Label>
-                                    <textarea
-                                      id="commentReplyText"
-                                      rows={2}
-                                      placeholder="ex: Acabei de te enviar todos os detalhes no direct! Dá uma olhadinha lá 📩🚀"
-                                      value={automationCommentReplyText}
-                                      onChange={(e) => setAutomationCommentReplyText(e.target.value)}
-                                      className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                                    />
-                                    <span className="text-[10px] text-muted-foreground block">
-                                      Esta resposta será publicada diretamente embaixo do comentário do usuário no post avisando que a DM foi enviada.
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-2">
-                                    <div className="bg-secondary/40 border border-primary/10 rounded-md p-2.5 text-[11px] text-muted-foreground flex gap-2 items-start">
-                                      <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                      <span>As chaves de API de IA são configuradas na aba <strong>Configurações → Provedores de IA</strong>.</span>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                      <Label htmlFor="commentReplyPrompt" className="font-semibold text-xs">Instrução / Prompt para Comentário</Label>
-                                      <textarea
-                                        id="commentReplyPrompt"
-                                        rows={3}
-                                        placeholder="ex: Responda ao comentário no post de forma amigável e descontraída, avisando que o link ou oferta exclusiva acabou de ser enviado no direct dele!"
-                                        value={automationCommentReplyPrompt}
-                                        onChange={(e) => setAutomationCommentReplyPrompt(e.target.value)}
-                                        className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                                      />
-                                      <span className="text-[10px] text-muted-foreground block">
-                                        Guie o comportamento da IA ao criar a resposta pública que será postada no comentário.
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             )}
                           </div>
@@ -5444,7 +5556,7 @@ export default function Home() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                               <div className="space-y-1.5">
-                                <Label htmlFor="autoProvider" className="font-semibold text-xs">Provedor de Resposta na DM</Label>
+                                <Label htmlFor="autoProvider" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Provedor de Resposta na DM</Label>
                                 <select
                                   id="autoProvider"
                                   value={automationAiProvider}
@@ -5464,7 +5576,7 @@ export default function Home() {
 
                             {automationAiProvider === "static" ? (
                               <div className="space-y-1.5">
-                                <Label htmlFor="staticReply" className="font-semibold text-xs">Texto da Mensagem Privada (DM)</Label>
+                                <Label htmlFor="staticReply" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Texto da Mensagem Privada (DM)</Label>
                                 <textarea
                                   id="staticReply"
                                   rows={3}
@@ -5481,7 +5593,7 @@ export default function Home() {
                                   <span>As chaves de IA são configuradas em <strong>Configurações → Provedores de IA</strong>.</span>
                                 </div>
                                 <div className="space-y-1.5">
-                                  <Label htmlFor="aiPrompt" className="font-semibold text-xs">Instrução / Prompt para a DM</Label>
+                                  <Label htmlFor="aiPrompt" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Instrução / Prompt para a DM</Label>
                                   <textarea
                                     id="aiPrompt"
                                     rows={3}
@@ -5496,67 +5608,200 @@ export default function Home() {
                           </div>
                         </div>
                       ) : (
-                        /* Standard Single Response for Responder Comentário or Responder DM */
-                        <div className="space-y-4 pb-4 border-b border-border/40">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <Label htmlFor="autoProvider" className="font-semibold text-sm">
-                                {automationType === "comment_reply" ? "Provedor de Resposta no Comentário" : "Provedor de Resposta na DM"}
-                              </Label>
-                              <select
-                                id="autoProvider"
-                                value={automationAiProvider}
-                                onChange={(e) => setAutomationAiProvider(e.target.value as any)}
-                                className="w-full text-sm bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
-                              >
-                                <option value="static">Texto Estático (Personalizado)</option>
-                                <option value="gemini">Google Gemini AI</option>
-                                <option value="openai">OpenAI (GPT-4o)</option>
-                                <option value="anthropic">Anthropic (Claude)</option>
-                                <option value="seekai">SeekAI (Multi-modelo)</option>
-                                <option value="mistral">Mistral AI</option>
-                                <option value="groq">Groq Cloud (Llama)</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          {automationAiProvider === "static" ? (
-                            <div className="space-y-1.5">
-                              <Label htmlFor="staticReply" className="font-semibold text-sm">
-                                {automationType === "comment_reply" ? "Mensagem Estática no Comentário" : "Mensagem Estática na DM"}
-                              </Label>
-                              <textarea
-                                id="staticReply"
-                                rows={3}
-                                placeholder={automationType === "comment_reply" ? "Escreva a resposta padrão que será publicada no comentário..." : "Escreva a resposta padrão que será enviada na DM..."}
-                                value={automationStaticReply}
-                                onChange={(e) => setAutomationStaticReply(e.target.value)}
-                                className="w-full text-sm bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <div className="bg-secondary/40 border border-primary/10 rounded-md p-3 text-xs text-muted-foreground flex gap-2 items-start">
-                                <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                <span>
-                                  As chaves de API de IA são configuradas uma única vez na aba{" "}
-                                  <button onClick={handleOpenSettings} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
-                                </span>
-                              </div>
+                        /* Standard Single Response for Responder Comentário, Responder DM, Stories */
+                        <div className="pb-4 border-b border-border/40">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                            {/* Left Column: Provider & Message/Prompt */}
+                            <div className="space-y-3.5">
                               <div className="space-y-1.5">
-                                <Label htmlFor="aiPrompt" className="font-semibold text-sm">Prompt / Instrução para a IA</Label>
-                                <textarea
-                                  id="aiPrompt"
-                                  rows={4}
-                                  placeholder="ex: Aja como suporte da marca X. Seja amigável, responda de forma muito curta e forneça o link www.exemplo.com."
-                                  value={automationAiPrompt}
-                                  onChange={(e) => setAutomationAiPrompt(e.target.value)}
-                                  className="w-full text-sm bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
-                                />
-                                <span className="text-[10px] text-muted-foreground block">Guie o comportamento da IA ao criar a resposta.</span>
+                                <Label htmlFor="autoProvider" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
+                                  {automationType === "comment_reply" ? "Provedor de Resposta no Comentário" : "Provedor de Resposta na DM"}
+                                </Label>
+                                <select
+                                  id="autoProvider"
+                                  value={automationAiProvider}
+                                  onChange={(e) => setAutomationAiProvider(e.target.value as any)}
+                                  className="w-full text-xs bg-card border rounded p-2 focus:ring-1 focus:ring-primary outline-none"
+                                >
+                                  <option value="static">Texto Estático (Personalizado)</option>
+                                  <option value="gemini">Google Gemini AI</option>
+                                  <option value="openai">OpenAI (GPT-4o)</option>
+                                  <option value="anthropic">Anthropic (Claude)</option>
+                                  <option value="seekai">SeekAI (Multi-modelo)</option>
+                                  <option value="mistral">Mistral AI</option>
+                                  <option value="groq">Groq Cloud (Llama)</option>
+                                </select>
                               </div>
+
+                              {automationAiProvider === "static" ? (
+                                <div className="space-y-1.5">
+                                  <Label htmlFor="staticReply" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
+                                    {automationType === "comment_reply" ? "Mensagem Estática no Comentário" : "Mensagem Estática na DM"}
+                                  </Label>
+                                  <textarea
+                                    id="staticReply"
+                                    rows={4}
+                                    placeholder={automationType === "comment_reply" ? "Escreva a resposta padrão que será publicada no comentário..." : "Escreva a resposta padrão que será enviada na DM..."}
+                                    value={automationStaticReply}
+                                    onChange={(e) => setAutomationStaticReply(e.target.value)}
+                                    className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="bg-secondary/40 border border-primary/10 rounded-md p-2.5 text-[11px] text-muted-foreground flex gap-2 items-start">
+                                    <Sparkles className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                    <span>
+                                      Chaves de IA configuradas em{" "}
+                                      <button onClick={handleOpenSettings} className="underline font-semibold text-foreground hover:text-primary">Configurações → Provedores de IA</button>.
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label htmlFor="aiPrompt" className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">Prompt / Instrução para a IA</Label>
+                                    <textarea
+                                      id="aiPrompt"
+                                      rows={4}
+                                      placeholder="ex: Aja como suporte da marca. Seja amigável, responda de forma muito curta e forneça o link www.exemplo.com."
+                                      value={automationAiPrompt}
+                                      onChange={(e) => setAutomationAiPrompt(e.target.value)}
+                                      className="w-full text-xs bg-card border rounded p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <span className="text-[10px] text-muted-foreground block">Guie o comportamento da IA ao criar a resposta.</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+
+                            {/* Right Column: Engajamento & Moderação Automática (quando envolve comentários) OU Dicas (DM/Stories) */}
+                            {automationType === "comment_reply" ? (
+                              <div className="bg-card border border-border/70 dark:border-slate-800 rounded-xl p-4 space-y-3.5 shadow-2xs">
+                                <div className="flex items-center gap-2 pb-2.5 border-b border-border/40">
+                                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                    <ShieldCheck className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <Label className="font-bold text-xs uppercase tracking-wider block text-foreground">
+                                      Engajamento & Moderação Automática
+                                    </Label>
+                                    <span className="text-[10px] text-muted-foreground block">
+                                      Ações automáticas executadas instantaneamente no post
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                  {/* Auto-Like */}
+                                  <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={automationAutoLike}
+                                      onChange={(e) => {
+                                        if (!canUseAutoEngagement) {
+                                          toast.info("O recurso de Auto-Like é exclusivo dos planos Pro e Agência.");
+                                          return;
+                                        }
+                                        setAutomationAutoLike(e.target.checked);
+                                      }}
+                                      className="rounded border-border text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-semibold text-xs text-foreground">Curtir comentário automaticamente (Auto-Like)</span>
+                                        {!canUseAutoEngagement && (
+                                          <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                            <Lock className="w-2.5 h-2.5" /> Pro
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                        Dá o like oficial da conta no comentário assim que o seguidor comenta, aquecendo o algoritmo.
+                                      </span>
+                                    </div>
+                                  </label>
+
+                                  {/* YouTube Heart */}
+                                  {(() => {
+                                    const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
+                                    if ((selAcc?.platform || "").toLowerCase() === "youtube") {
+                                      return (
+                                        <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2.5 border-t border-border/20">
+                                          <input
+                                            type="checkbox"
+                                            checked={automationAutoHeart}
+                                            onChange={(e) => {
+                                              if (!canUseAutoEngagement) {
+                                                toast.info("O recurso de Coração no YouTube é exclusivo dos planos Pro e Agência.");
+                                                return;
+                                              }
+                                              setAutomationAutoHeart(e.target.checked);
+                                            }}
+                                            className="rounded border-border text-red-500 focus:ring-red-500 h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                          />
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                              <span className="font-semibold text-xs text-red-600 dark:text-red-400">Dar Coração oficial do Canal (YouTube Heart) ❤️</span>
+                                              {!canUseAutoEngagement && (
+                                                <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                                  <Lock className="w-2.5 h-2.5" /> Pro
+                                                </span>
+                                              )}
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                              Aplica o coração oficial do criador no comentário. O YouTube envia notificação push no celular do inscrito!
+                                            </span>
+                                          </div>
+                                        </label>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+
+                                  {/* Moderação Anti-Spam */}
+                                  <label className="flex items-start gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2.5 border-t border-border/20">
+                                    <input
+                                      type="checkbox"
+                                      checked={automationAutoModerateSpam}
+                                      onChange={(e) => {
+                                        if (!canUseAutoModeration) {
+                                          toast.info("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
+                                          return;
+                                        }
+                                        setAutomationAutoModerateSpam(e.target.checked);
+                                      }}
+                                      className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4 mt-0.5 cursor-pointer shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-semibold text-xs text-foreground">Moderação Inteligente Anti-Spam (Auto-Ocultar) 🛡️</span>
+                                        {!canUseAutoModeration && (
+                                          <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
+                                            <Lock className="w-2.5 h-2.5" /> Pro
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground leading-tight block mt-0.5">
+                                        Detecta comentários com links de golpes, spam ou termos maliciosos e oculta automaticamente sem responder.
+                                      </span>
+                                    </div>
+                                  </label>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-secondary/15 border border-border/40 rounded-xl p-4 space-y-2.5">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border/30">
+                                  <Sparkles className="w-4 h-4 text-primary" />
+                                  <Label className="font-bold text-xs uppercase tracking-wider block text-foreground">
+                                    Dicas de Conversão no Direct
+                                  </Label>
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                  {automationType === "dm_reply" && "A automação responderá imediatamente mensagens privadas no Direct. Mantenha as mensagens objetivas com links claros."}
+                                  {automationType === "story_mention" && "Dispara automaticamente quando seguidores mencionam sua marca nos Stories. Excelente para enviar cupons de desconto imediatos!"}
+                                  {automationType === "story_reply" && "Responde interações e reações a Stories da sua conta. Ideal para qualificar seguidores e iniciar conversas de vendas."}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -5769,103 +6014,6 @@ export default function Home() {
                           )}
                         </div>
                       )}
-
-                      {/* Ações Complementares: Auto-Like, YouTube Heart, Moderação com IA */}
-                      <div className="bg-secondary/15 border border-border/40 rounded-xl p-4 space-y-3">
-                        <Label className="font-semibold text-xs text-muted-foreground uppercase tracking-wider block">
-                          Engajamento & Moderação Automática
-                        </Label>
-                        <div className="space-y-2.5">
-                          {/* Auto-Like */}
-                          <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={automationAutoLike}
-                              onChange={(e) => {
-                                if (!canUseAutoEngagement) {
-                                  toast.info("O recurso de Auto-Like é exclusivo dos planos Pro e Agência.");
-                                  return;
-                                }
-                                setAutomationAutoLike(e.target.checked);
-                              }}
-                              className="rounded border-border text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold block">Curtir comentário automaticamente (Auto-Like)</span>
-                                {!canUseAutoEngagement && (
-                                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
-                                    <Lock className="w-2.5 h-2.5" /> Pro
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">Dá o like oficial da conta no comentário do usuário assim que ele comenta, aquecendo o algoritmo.</span>
-                            </div>
-                          </label>
-
-                          {/* Auto-Heart YouTube */}
-                          {(() => {
-                            const selAcc = accounts.find(a => (a._id || a.id) === selectedAutomationAccount);
-                            if ((selAcc?.platform || "").toLowerCase() === "youtube") {
-                              return (
-                                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
-                                  <input
-                                    type="checkbox"
-                                    checked={automationAutoHeart}
-                                    onChange={(e) => {
-                                      if (!canUseAutoEngagement) {
-                                        toast.info("O recurso de Coração no YouTube é exclusivo dos planos Pro e Agência.");
-                                        return;
-                                      }
-                                      setAutomationAutoHeart(e.target.checked);
-                                    }}
-                                    className="rounded border-border text-red-500 focus:ring-red-500 h-4 w-4 cursor-pointer"
-                                  />
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="font-semibold block text-red-600 dark:text-red-400">Dar Coração oficial do Canal (YouTube Heart) ❤️</span>
-                                      {!canUseAutoEngagement && (
-                                        <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
-                                          <Lock className="w-2.5 h-2.5" /> Pro
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="text-[10px] text-muted-foreground">Aplica o selo de coração oficial do criador no comentário. O YouTube envia notificação push no celular do inscrito!</span>
-                                  </div>
-                                </label>
-                              );
-                            }
-                            return null;
-                          })()}
-
-                          {/* Auto-Moderação / Anti-Spam */}
-                          <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none pt-2 border-t border-border/20">
-                            <input
-                              type="checkbox"
-                              checked={automationAutoModerateSpam}
-                              onChange={(e) => {
-                                if (!canUseAutoModeration) {
-                                  toast.info("A Moderação Inteligente com IA é exclusiva dos planos Pro e Agência.");
-                                  return;
-                                }
-                                setAutomationAutoModerateSpam(e.target.checked);
-                              }}
-                              className="rounded border-border text-amber-500 focus:ring-amber-500 h-4 w-4 cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold block">Moderação Inteligente Anti-Spam (Auto-Ocultar) 🛡️</span>
-                                {!canUseAutoModeration && (
-                                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
-                                    <Lock className="w-2.5 h-2.5" /> Pro
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">Detecta comentários com links de golpes, spam ou termos maliciosos e oculta automaticamente sem responder.</span>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
 
                       {/* Actions bar */}
                       <div className="flex justify-end pt-2">
